@@ -5,8 +5,10 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,14 +20,14 @@ import java.util.List;
  * @author Joshua H. | KaitoKunTatsu
  * @version 1.0.0 | last edit: 22.09.2022
  * */
-public class BasicCommandsManager extends ListenerAdapter {
+public class CategorylessManager extends ListenerAdapter {
 
     private static final Color standardColor = Color.orange;
 
     // Command categories
     private static final String[] categories =
             {
-                    "**» Gamble «**", "**» Auto Channel «**", "**» Reaction Roles «**",
+                    "**» Economy «**", "**» Auto Channel «**", "**» Reaction Roles «**",
                     "**» Server Settings «**", "**» Moderation «**", "**» Others «**"
             };
 
@@ -35,13 +37,7 @@ public class BasicCommandsManager extends ListenerAdapter {
                 {
                     // Name | Description | options (type, name, description, required)
 
-                    // Gamble
-                        {"set_reaction_role", "Sets a role which each member adding the specific emoji will get",
-                                "role,role,Reaction Role,true",
-                                "channel,channel,Channel in which the message was sent,true",
-                                "string,message,ID of the message for Reaction Role,true",
-                                "string,emoji,Reacting with this will grant the role,true"},
-                        {"help", "Gives information about the commands"},
+                    // Economy
                     {"bal", "Displays balance of specific user", "user,user,User whose wealth you want to see,false"},
                     {"dep", "Deposites your money to your bank", "int,amount,Amount of money you want to deposite,false"},
                     {"with", "Debits your money from the bank", "int,amount,Amount of money you want to debit,false"},
@@ -69,7 +65,11 @@ public class BasicCommandsManager extends ListenerAdapter {
                 },
                 {
                     // Reaction Roles
-
+                    {"set_reaction_role", "Sets a role which each member adding the specific emoji will get",
+                                "role,role,Reaction Role,true",
+                                "channel,channel,Channel in which the message was sent,true",
+                                "string,message,ID of the message for Reaction Role,true",
+                                "string,emoji,Reacting with this will grant the role,true"},
                     {"del_reaction_role", "Deletes a Reaction Role",
                             "role,role,Reaction Role,true",
                             "string,message,ID of the message with emotji,true",
@@ -104,7 +104,7 @@ public class BasicCommandsManager extends ListenerAdapter {
                 },
                 {
                     // Others
-
+                    {"help", "Gives information about the commands"},
                     {"links", "Returns all links considering the bot"},
                     {"cat", "Returns a cute cat pic"},
                     {"embed", "Creates a custom embed",
@@ -124,13 +124,19 @@ public class BasicCommandsManager extends ListenerAdapter {
 
     private final Utils utils;
 
-    public BasicCommandsManager(Utils pUtils) {
+    public CategorylessManager(Utils pUtils) {
         this.utils = pUtils;
     }
 
-    /*@Override
-    public void onSlashCommand(@Nonnull SlashCommandInteraction event) {}
-*/
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
+    {
+        switch (event.getName())
+        {
+            case "help" -> helpCommand(event);
+        }
+    }
+
     /**
      * TODO:
      *

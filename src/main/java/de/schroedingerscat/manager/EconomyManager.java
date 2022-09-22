@@ -18,7 +18,7 @@ import java.text.NumberFormat;
 import java.util.*;
 
 /**
- * Handles commands redirected by {@link BasicCommandsManager}.
+ * Handles commands redirected by {@link CategorylessManager}.
  * Everything considering the bot's economy happens here.
  *
  * @author Joshua | KaitoKunTatsu
@@ -41,7 +41,22 @@ public class EconomyManager extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
     {
-
+        switch (event.getName())
+        {
+            case "bal" -> balCommand(event);
+            case "top" -> topCommand(event);
+            case "crime" -> crimeCommand(event);
+            case "rob" -> robCommand(event);
+            case "dep" -> depCommand(event);
+            case "with" -> withCommand(event);
+            case "work" -> workCommand(event);
+            case "spin" -> spinCommand(event);
+            case "get_income_role" -> getIncomeRoleCommand(event);
+            case "del_income_role" -> deleteIncomeRoleCommand(event);
+            case "add_income_role" -> addIncomeRoleCommand(event);
+            case "give" -> giveCommmand(event);
+            case "give_admin" -> giveAdminCommand(event);
+        }
     }
 
     /**
@@ -134,14 +149,8 @@ public class EconomyManager extends ListenerAdapter {
     {
         event.deferReply().queue();
         User user;
-        if(event.getOption("user") != null)
-        {
-            user = event.getOption("user").getAsUser();
-        }
-        else
-        {
-            user = event.getUser();
-        }
+        if(event.getOption("user") != null) user = event.getOption("user").getAsUser();
+        else user = event.getUser();
 
         long[] wealth = getWealth(user.getIdLong(), event.getGuild().getIdLong());
         String[][] fields = {
@@ -491,7 +500,7 @@ public class EconomyManager extends ListenerAdapter {
      *
      * @param event - SlashCommandInteractionEvent triggered by member
      * */
-    protected void addIncomeCommand(SlashCommandInteractionEvent event)
+    protected void addIncomeRoleCommand(SlashCommandInteractionEvent event)
     {
         event.deferReply().queue();
         long role_id = event.getOption("role").getAsRole().getIdLong();
@@ -525,7 +534,7 @@ public class EconomyManager extends ListenerAdapter {
      *
      * @param event - SlashCommandInteractionEvent triggered by member
      * */
-    protected void getIncomeCommand(SlashCommandInteractionEvent event)
+    protected void getIncomeRoleCommand(SlashCommandInteractionEvent event)
     {
         event.deferReply().queue();
         StringBuilder builder = new StringBuilder();
@@ -551,7 +560,7 @@ public class EconomyManager extends ListenerAdapter {
      *
      * @param event - SlashCommandInteractionEvent triggered by member
      * */
-    protected void delIncomeCommand(SlashCommandInteractionEvent event)
+    protected void deleteIncomeRoleCommand(SlashCommandInteractionEvent event)
     {
         event.deferReply().queue();
         Role role = event.getOption("role").getAsRole();

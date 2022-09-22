@@ -9,7 +9,6 @@ import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
-import net.dv8tion.jda.api.utils.cache.CacheFlag;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -32,7 +31,7 @@ public class Main {
     public Main() {
         String lToken = "";
         try {
-            File lTokenFile = new File("src/de/catbot/tokenFile.txt");
+            File lTokenFile = new File("src/main/resources/tokenFile.txt");
             Scanner lReader = new Scanner(lTokenFile);
             lToken = lReader.nextLine();
             lReader.close();
@@ -42,7 +41,7 @@ public class Main {
 
         Utils lUtils = null;
         try {
-            lUtils = new Utils("catbot.db");
+            lUtils = new Utils("src/main/resources/catbot.db");
             lUtils.createTables();
         } catch (SQLException e) {
             System.exit(1);
@@ -51,7 +50,7 @@ public class Main {
         JDABuilder lBuilder = JDABuilder.createDefault(lToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES);
 
-        BasicCommandsManager lBCmdManager = new BasicCommandsManager(lUtils);
+        CategorylessManager lBCmdManager = new CategorylessManager(lUtils);
         lBuilder.addEventListeners(
                 new AutoChannelManager(lUtils),
                 new AutoRoleManager(lUtils),
