@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -27,8 +28,8 @@ import java.util.*;
 public class EconomyManager extends ListenerAdapter {
 
     // Emoji which represents the currency
-    private static final String currency = "<:wiggle:935151967137832990>";
-    private static final Color economyColor = Color.pink;
+    private static final String CURRENCY = "<:wiggle:935151967137832990>";
+    private static final Color ECONOMY_COLOR = new Color(234,217,25);
 
     private final Utils utils;
     private HashMap<Long, HashMap<Long, Long[]>> currentSpins;
@@ -41,6 +42,7 @@ public class EconomyManager extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
     {
+
         switch (event.getName())
         {
             case "bal" -> balCommand(event);
@@ -56,6 +58,22 @@ public class EconomyManager extends ListenerAdapter {
             case "add_income_role" -> addIncomeRoleCommand(event);
             case "give" -> giveCommmand(event);
             case "give_admin" -> giveAdminCommand(event);
+        }
+    }
+
+    @Override
+    public void onButtonInteraction(@Nonnull ButtonInteractionEvent event)
+    {
+        switch (event.getButton().getId())
+        {
+            case "EconomyBankButton" -> {
+                event.editMessageEmbeds(topEmbed(event.getGuild().getIdLong(), "Bank")).queue();
+                event.editButton(event.getButton().asDisabled()).queue();
+            }
+            case "EconomyCashButton" -> {
+                event.editMessageEmbeds(topEmbed(event.getGuild().getIdLong(), "Cash")).queue();
+                event.editButton(event.getButton().asDisabled()).queue();
+            }
         }
     }
 
@@ -158,7 +176,7 @@ public class EconomyManager extends ListenerAdapter {
                 {"Cash",Long.toString(wealth[1])},
         };
 
-        event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "", "", fields, false, user, null, null)).queue();
+        event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", "", fields, false, user, null, null)).queue();
     }
 
     /**
@@ -179,9 +197,9 @@ public class EconomyManager extends ListenerAdapter {
 
         setBankOrCash(memberId, serverId, currentCash+gainedAmount, "cash");
 
-        String description = ":white_check_mark: You earned "+ gainedAmount+currency;
+        String description = ":white_check_mark: You earned "+ gainedAmount+ CURRENCY;
 
-        event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "", description, null, false, event.getUser(), null, null)).queue();
+        event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", description, null, false, event.getUser(), null, null)).queue();
     }
 
     /**
@@ -202,14 +220,14 @@ public class EconomyManager extends ListenerAdapter {
         if (rnd.nextInt(3) == 0)
         {
             setBankOrCash(memberId, serverId, currentCash - gainedAmount, "cash");
-            String description = ":x: You got caught while commiting a crime and paid " + gainedAmount + currency;
-            event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "", description, null, false, event.getUser(), null, null)).queue();
+            String description = ":x: You got caught while commiting a crime and paid " + gainedAmount + CURRENCY;
+            event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", description, null, false, event.getUser(), null, null)).queue();
         }
         else
         {
             setBankOrCash(memberId, serverId, currentCash + gainedAmount, "cash");
-            String description = ":white_check_mark: You earned " + gainedAmount + currency;
-            event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "", description, null, false, event.getUser(), null, null)).queue();
+            String description = ":white_check_mark: You earned " + gainedAmount + CURRENCY;
+            event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", description, null, false, event.getUser(), null, null)).queue();
         }
     }
 
@@ -257,7 +275,7 @@ public class EconomyManager extends ListenerAdapter {
                 else
                 {
                     description.append("**").append(counter).append("** ").append(member.getAsMention()).append(" • ").append(NumberFormat.getInstance()
-                            .format(resultSet.getLong(2))).append(currency+"\n");
+                            .format(resultSet.getLong(2))).append(CURRENCY +"\n");
                     counter++;
                 }
             }
@@ -267,12 +285,12 @@ public class EconomyManager extends ListenerAdapter {
                 description.append("No aren't any users with ").append(cashOrBank).append(" value");
             }
 
-            embed = utils.createEmbed(economyColor, "TOP "+cashOrBank.toUpperCase()+" VALUES",
+            embed = utils.createEmbed(ECONOMY_COLOR, "TOP "+cashOrBank.toUpperCase()+" VALUES",
                     description.toString(), null, false, null, null, null);
         }
         catch (SQLException e)
         {
-            embed = utils.createEmbed(economyColor,"TOP "+cashOrBank.toUpperCase()+" VALUES",
+            embed = utils.createEmbed(ECONOMY_COLOR,"TOP "+cashOrBank.toUpperCase()+" VALUES",
                     "No aren't any users with "+cashOrBank+" value", null, false, null, null, null);
         }
         return embed;
@@ -311,7 +329,7 @@ public class EconomyManager extends ListenerAdapter {
             setBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), wealth[1]+amount, "cash");
             setBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), wealth[0]-amount, "bank");
             event.getHook().editOriginalEmbeds(utils.createEmbed(
-                    economyColor, "", ":white_check_mark: Withdrawed "+amount+currency+" from your bank",
+                    ECONOMY_COLOR, "", ":white_check_mark: Withdrawed "+amount+ CURRENCY +" from your bank",
                     null, false, event.getUser(), null, null)).queue();
         }
     }
@@ -349,7 +367,7 @@ public class EconomyManager extends ListenerAdapter {
             setBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), wealth[1]-amount, "cash");
             setBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), wealth[0]+amount, "bank");
             event.getHook().editOriginalEmbeds(utils.createEmbed(
-                    economyColor, "", ":white_check_mark: Deposited "+amount+currency+" to your bank",
+                    ECONOMY_COLOR, "", ":white_check_mark: Deposited "+amount+ CURRENCY +" to your bank",
                     null, false, event.getUser(), null, null)).queue();
         }
     }
@@ -380,7 +398,7 @@ public class EconomyManager extends ListenerAdapter {
             {
                 long lostValue = (long) (authorsWealth[0]*0.25);
                 setBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), authorsWealth[1]-lostValue, "cash");
-                description += " You got caught robbing and paid "+lostValue+currency;
+                description += " You got caught robbing and paid "+lostValue+ CURRENCY;
             }
             event.getHook().editOriginalEmbeds(utils.createEmbed(
                     Color.red, "", description,
@@ -391,7 +409,7 @@ public class EconomyManager extends ListenerAdapter {
             setBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), authorsWealth[0]+membersCash, "cash");
             setBankOrCash(event.getOption("user").getAsUser().getIdLong(), event.getGuild().getIdLong(), 0, "cash");
             event.getHook().editOriginalEmbeds(utils.createEmbed(
-                    economyColor, "", "Successfully robbed "+
+                    ECONOMY_COLOR, "", "Successfully robbed "+
                             event.getOption("user").getAsMember().getAsMention()+" and got "+membersCash,
                     null, false, event.getUser(), null, null)).queue();
         }
@@ -477,8 +495,8 @@ public class EconomyManager extends ListenerAdapter {
                     }
                 }, 10000);
             }
-            event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "",
-                    ":white_check_mark: You bet "+ amount+currency, null,
+            event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+                    ":white_check_mark: You bet "+ amount+ CURRENCY, null,
                     false, event.getUser(), null, "sec remaining")).queue();
 
 
@@ -505,7 +523,7 @@ public class EconomyManager extends ListenerAdapter {
         event.deferReply().queue();
         long role_id = event.getOption("role").getAsRole().getIdLong();
         long income = event.getOption("income").getAsLong();
-        Color color = economyColor;
+        Color color = ECONOMY_COLOR;
         String description;
         try {
             if (!utils.onQuery("SELECT income FROM income_roles WHERE role_id="+role_id).isClosed())
@@ -518,7 +536,7 @@ public class EconomyManager extends ListenerAdapter {
             {
                 utils.onExecute("INSERT INTO income_roles VALUES("+event.getGuild().getIdLong()+","+role_id+ ","+income+")");
                 description = "Added Income Role "+event.getOption("role").getAsRole().getAsMention()+" with "
-                        +income+currency+" income";
+                        +income+ CURRENCY +" income";
             }
         } catch (SQLException e) {
             description = "An error occurred";
@@ -543,7 +561,7 @@ public class EconomyManager extends ListenerAdapter {
             ResultSet rs = utils.onQuery("SELECT * FROM income_roles where server_id="+event.getGuild().getIdLong());
             while(rs.next())
             {
-                builder.append(event.getJDA().getRoleById(rs.getLong(2)).getAsMention() +" • "+rs.getLong(3)+currency);
+                builder.append(event.getJDA().getRoleById(rs.getLong(2)).getAsMention() +" • "+rs.getLong(3)+ CURRENCY);
             }
         }
         catch (SQLException e)
@@ -551,7 +569,7 @@ public class EconomyManager extends ListenerAdapter {
             event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
                     "An error occurred",null, false, event.getUser(), null, null)).queue();
         }
-        event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "Income Roles",
+        event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "Income Roles",
                 builder.toString(),null, false, null, null, null)).queue();
     }
 
@@ -576,7 +594,7 @@ public class EconomyManager extends ListenerAdapter {
             {
                 utils.onExecute("DELETE FROM income_roles WHERE server_id="+event.getGuild().getIdLong()+
                                             " AND role_id="+role.getIdLong());
-                event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "",
+                event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                         "Income Role "+role.getAsMention()+" deleted",null, false, event.getUser(), null, null)).queue();
             }
         }
@@ -611,13 +629,13 @@ public class EconomyManager extends ListenerAdapter {
         else if (amount <= 0)
         {
             event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
-                    "Can't give less than 1"+currency,null,
+                    "Can't give less than 1"+ CURRENCY,null,
                     false, event.getUser(), null, null)).queue();
         }
         else if (wealth_author[1] < amount)
         {
             event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
-                    "You don't have enough "+currency,null,
+                    "You don't have enough "+ CURRENCY,null,
                     false, event.getUser(), null, null)).queue();
         }
         else
@@ -625,8 +643,8 @@ public class EconomyManager extends ListenerAdapter {
             setBankOrCash(author.getIdLong(), event.getGuild().getIdLong(), wealth_author[1]-amount, "cash");
             setBankOrCash(user.getIdLong(), event.getGuild().getIdLong(), wealth_user[1]+amount, "cash");
 
-            event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "",
-                    "Successfully given "+amount+currency+" to "+user.getAsMention(),null,
+            event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+                    "Successfully given "+amount+ CURRENCY +" to "+user.getAsMention(),null,
                     false, event.getUser(), null, null)).queue();
         }
     }
@@ -643,31 +661,10 @@ public class EconomyManager extends ListenerAdapter {
         setBankOrCash(user.getIdLong(), event.getGuild().getIdLong(),
                 getWealth(user.getIdLong(), event.getGuild().getIdLong())[1]+amount, "cash");
 
-        event.getHook().editOriginalEmbeds(utils.createEmbed(economyColor, "",
-                "Successfully given "+amount+currency+" to "+user.getAsMention(),null,
+        event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+                "Successfully given "+amount+ CURRENCY +" to "+user.getAsMention(),null,
                 false, event.getUser(), null, null)).queue();
     }
 
-
-    /**
-     * Handles button presses considering the economy.<br/>
-     * If pressed button's id is "EconomyBankButton", the bank toplist is displayed.<br/>
-     * If pressed button's id is "EconomyCashButton", the cash toplist is displayed.
-     *
-     * @param event - ButtonInteractionEvent triggered by member
-     * */
-    protected void reactOnButton(ButtonInteractionEvent event)
-    {
-        switch (event.getButton().getId())
-        {
-            case "EconomyBankButton" -> {
-                event.editMessageEmbeds(topEmbed(event.getGuild().getIdLong(), "Bank")).queue();
-                event.editButton(event.getButton().asDisabled()).queue();
-            }
-            case "EconomyCashButton" -> {
-                event.editMessageEmbeds(topEmbed(event.getGuild().getIdLong(), "Cash")).queue();
-                event.editButton(event.getButton().asDisabled()).queue();
-            }
-        }
-    }
+    public static Color getCategoryColor() {return ECONOMY_COLOR; }
 }

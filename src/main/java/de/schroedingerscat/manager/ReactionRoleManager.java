@@ -7,13 +7,13 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 
 import java.awt.*;
 
-public class ReactionManager extends ListenerAdapter {
+public class ReactionRoleManager extends ListenerAdapter {
 
-    private static final Color REACTION_ROLE_COLOR = Color.cyan;
+    private static final Color REACTION_ROLE_COLOR = new Color(158,242,79);
 
     private final Utils utils;
 
-    public ReactionManager(Utils pUtils) {
+    public ReactionRoleManager(Utils pUtils) {
         this.utils = pUtils;
     }
 
@@ -50,4 +50,6 @@ public class ReactionManager extends ListenerAdapter {
         }
 
     }
+
+    public static Color getCategoryColor() {return REACTION_ROLE_COLOR;}
 }

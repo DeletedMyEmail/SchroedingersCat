@@ -1,11 +1,11 @@
 package de.schroedingerscat.manager;
 
 import de.schroedingerscat.Utils;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 
 import javax.annotation.Nonnull;
@@ -22,7 +22,7 @@ import java.util.List;
  * */
 public class CategorylessManager extends ListenerAdapter {
 
-    private static final Color standardColor = Color.orange;
+    private static final Color CATEGORYLESS_COLOR = new Color(192,214,203);
 
     // Command categories
     private static final String[] categories =
@@ -110,10 +110,10 @@ public class CategorylessManager extends ListenerAdapter {
                     {"embed", "Creates a custom embed",
                         "int,color,Color as decimal,true",
                         "string,title,Embed title,true",
-                        "string,description,Embed description,true",
-                        "string,fieldtitles,Field titles seperated by commas,false",
-                        "string,fieldescriptions,Field descriptions seperated by commas,false",
-                        "string,image,Image on the embed bottom,false"},
+                        "string,description,Embed description,false",
+                        "bool,inline,Format fields inline,false",
+                        "string,fieldtitles,Field titles seperated by semicolon,false",
+                        "string,fielddescriptions,Field descriptions seperated by semicolons,false"},
                     {"ping", "Mentions a user x times",
                             "user,user,User to mention,true",
                             "int,amount,How often should the user be mentioned,true"},
@@ -134,42 +134,97 @@ public class CategorylessManager extends ListenerAdapter {
         switch (event.getName())
         {
             case "help" -> helpCommand(event);
+            case "embed" -> embedCommand(event);
         }
     }
 
-    /**
-     * TODO:
-     *
-     * */
-    public void reactOnSelection(SelectMenuInteractionEvent event)
+    @Override
+    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent event)
     {
         event.deferEdit().queue();
+
+        int lCategoryAsValue = Integer.parseInt(event.getValues().get(0));
+
         List<String[]> fields = new ArrayList<>();
-        for (String[] cmds : commands[Integer.parseInt(event.getValues().get(0))])
-        {
+        for (String[] cmds : commands[lCategoryAsValue]) {
             fields.add(new String[] { cmds[0],cmds[1] });
         }
+
+        Color lColor = null;
+        switch (lCategoryAsValue) {
+            case 0 -> lColor = EconomyManager.getCategoryColor();
+            case 1 -> lColor = AutoChannelManager.getCategoryColor();
+            case 2 -> lColor = AutoRoleManager.getCategoryColor();
+            case 3 -> lColor = SettingsManager.getCategoryColor();
+            case 4 -> lColor = ReactionRoleManager.getCategoryColor();
+            case 5 -> lColor = ModerationManager.getCategoryColor();
+            case 6 -> lColor = CATEGORYLESS_COLOR;
+        }
+
         MessageEmbed embed = utils.createEmbed(
-                standardColor, categories[Integer.parseInt(event.getValues().get(0))]+" Commands", "",
+                lColor, categories[Integer.parseInt(event.getValues().get(0))]+" Commands", "",
                 fields.toArray(new String[][]{}), true, null, null, null);
         event.getHook().editOriginalEmbeds(embed).queue();
-
     }
 
     /**
      * TODO:
      *
      * */
-    public void helpCommand(SlashCommandInteractionEvent event)
+    private void helpCommand(SlashCommandInteractionEvent event)
     {
-        event.replyEmbeds(utils.createEmbed(standardColor, "Select a category","", null, false, null, null, null)).addActionRow(
+        event.replyEmbeds(utils.createEmbed(CATEGORYLESS_COLOR, "Select a category","", null, false, null, null, null)).addActionRow(
                 SelectMenu.create("HelpMenu").
                         addOption("Economy","0").
                         addOption("AutoChannel","1").
-                        addOption("ReactionRoles",",2").
-                        addOption("Moderation","3").
-                        addOption("Others","4").build()
+                        addOption("AutoRoles","2").
+                        addOption("ServerSettings","3").
+                        addOption("ReactionRoles","4").
+                        addOption("Moderation","5").
+                        addOption("Others","6").build()
         ).queue();
+    }
+
+    private void embedCommand(SlashCommandInteractionEvent event)
+    {
+        event.deferReply().queue();
+        EmbedBuilder lBuilder = new EmbedBuilder();
+
+        lBuilder.setTitle(event.getOption("title").getAsString());
+
+        boolean lInline = false;
+        if (event.getOption("inline") != null)
+            lInline = event.getOption("inline").getAsBoolean();
+        if (event.getOption("fieldtitles") != null && event.getOption("fielddescriptions") != null) {
+
+            String[] lTitles = event.getOption("fieldtitles").getAsString().split(";");
+            String[] lDescriptions = event.getOption("fielddescriptions").getAsString().split(";");
+
+            if (lDescriptions.length != lTitles.length)
+            {
+                event.getHook()
+                    .editOriginalEmbeds(utils.createEmbed(Color.red, "",":x: Each field must have a title and description", null, false, event.getUser(), null, null))
+                    .queue();
+                return;
+            }
+
+            for (int i = 0; i < lTitles.length; i++)
+            {
+                lBuilder.addField(
+                        lTitles[i],
+                        lDescriptions[i],
+                        lInline
+                );
+            }
+        }
+
+        if (event.getOption("image") != null)
+            lBuilder.setImage(event.getOption("image").getAsAttachment().getUrl());
+
+        if (event.getOption("description") != null)
+            lBuilder.setDescription(event.getOption("description").getAsString());
+
+        event.getHook().editOriginalEmbeds(lBuilder.build()).queue();
     }
 
     public String[] getCategories() {return categories;}

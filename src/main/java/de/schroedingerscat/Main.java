@@ -55,7 +55,7 @@ public class Main {
                 new AutoChannelManager(lUtils),
                 new AutoRoleManager(lUtils),
                 new EconomyManager(lUtils),
-                new ReactionManager(lUtils),
+                new ReactionRoleManager(lUtils),
                 new SettingsManager(lUtils),
                 lBCmdManager
         );
