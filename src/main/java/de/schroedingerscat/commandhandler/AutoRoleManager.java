@@ -1,4 +1,4 @@
-package de.schroedingerscat.manager;
+package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;

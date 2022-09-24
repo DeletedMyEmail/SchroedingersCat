@@ -27,16 +27,26 @@ public class Utils {
     {
         try
         {
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS economy (server_id INTEGER, user_id INTEGER, bank INTEGER, cash INTEGER)").executeUpdate();
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS Economy (guild_id INTEGER, user_id INTEGER, bank INTEGER, cash INTEGER)").executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS guildsettings (server_id INTEGER, channel_id INTEGER," +
-                    " autorole_id LONG, ac_id INTEGER, welcome_message TEXT, screening TEXT, log_id INTEGER)").executeUpdate();
+            conn.prepareStatement("""
+                 CREATE TABLE 'GuildSettings' (
+                    'guild_id' INTEGER,
+                    'welcome_channel_id' INTEGER,
+                    'auto_role_id' INTEGER,
+                    'auto_channel_id' INTEGER,
+                    'welcome_message' TEXT,
+                    'screening'	INTEGER,
+                    'log_channel_id' INTEGER,
+                    PRIMARY KEY('guild_id')
+                )
+                            """
+            ).executeUpdate();
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS IncomeRoles (guild_id INTEGER, role_id INTEGER, income INTEGER)").executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS income_roles (server_id INTEGER, role_id INTEGER, income INTEGER)").executeUpdate();
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS ReactionRoles (guild_id INTEGER, reaction TEXT, role_id INTEGER, msg_id INTEGER)").executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS reactions (server_id INTEGER, reaction TEXT, role_id INTEGER, msg_id INTEGER)").executeUpdate();
-
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS autochannel (server_id INTEGER, owner_id INTEGER, channel_id INTEGER)").executeUpdate();
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS AutoChannel (guild_id INTEGER, owner_id INTEGER, channel_id INTEGER)").executeUpdate();
         }
         catch (SQLException e) {e.printStackTrace();}
     }
@@ -61,6 +71,11 @@ public class Utils {
         return builder.build();
     }
 
+    public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor)
+    {
+        return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
+    }
+
     /**
      * @param pStatement SQL statement
      * @param pSet Each ? in the statment will be replaced with the content of this array
@@ -76,6 +91,7 @@ public class Utils {
                 else if (byte.class.equals(pSet[i].getClass())) stmt.setByte(i + 1, (byte) pSet[i]);
                 else if (String.class.equals(pSet[i].getClass())) stmt.setString(i + 1, (String) pSet[i]);
                 else if (Integer.class.equals(pSet[i].getClass())) stmt.setInt(i + 1, (Integer) pSet[i]);
+                else if (Long.class.equals(pSet[i].getClass())) stmt.setLong(i + 1, (Long) pSet[i]);
                 else if (Boolean.class.equals(pSet[i].getClass())) stmt.setBoolean(i + 1, (Boolean) pSet[i]);
                 else if (Double.class.equals(pSet[i].getClass())) stmt.setDouble(i + 1, (Double) pSet[i]);
                 else if (Date.class.equals(pSet[i].getClass())) stmt.setDate(i + 1, (Date) pSet[i]);
@@ -109,6 +125,7 @@ public class Utils {
                 else if (byte.class.equals(pSet[i].getClass())) stmt.setByte(i + 1, (byte) pSet[i]);
                 else if (String.class.equals(pSet[i].getClass())) stmt.setString(i + 1, (String) pSet[i]);
                 else if (Integer.class.equals(pSet[i].getClass())) stmt.setInt(i + 1, (Integer) pSet[i]);
+                else if (Long.class.equals(pSet[i].getClass())) stmt.setLong(i + 1, (Long) pSet[i]);
                 else if (Boolean.class.equals(pSet[i].getClass())) stmt.setBoolean(i + 1, (Boolean) pSet[i]);
                 else if (Double.class.equals(pSet[i].getClass())) stmt.setDouble(i + 1, (Double) pSet[i]);
                 else if (Date.class.equals(pSet[i].getClass())) stmt.setDate(i + 1, (Date) pSet[i]);
@@ -125,5 +142,13 @@ public class Utils {
     public void onExecute(String pStatement) throws SQLException {
         conn.createStatement().execute(pStatement);
         conn.commit();
+    }
+
+    public void insertGuildInSettingsIfNotExist(long pGuildId) throws SQLException
+    {
+        ResultSet lRs = onQuery("SELECT guild_id FROM GuildSettings WHERE guild_id="+pGuildId);
+        if (lRs.isClosed() || !lRs.next()) {
+            onExecute("INSERT INTO GuildSettings(guild_id) VALUES(?)", pGuildId);
+        }
     }
 }

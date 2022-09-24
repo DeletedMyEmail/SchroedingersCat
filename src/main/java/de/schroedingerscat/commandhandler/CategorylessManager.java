@@ -1,4 +1,4 @@
-package de.schroedingerscat.manager;
+package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -61,7 +61,7 @@ public class CategorylessManager extends ListenerAdapter {
                     {"vckick", "Kicks a user from your current Voice Channel", "user,user,User who will be kicked,true"},
                     {"vcban", "Bans a user from your current Voice Channel", "user,user,User who will be banned,true"},
                     {"vcunban","Unbans a user from your current Voice Channel","user,user,User who will be unbanned,true"},
-                    {"userlimit", "Sets the userlimit in your current Voice Channel. 0 will remove the userlimit.", "int,limit,Maximum amount of possible users in your Voice Channel,true"}
+                    {"vclimit", "Sets the userlimit in your current Voice Channel. 0 will remove the userlimit.", "int,limit,Maximum amount of possible users in your Voice Channel,true"}
                 },
                 {
                     // Reaction Roles
@@ -154,11 +154,10 @@ public class CategorylessManager extends ListenerAdapter {
         switch (lCategoryAsValue) {
             case 0 -> lColor = EconomyManager.getCategoryColor();
             case 1 -> lColor = AutoChannelManager.getCategoryColor();
-            case 2 -> lColor = AutoRoleManager.getCategoryColor();
+            case 2 -> lColor = ReactionRoleManager.getCategoryColor();
             case 3 -> lColor = SettingsManager.getCategoryColor();
-            case 4 -> lColor = ReactionRoleManager.getCategoryColor();
-            case 5 -> lColor = ModerationManager.getCategoryColor();
-            case 6 -> lColor = CATEGORYLESS_COLOR;
+            case 4 -> lColor = ModerationManager.getCategoryColor();
+            case 5 -> lColor = CATEGORYLESS_COLOR;
         }
 
         MessageEmbed embed = utils.createEmbed(
@@ -177,11 +176,10 @@ public class CategorylessManager extends ListenerAdapter {
                 SelectMenu.create("HelpMenu").
                         addOption("Economy","0").
                         addOption("AutoChannel","1").
-                        addOption("AutoRoles","2").
-                        addOption("ServerSettings","3").
-                        addOption("ReactionRoles","4").
-                        addOption("Moderation","5").
-                        addOption("Others","6").build()
+                        addOption("ServerSettings","2").
+                        addOption("ReactionRoles","3").
+                        addOption("Moderation","4").
+                        addOption("Others","5").build()
         ).queue();
     }
 

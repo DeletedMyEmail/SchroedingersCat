@@ -1,4 +1,4 @@
-package de.schroedingerscat.manager;
+package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Main;
 import de.schroedingerscat.Utils;
