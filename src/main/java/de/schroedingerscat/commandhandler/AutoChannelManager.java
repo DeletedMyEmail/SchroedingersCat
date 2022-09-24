@@ -36,6 +36,7 @@ public class AutoChannelManager extends ListenerAdapter {
             case "vckick" -> kickChannelCommand(event);
             case "vcban" -> banChannelCommand(event);
             case "claim" -> claimChannelCommand(event);
+            case "clear_auto_channel_db" -> clearAutoChannelDatabaseCommand(event);
         }
     }
 
@@ -268,7 +269,17 @@ public class AutoChannelManager extends ListenerAdapter {
         }
     }
 
-    private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent event) {}
+    private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent event)
+    {
+        try
+        {
+            utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ?", event.getGuild().getIdLong());
+            event.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Deleted all custom channel", event.getUser())).queue();
+        }
+        catch (SQLException sqlEx) {
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+        }
+    }
 
     // Other private methods
 
