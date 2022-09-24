@@ -3,8 +3,7 @@
 <img align="right" src="https://user-images.githubusercontent.com/88390464/192118947-6e713788-9a1d-443d-b8ba-7d59f4dd4165.png" height="256" width="256">
 
 <div>
-   <img src="https://top.gg/api/widget/servers/872475386620026971.svg">
-   <img src="https://discord.com/api/guilds/872891293733388320/widget.png">
+   <img src="https://top.gg/api/widget/servers/872475386620026971.svg"><iframe src="https://discord.com/widget?id=872891293733388320&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
 <div>
 
 Schroedinger's Cat is an easy-to-use discord bot providing slash commands to make your and your user's discord experience a lot better. <br><br>
