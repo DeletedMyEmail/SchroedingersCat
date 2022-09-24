@@ -9,9 +9,9 @@ Schroedinger's Cat is an easy-to-use discord bot providing slash commands to mak
 <!-- FEATURES-->
 ## Features
 
-    - comming 
-    - soon
-    - ig
+   - comming 
+   - soon
+   - ig
   
 ## Examples
 
