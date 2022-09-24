@@ -19,13 +19,13 @@ import java.text.NumberFormat;
 import java.util.*;
 
 /**
- * Handles commands redirected by {@link CategorylessManager}.
+ * Handles commands redirected by {@link CategorylessHandler}.
  * Everything considering the bot's economy happens here.
  *
  * @author Joshua | KaitoKunTatsu
  * @version v2.0
  * */
-public class EconomyManager extends ListenerAdapter {
+public class EconomyHandler extends ListenerAdapter {
 
     // Emoji which represents the currency
     private static final String CURRENCY = "<:wiggle:935151967137832990>";
@@ -34,7 +34,7 @@ public class EconomyManager extends ListenerAdapter {
     private final Utils utils;
     private HashMap<Long, HashMap<Long, Long[]>> currentSpins;
 
-    public EconomyManager(Utils pUtils) {
+    public EconomyHandler(Utils pUtils) {
         this.utils = pUtils;
         currentSpins = new HashMap<>();
     }

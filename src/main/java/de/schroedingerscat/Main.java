@@ -5,10 +5,12 @@ import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -48,16 +50,18 @@ public class Main {
         }
 
         JDABuilder lBuilder = JDABuilder.createDefault(lToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
-                GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES);
+                GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_BANS);
 
-        CategorylessManager lBCmdManager = new CategorylessManager(lUtils);
+        lBuilder.setMemberCachePolicy(MemberCachePolicy.ALL);
+
         lBuilder.addEventListeners(
-                new AutoChannelManager(lUtils),
-                new AutoRoleManager(lUtils),
-                new EconomyManager(lUtils),
-                new ReactionRoleManager(lUtils),
-                new SettingsManager(lUtils),
-                lBCmdManager
+                new AutoChannelHandler(lUtils),
+                new AutoRoleHandler(lUtils),
+                new EconomyHandler(lUtils),
+                new ReactionRoleHandler(lUtils),
+                new SettingsHandler(lUtils),
+                new CategorylessHandler(lUtils),
+                new ExceptionHandler()
         );
 
         lBuilder.setStatus(OnlineStatus.ONLINE);
@@ -66,7 +70,7 @@ public class Main {
         try {
             JDA = lBuilder.build();
             JDA.awaitReady();
-            addSlashCommands(JDA, lBCmdManager.getCommands());
+            addSlashCommands(JDA, CategorylessHandler.getCommands());
         } catch (LoginException | InterruptedException loginException) {
             System.out.println("Login failed");
             System.exit(0);

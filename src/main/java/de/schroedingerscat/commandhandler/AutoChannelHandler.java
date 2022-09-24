@@ -14,13 +14,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.EnumSet;
 
-public class AutoChannelManager extends ListenerAdapter {
+public class AutoChannelHandler extends ListenerAdapter {
 
     private static final Color AUTOCHANNEL_COLOR = new Color(25,196,234);
 
     private final Utils utils;
 
-    public AutoChannelManager(Utils pUtils) {
+    public AutoChannelHandler(Utils pUtils) {
         this.utils = pUtils;
     }
 

@@ -20,7 +20,7 @@ import java.util.List;
  * @author Joshua H. | KaitoKunTatsu
  * @version 1.0.0 | last edit: 22.09.2022
  * */
-public class CategorylessManager extends ListenerAdapter {
+public class CategorylessHandler extends ListenerAdapter {
 
     private static final Color CATEGORYLESS_COLOR = new Color(192,214,203);
 
@@ -86,7 +86,7 @@ public class CategorylessManager extends ListenerAdapter {
                             "string,message,Welcome Message,true"},
                     {"set_auto_role", "Sets the role which will be added to every new member",
                             "role,role,Auto Role,true",
-                            "bool,screening,Is Membership Screening enabled?,true"},
+                            "bool,screening,Is Rule Screening enabled,true"},
                     {"clear_settings", "Resets all settings"},
                     {"set_log", "Sets the channel where all important commands will be logged",
                         "channel,channel,Text Channel which will be the log,true"}
@@ -124,7 +124,7 @@ public class CategorylessManager extends ListenerAdapter {
 
     private final Utils utils;
 
-    public CategorylessManager(Utils pUtils) {
+    public CategorylessHandler(Utils pUtils) {
         this.utils = pUtils;
     }
 
@@ -152,11 +152,11 @@ public class CategorylessManager extends ListenerAdapter {
 
         Color lColor = null;
         switch (lCategoryAsValue) {
-            case 0 -> lColor = EconomyManager.getCategoryColor();
-            case 1 -> lColor = AutoChannelManager.getCategoryColor();
-            case 2 -> lColor = ReactionRoleManager.getCategoryColor();
-            case 3 -> lColor = SettingsManager.getCategoryColor();
-            case 4 -> lColor = ModerationManager.getCategoryColor();
+            case 0 -> lColor = EconomyHandler.getCategoryColor();
+            case 1 -> lColor = AutoChannelHandler.getCategoryColor();
+            case 2 -> lColor = ReactionRoleHandler.getCategoryColor();
+            case 3 -> lColor = SettingsHandler.getCategoryColor();
+            case 4 -> lColor = ModerationHandler.getCategoryColor();
             case 5 -> lColor = CATEGORYLESS_COLOR;
         }
 
@@ -227,5 +227,5 @@ public class CategorylessManager extends ListenerAdapter {
 
     public String[] getCategories() {return categories;}
 
-    public String[][][] getCommands() {return commands; }
+    public static String[][][] getCommands() {return commands; }
 }

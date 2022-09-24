@@ -11,13 +11,13 @@ import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class SettingsManager extends ListenerAdapter {
+public class SettingsHandler extends ListenerAdapter {
 
     private static final Color SERVERSETTINGS_COLOR = new Color(252,229,159);
 
     private final Utils utils;
 
-    public SettingsManager(Utils pUtils) {
+    public SettingsHandler(Utils pUtils) {
         this.utils = pUtils;
     }
 
