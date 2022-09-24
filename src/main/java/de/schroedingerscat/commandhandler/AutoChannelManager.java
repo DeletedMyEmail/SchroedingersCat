@@ -1,6 +1,7 @@
 package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
+import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
@@ -11,6 +12,7 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.EnumSet;
 
 public class AutoChannelManager extends ListenerAdapter {
 
@@ -30,6 +32,9 @@ public class AutoChannelManager extends ListenerAdapter {
         {
             case "set_auto_channel" -> setAutoChannelCommand(event);
             case "vcname" -> setChannelNameCommand(event);
+            case "vclimit" -> setChannelLimitCommand(event);
+            case "vckick" -> kickChannelCommand(event);
+            case "vcban" -> banChannelCommand(event);
         }
     }
 
@@ -43,7 +48,7 @@ public class AutoChannelManager extends ListenerAdapter {
         // Create custom voice if joined create channel
         if (lCreateChannel != null && lCreateChannel.equals(lJoinedChannel))
         {
-            event.getGuild().createVoiceChannel(lMember.getNickname()).queue(channel ->
+            event.getGuild().createVoiceChannel(lMember.getEffectiveName()).queue(channel ->
                 {
                     try
                     {
@@ -100,7 +105,32 @@ public class AutoChannelManager extends ListenerAdapter {
         }
     }
 
-    private void setChannelLimitCommand(SlashCommandInteractionEvent event) {}
+    private void setChannelLimitCommand(SlashCommandInteractionEvent event)
+    {
+        event.deferReply().queue();
+
+        Member lMember = event.getMember();
+        VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
+
+        if (lCurrentVoice == null)
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+
+        else
+        {
+            int lUserlimit = event.getOption("limit").getAsInt();
+            event.getHook().editOriginalEmbeds(
+                    utils.createEmbed(
+                            AUTOCHANNEL_COLOR,
+                            ":white_check_mark: Changed channel limit from **"+lCurrentVoice.getUserLimit()+"** to **"+ lUserlimit+"**",
+                            event.getUser()
+                    )
+            ).queue();
+            lCurrentVoice.getManager().setUserLimit(lUserlimit).queue();
+        }
+    }
 
     private void setChannelNameCommand(SlashCommandInteractionEvent event)
     {
@@ -131,11 +161,72 @@ public class AutoChannelManager extends ListenerAdapter {
 
     private void claimChannelCommand(SlashCommandInteractionEvent event) {}
 
-    private void kickChannelCommand(SlashCommandInteractionEvent event) {}
+    private void kickChannelCommand(SlashCommandInteractionEvent event)
+    {
+        event.deferReply().queue();
 
-    private void banChannelCommand(SlashCommandInteractionEvent event) {}
+        Member lMember = event.getMember();
+        VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
+        Member lMemberToKick = event.getOption("user").getAsMember();
 
-    private void setUserLimitCommand(SlashCommandInteractionEvent event) {}
+        if (lCurrentVoice == null)
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+
+        else if (lMemberToKick == null)
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User not found", event.getUser())).queue();
+
+        else if (lMemberToKick.getVoiceState().getChannel() == null || !lMemberToKick.getVoiceState().getChannel().equals(lCurrentVoice))
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User isn't connected to your voice channel", event.getUser())).queue();
+
+        else
+        {
+            event.getGuild().kickVoiceMember(lMemberToKick).queue();
+            event.getHook().editOriginalEmbeds(
+                    utils.createEmbed(
+                            AUTOCHANNEL_COLOR,
+                            ":white_check_mark: Kicked "+lMemberToKick.getAsMention()+" from "+lCurrentVoice.getAsMention(),
+                            event.getUser()
+                    )
+            ).queue();
+        }
+    }
+
+    private void banChannelCommand(SlashCommandInteractionEvent event)
+    {
+        event.deferReply().queue();
+
+        Member lMember = event.getMember();
+        VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
+        Member lMemberToBan = event.getOption("user").getAsMember();
+
+        if (lCurrentVoice == null)
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+
+        else if (lMemberToBan == null)
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Member not found", event.getUser())).queue();
+
+        else
+        {
+
+            lCurrentVoice.getManager().putPermissionOverride(lMemberToBan, null, EnumSet.of(Permission.VOICE_CONNECT)).queue();
+            if (lMemberToBan.getVoiceState().getChannel() != null && lMemberToBan.getVoiceState().getChannel().equals(lCurrentVoice))
+                event.getGuild().kickVoiceMember(lMemberToBan).queue();
+
+            event.getHook().editOriginalEmbeds(
+                    utils.createEmbed(
+                            AUTOCHANNEL_COLOR,
+                            ":white_check_mark: Banned "+lMemberToBan.getAsMention()+" from "+lCurrentVoice.getAsMention(),
+                            event.getUser()
+                    )
+            ).queue();
+        }
+    }
 
     private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent event) {}
 
