@@ -3,7 +3,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-![schroedingerscat-circle](https://user-images.githubusercontent.com/88390464/192118741-c12e2ce3-ef64-42a6-83f9-f4ec972b9d4f.png)
+![schrodingerscar-circle-small](https://user-images.githubusercontent.com/88390464/192118842-d819d2b2-7766-412a-881f-de3730ecf4ec.png)
 
 Description [coming soon]
 
