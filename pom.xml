@@ -6,7 +6,7 @@
 
     <groupId>org.example</groupId>
     <artifactId>SchroedingersCat</artifactId>
-    <version>PRE-RELEASE-1.0.0</version>
+    <version>1.0.0</version>
     <build>
         <plugins>
             <plugin>
