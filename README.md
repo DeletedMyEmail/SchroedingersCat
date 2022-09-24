@@ -4,7 +4,7 @@
 
 <img align="middle" src="https://top.gg/api/widget/servers/872475386620026971.svg">
 
-Schroedinger's Cat is an easy-to-use discord bot providing slash commands to make your and your user's discord experience a lot better. 
+Schroedinger's Cat is an easy-to-use discord bot providing slash commands to make your and your user's discord experience a lot better. <br><br>
 **Note:** The cat is currently offline until it's fully reworked in java (was written in python)
 
 <!-- FEATURES-->
@@ -14,7 +14,7 @@ Schroedinger's Cat is an easy-to-use discord bot providing slash commands to mak
    - Automated / Reaction Roles
    - Moderation
    - Welcome Messages
-   - **Cats**
+   - Cats
   
 ## Examples
 
