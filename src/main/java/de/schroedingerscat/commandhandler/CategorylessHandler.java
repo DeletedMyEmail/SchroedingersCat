@@ -15,7 +15,7 @@ import java.util.List;
 
 
 /**
- *
+ * Handles slash commands which can't be categorized
  *
  * @author Joshua H. | KaitoKunTatsu
  * @version 1.0.0 | last edit: 25.09.2022

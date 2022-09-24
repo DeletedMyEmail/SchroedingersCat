@@ -15,7 +15,7 @@ import java.sql.SQLException;
 import java.util.EnumSet;
 
 /**
- *
+ * Handles slash commands considering automated custom channels
  *
  * @author Joshua H. | KaitoKunTatsu
  * @version 1.0.0 | last edit: 25.09.2022
