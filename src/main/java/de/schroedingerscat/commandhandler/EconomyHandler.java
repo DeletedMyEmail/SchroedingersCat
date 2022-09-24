@@ -19,16 +19,17 @@ import java.text.NumberFormat;
 import java.util.*;
 
 /**
- * Handles commands redirected by {@link CategorylessHandler}.
- * Everything considering the bot's economy happens here.
+ * Handles slash commands considering the bot's economy
  *
- * @author Joshua | KaitoKunTatsu
- * @version v2.0
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 1.0.0 | last edit: 25.09.2022
  * */
 public class EconomyHandler extends ListenerAdapter {
 
     // Emoji which represents the currency
     private static final String CURRENCY = "<:wiggle:935151967137832990>";
+
+    /** Default color for this category to be used for embeds */
     private static final Color ECONOMY_COLOR = new Color(234,217,25);
 
     private final Utils utils;

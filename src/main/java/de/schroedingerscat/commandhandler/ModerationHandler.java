@@ -4,8 +4,15 @@ import de.schroedingerscat.Utils;
 
 import java.awt.*;
 
+/**
+ *
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 1.0.0 | last edit: 25.09.2022
+ * */
 public class ModerationHandler {
 
+    /** Default color for this category to be used for embeds */
     private static final Color MODERATION_COLOR = new Color(237,81,9);
 
     private final Utils utils;

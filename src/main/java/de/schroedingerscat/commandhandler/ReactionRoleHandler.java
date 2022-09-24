@@ -7,8 +7,15 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 
 import java.awt.*;
 
+/**
+ *
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 1.0.0 | last edit: 25.09.2022
+ * */
 public class ReactionRoleHandler extends ListenerAdapter {
 
+    /** Default color for this category to be used for embeds */
     private static final Color REACTION_ROLE_COLOR = new Color(158,242,79);
 
     private final Utils utils;

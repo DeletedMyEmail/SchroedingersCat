@@ -11,8 +11,15 @@ import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ *
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 1.0.0 | last edit: 25.09.2022
+ * */
 public class SettingsHandler extends ListenerAdapter {
 
+    /** Default color for this category to be used for embeds */
     private static final Color SERVERSETTINGS_COLOR = new Color(252,229,159);
 
     private final Utils utils;

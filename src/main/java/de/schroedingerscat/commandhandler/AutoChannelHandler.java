@@ -14,8 +14,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.EnumSet;
 
+/**
+ *
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 1.0.0 | last edit: 25.09.2022
+ **/
 public class AutoChannelHandler extends ListenerAdapter {
 
+    /** Default color for this category to be used for embeds */
     private static final Color AUTOCHANNEL_COLOR = new Color(25,196,234);
 
     private final Utils utils;

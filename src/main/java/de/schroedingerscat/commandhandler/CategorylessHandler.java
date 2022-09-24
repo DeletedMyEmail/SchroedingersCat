@@ -18,10 +18,11 @@ import java.util.List;
  *
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 1.0.0 | last edit: 22.09.2022
+ * @version 1.0.0 | last edit: 25.09.2022
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
+    /** Default color for this category to be used for embeds */
     private static final Color CATEGORYLESS_COLOR = new Color(192,214,203);
 
     // Command categories

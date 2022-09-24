@@ -13,6 +13,12 @@ import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+/**
+ *
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 1.0.0 | last edit: 25.09.2022
+ * */
 public class AutoRoleHandler extends ListenerAdapter {
 
     private final Utils utils;
