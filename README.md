@@ -4,7 +4,7 @@
 
 
 <img src="https://top.gg/api/widget/servers/872475386620026971.svg">
-<img src="https://discordapp.com/api/guilds/872891293733388320/widget.png">
+[![Discord](https://discordapp.com/api/guilds/872891293733388320/widget.png)](https://discord.gg/XUqU4MpFFF)
 
 
 Schroedinger's Cat is an easy-to-use discord bot providing slash commands to make your and your user's discord experience a lot better. <br><br>
