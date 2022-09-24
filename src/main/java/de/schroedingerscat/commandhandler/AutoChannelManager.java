@@ -35,6 +35,7 @@ public class AutoChannelManager extends ListenerAdapter {
             case "vclimit" -> setChannelLimitCommand(event);
             case "vckick" -> kickChannelCommand(event);
             case "vcban" -> banChannelCommand(event);
+            case "claim" -> claimChannelCommand(event);
         }
     }
 
@@ -159,7 +160,46 @@ public class AutoChannelManager extends ListenerAdapter {
         }
     }
 
-    private void claimChannelCommand(SlashCommandInteractionEvent event) {}
+    private void claimChannelCommand(SlashCommandInteractionEvent event)
+    {
+        event.deferReply().queue();
+
+        Member lMember = event.getMember();
+        VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
+
+        if (lCurrentVoice == null)
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+
+        else if (!isCustomChannel(lCurrentVoice))
+            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: This isn't a custom channel", event.getUser())).queue();
+
+        else
+        {
+            Member lVoiceOwner = getCustomChannelOwner(event.getGuild(), lCurrentVoice.getIdLong());
+            if (lVoiceOwner != null && lVoiceOwner.equals(lMember))
+                event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You already own this voice channel", event.getUser())).queue();
+
+            else if (lVoiceOwner != null && lVoiceOwner.getVoiceState().getChannel() != null && lVoiceOwner.getVoiceState().getChannel().equals(lCurrentVoice))
+                event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Channel owner is connected", event.getUser())).queue();
+
+            else
+            {
+                try {
+                    utils.onExecute("UPDATE AutoChannel SET owner_id = ? WHERE guild_id = ? AND channel_id = ?", lMember.getIdLong(), event.getGuild().getIdLong(), lCurrentVoice.getIdLong());
+                    event.getHook().editOriginalEmbeds(
+                            utils.createEmbed(
+                                    AUTOCHANNEL_COLOR,
+                                    ":white_check_mark: Claimed "+lCurrentVoice.getAsMention(),
+                                    event.getUser()
+                            )
+                    ).queue();
+                }
+                catch (SQLException sqlEx) {
+                    event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+                }
+            }
+        }
+    }
 
     private void kickChannelCommand(SlashCommandInteractionEvent event)
     {
@@ -231,6 +271,18 @@ public class AutoChannelManager extends ListenerAdapter {
     private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent event) {}
 
     // Other private methods
+
+    private Member getCustomChannelOwner(Guild pGuild, long pChannelId)
+    {
+        try
+        {
+            ResultSet lRs = utils.onQuery("SELECT owner_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pGuild.getIdLong(), pChannelId);
+            lRs.next();
+
+            return pGuild.getMemberById(lRs.getLong("owner_id"));
+        }
+        catch (SQLException sqlEx) { return null;}
+    }
 
     private boolean ownsCustomChannel(long pMemberId, long pChannelId, long pGuildId)
     {
