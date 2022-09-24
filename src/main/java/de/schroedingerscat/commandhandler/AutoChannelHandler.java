@@ -34,36 +34,47 @@ public class AutoChannelHandler extends ListenerAdapter {
     // Events
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
-        switch (event.getName())
+    /**
+     *  Redirects the event to method handling it if the slash command belongs to this category
+     *
+     *  @param pEvent   Event triggered by a user using a slash command
+     * */
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
+        switch (pEvent.getName())
         {
-            case "set_auto_channel" -> setAutoChannelCommand(event);
-            case "vcname" -> setChannelNameCommand(event);
-            case "vclimit" -> setChannelLimitCommand(event);
-            case "vckick" -> kickChannelCommand(event);
-            case "vcban" -> banChannelCommand(event);
-            case "claim" -> claimChannelCommand(event);
-            case "clear_auto_channel_db" -> clearAutoChannelDatabaseCommand(event);
+            case "set_auto_channel" -> setAutoChannelCommand(pEvent);
+            case "vcname" -> setChannelNameCommand(pEvent);
+            case "vclimit" -> setChannelLimitCommand(pEvent);
+            case "vckick" -> kickChannelCommand(pEvent);
+            case "vcban" -> banChannelCommand(pEvent);
+            case "claim" -> claimChannelCommand(pEvent);
+            case "clear_auto_channel_db" -> clearAutoChannelDatabaseCommand(pEvent);
         }
     }
 
     @Override
-    public void onGuildVoiceJoin(@Nonnull GuildVoiceJoinEvent event)
+    /**
+     *  If the voice channel the user connected to is the create-channel for automated custom channel
+     *  a new voice will be created, added to the database table of custom channel and the user moved in it
+     *
+     *  @param pEvent   Event triggered by a user joining a voice channel
+     * */
+    public void onGuildVoiceJoin(@Nonnull GuildVoiceJoinEvent pEvent)
     {
-        VoiceChannel lCreateChannel = getAutoCreateChannelForGuild(event.getGuild());
-        VoiceChannel lJoinedChannel = (VoiceChannel) event.getChannelJoined();
-        Member lMember = event.getMember();
+        VoiceChannel lCreateChannel = getAutoCreateChannelForGuild(pEvent.getGuild());
+        VoiceChannel lJoinedChannel = (VoiceChannel) pEvent.getChannelJoined();
+        Member lMember = pEvent.getMember();
 
         // Create custom voice if joined create channel
         if (lCreateChannel != null && lCreateChannel.equals(lJoinedChannel))
         {
-            event.getGuild().createVoiceChannel(lMember.getEffectiveName()).queue(channel ->
+            pEvent.getGuild().createVoiceChannel(lMember.getEffectiveName()).queue(channel ->
                 {
                     try
                     {
                         utils.onExecute(
                                 "INSERT INTO AutoChannel VALUES(?,?,?)",
-                                event.getGuild().getIdLong(),
+                                pEvent.getGuild().getIdLong(),
                                 lMember.getIdLong(),
                                 channel.getIdLong());
                     }
@@ -72,21 +83,26 @@ public class AutoChannelHandler extends ListenerAdapter {
                         sqlException.printStackTrace();
                         return;
                     }
-                    event.getGuild().moveVoiceMember(lMember, channel).queue();
+                    pEvent.getGuild().moveVoiceMember(lMember, channel).queue();
                 }
             );
         }
     }
 
     @Override
-    public void onGuildVoiceLeave(@Nonnull GuildVoiceLeaveEvent event)
+    /**
+     *  If the voice channel the user left is a custom channel and empty it gets deleted
+     *
+     *  @param pEvent   Event triggered by a user leaving a voice channel
+     * */
+    public void onGuildVoiceLeave(@Nonnull GuildVoiceLeaveEvent pEvent)
     {
-        VoiceChannel lVoiceLeft = (VoiceChannel) event.getChannelLeft();
+        VoiceChannel lVoiceLeft = (VoiceChannel) pEvent.getChannelLeft();
         if (isCustomChannel(lVoiceLeft) && lVoiceLeft.getMembers().size() < 1)
         {
             try
             {
-                utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", event.getGuild(), lVoiceLeft.getIdLong());
+                utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pEvent.getGuild(), lVoiceLeft.getIdLong());
                 lVoiceLeft.delete().queue();
             }
             catch (SQLException sqlEx) { sqlEx.printStackTrace();}
@@ -95,201 +111,242 @@ public class AutoChannelHandler extends ListenerAdapter {
 
     // Slash Commands
 
-    private void setAutoChannelCommand(SlashCommandInteractionEvent event) {
-        event.deferReply().queue();
-        Channel lChannel = event.getOption("channel").getAsChannel();
+    /**
+     * Sets the create-channel for automated custom channel to the one defined in the slash command option "channel"
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void setAutoChannelCommand(SlashCommandInteractionEvent pEvent) {
+        pEvent.deferReply().queue();
+        Channel lChannel = pEvent.getOption("channel").getAsChannel();
         if (lChannel.getType() != ChannelType.VOICE)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Select a voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Select a voice channel", pEvent.getUser())).queue();
         else
         {
             try
             {
-                utils.insertGuildInSettingsIfNotExist(event.getGuild().getIdLong());
-                utils.onExecute("UPDATE GuildSettings SET auto_channel_id = ? WHERE guild_id=?",lChannel.getIdLong(), event.getGuild().getIdLong());
-                event.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Successfully assigned "+lChannel.getAsMention()+" as auto channel", event.getUser())).queue();
+                utils.insertGuildInSettingsIfNotExist(pEvent.getGuild().getIdLong());
+                utils.onExecute("UPDATE GuildSettings SET auto_channel_id = ? WHERE guild_id=?",lChannel.getIdLong(), pEvent.getGuild().getIdLong());
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Successfully assigned "+lChannel.getAsMention()+" as auto channel", pEvent.getUser())).queue();
             }
             catch (SQLException sqlEx) {
-                event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
             }
         }
     }
 
-    private void setChannelLimitCommand(SlashCommandInteractionEvent event)
+    /**
+     * Sets user limit of the custom channel the member who triggered the event is currently connected to the value of the slash command option "limit"
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void setChannelLimitCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
 
-        Member lMember = event.getMember();
+        Member lMember = pEvent.getMember();
         VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
 
         if (lCurrentVoice == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
 
-        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),pEvent.getGuild().getIdLong()))
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pEvent.getUser())).queue();
 
         else
         {
-            int lUserlimit = event.getOption("limit").getAsInt();
-            event.getHook().editOriginalEmbeds(
+            int lUserlimit = pEvent.getOption("limit").getAsInt();
+            pEvent.getHook().editOriginalEmbeds(
                     utils.createEmbed(
                             AUTOCHANNEL_COLOR,
                             ":white_check_mark: Changed channel limit from **"+lCurrentVoice.getUserLimit()+"** to **"+ lUserlimit+"**",
-                            event.getUser()
+                            pEvent.getUser()
                     )
             ).queue();
             lCurrentVoice.getManager().setUserLimit(lUserlimit).queue();
         }
     }
 
-    private void setChannelNameCommand(SlashCommandInteractionEvent event)
+    /**
+     * Sets name of the custom channel the member who triggered the event is currently connected to the value defined in the slash command option "name"
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void setChannelNameCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
 
-        Member lMember = event.getMember();
+        Member lMember = pEvent.getMember();
         VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
 
         if (lCurrentVoice == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
 
-        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),pEvent.getGuild().getIdLong()))
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pEvent.getUser())).queue();
 
         else
         {
-            String lNewName = event.getOption("name").getAsString();
-            event.getHook().editOriginalEmbeds(
+            String lNewName = pEvent.getOption("name").getAsString();
+            pEvent.getHook().editOriginalEmbeds(
                     utils.createEmbed(
                             AUTOCHANNEL_COLOR,
                             ":white_check_mark: Changed channel name from **"+lCurrentVoice.getName()+"** to **"+ lNewName+"**",
-                            event.getUser()
+                            pEvent.getUser()
                     )
             ).queue();
             lCurrentVoice.getManager().setName(lNewName).queue();
         }
     }
 
-    private void claimChannelCommand(SlashCommandInteractionEvent event)
+    /**
+     * Changes to owner of the custom channel the member who triggered the event is currently connected to themself
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void claimChannelCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
 
-        Member lMember = event.getMember();
+        Member lMember = pEvent.getMember();
         VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
 
         if (lCurrentVoice == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
 
         else if (!isCustomChannel(lCurrentVoice))
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: This isn't a custom channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: This isn't a custom channel", pEvent.getUser())).queue();
 
         else
         {
-            Member lVoiceOwner = getCustomChannelOwner(event.getGuild(), lCurrentVoice.getIdLong());
+            Member lVoiceOwner = getCustomChannelOwner(pEvent.getGuild(), lCurrentVoice.getIdLong());
             if (lVoiceOwner != null && lVoiceOwner.equals(lMember))
-                event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You already own this voice channel", event.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You already own this voice channel", pEvent.getUser())).queue();
 
             else if (lVoiceOwner != null && lVoiceOwner.getVoiceState().getChannel() != null && lVoiceOwner.getVoiceState().getChannel().equals(lCurrentVoice))
-                event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Channel owner is connected", event.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Channel owner is connected", pEvent.getUser())).queue();
 
             else
             {
                 try {
-                    utils.onExecute("UPDATE AutoChannel SET owner_id = ? WHERE guild_id = ? AND channel_id = ?", lMember.getIdLong(), event.getGuild().getIdLong(), lCurrentVoice.getIdLong());
-                    event.getHook().editOriginalEmbeds(
+                    utils.onExecute("UPDATE AutoChannel SET owner_id = ? WHERE guild_id = ? AND channel_id = ?", lMember.getIdLong(), pEvent.getGuild().getIdLong(), lCurrentVoice.getIdLong());
+                    pEvent.getHook().editOriginalEmbeds(
                             utils.createEmbed(
                                     AUTOCHANNEL_COLOR,
                                     ":white_check_mark: Claimed "+lCurrentVoice.getAsMention(),
-                                    event.getUser()
+                                    pEvent.getUser()
                             )
                     ).queue();
                 }
                 catch (SQLException sqlEx) {
-                    event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+                    pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
                 }
             }
         }
     }
 
-    private void kickChannelCommand(SlashCommandInteractionEvent event)
+    /**
+     * Kicks the user defined in the slash command option "user" out of the current custom voice channel the user who triggered the event is connected to if they own it
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void kickChannelCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
 
-        Member lMember = event.getMember();
+        Member lMember = pEvent.getMember();
         VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
-        Member lMemberToKick = event.getOption("user").getAsMember();
+        Member lMemberToKick = pEvent.getOption("user").getAsMember();
 
         if (lCurrentVoice == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
 
-        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),pEvent.getGuild().getIdLong()))
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pEvent.getUser())).queue();
 
         else if (lMemberToKick == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User not found", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User not found", pEvent.getUser())).queue();
 
         else if (lMemberToKick.getVoiceState().getChannel() == null || !lMemberToKick.getVoiceState().getChannel().equals(lCurrentVoice))
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User isn't connected to your voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User isn't connected to your voice channel", pEvent.getUser())).queue();
 
         else
         {
-            event.getGuild().kickVoiceMember(lMemberToKick).queue();
-            event.getHook().editOriginalEmbeds(
+            pEvent.getGuild().kickVoiceMember(lMemberToKick).queue();
+            pEvent.getHook().editOriginalEmbeds(
                     utils.createEmbed(
                             AUTOCHANNEL_COLOR,
                             ":white_check_mark: Kicked "+lMemberToKick.getAsMention()+" from "+lCurrentVoice.getAsMention(),
-                            event.getUser()
+                            pEvent.getUser()
                     )
             ).queue();
         }
     }
 
-    private void banChannelCommand(SlashCommandInteractionEvent event)
+    /**
+     * Bans the user defined in the slash command option "user" out of the current custom voice channel the user who triggered the event is connected to if they own it
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void banChannelCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
 
-        Member lMember = event.getMember();
+        Member lMember = pEvent.getMember();
         VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
-        Member lMemberToBan = event.getOption("user").getAsMember();
+        Member lMemberToBan = pEvent.getOption("user").getAsMember();
 
         if (lCurrentVoice == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
 
-        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),event.getGuild().getIdLong()))
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", event.getUser())).queue();
+        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),pEvent.getGuild().getIdLong()))
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pEvent.getUser())).queue();
 
         else if (lMemberToBan == null)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Member not found", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Member not found", pEvent.getUser())).queue();
 
         else
         {
 
             lCurrentVoice.getManager().putPermissionOverride(lMemberToBan, null, EnumSet.of(Permission.VOICE_CONNECT)).queue();
             if (lMemberToBan.getVoiceState().getChannel() != null && lMemberToBan.getVoiceState().getChannel().equals(lCurrentVoice))
-                event.getGuild().kickVoiceMember(lMemberToBan).queue();
+                pEvent.getGuild().kickVoiceMember(lMemberToBan).queue();
 
-            event.getHook().editOriginalEmbeds(
+            pEvent.getHook().editOriginalEmbeds(
                     utils.createEmbed(
                             AUTOCHANNEL_COLOR,
                             ":white_check_mark: Banned "+lMemberToBan.getAsMention()+" from "+lCurrentVoice.getAsMention(),
-                            event.getUser()
+                            pEvent.getUser()
                     )
             ).queue();
         }
     }
 
-    private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent event)
+    /**
+     * Deletes all the registered custom channel in the database connected to the guild the event was triggered in
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent pEvent)
     {
         try
         {
-            utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ?", event.getGuild().getIdLong());
-            event.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Deleted all custom channel", event.getUser())).queue();
+            utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ?", pEvent.getGuild().getIdLong());
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Deleted all custom channel", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx) {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
 
     // Other private methods
 
+    /**
+     *
+     *
+     * @param pChannelId
+     * @param pGuild
+     * */
     private Member getCustomChannelOwner(Guild pGuild, long pChannelId)
     {
         try
@@ -302,6 +359,13 @@ public class AutoChannelHandler extends ListenerAdapter {
         catch (SQLException sqlEx) { return null;}
     }
 
+    /**
+     *
+     *
+     * @param pMemberId
+     * @param pChannelId
+     * @param pGuildId
+     * */
     private boolean ownsCustomChannel(long pMemberId, long pChannelId, long pGuildId)
     {
         try
@@ -314,6 +378,11 @@ public class AutoChannelHandler extends ListenerAdapter {
         catch (SQLException sqlEx) { return false;}
     }
 
+    /**
+     *
+     *
+     * @param pVoice
+     * */
     private boolean isCustomChannel(VoiceChannel pVoice)
     {
         try
@@ -326,6 +395,11 @@ public class AutoChannelHandler extends ListenerAdapter {
         catch (SQLException sqlEx) { return false;}
     }
 
+    /**
+     *
+     *
+     * @param pGuild
+     * */
     private VoiceChannel getAutoCreateChannelForGuild(Guild pGuild)
     {
         try
