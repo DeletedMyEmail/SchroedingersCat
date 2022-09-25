@@ -23,14 +23,12 @@ public class Utils {
         conn.setAutoCommit(false);
     }
 
-    public void createTables()
+    public void createTables() throws SQLException
     {
-        try
-        {
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS Economy (guild_id INTEGER, user_id INTEGER, bank INTEGER, cash INTEGER)").executeUpdate();
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'Economy' ('guild_id' INTEGER, 'user_id' INTEGER, 'bank' INTEGER, 'cash' INTEGER)").executeUpdate();
 
             conn.prepareStatement("""
-                 CREATE TABLE 'GuildSettings' (
+                 CREATE TABLE IF NOT EXISTS 'GuildSettings' (
                     'guild_id' INTEGER,
                     'welcome_channel_id' INTEGER,
                     'auto_role_id' INTEGER,
@@ -42,13 +40,20 @@ public class Utils {
                 )
                             """
             ).executeUpdate();
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS IncomeRoles (guild_id INTEGER, role_id INTEGER, income INTEGER)").executeUpdate();
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)").executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS ReactionRoles (guild_id INTEGER, reaction TEXT, role_id INTEGER, msg_id INTEGER)").executeUpdate();
+            conn.prepareStatement("""
+                    CREATE TABLE IF NOT EXISTS 'ReactionRole' (
+                    	'guild_id' INTEGER,
+                    	'message_id' INTEGER,
+                    	'emoji' TEXT,
+                    	'channel_id' INTEGER,
+                    	'role_id' INTEGER,
+                    	PRIMARY KEY('guild_id','emoji','message_id')
+                    );
+                    """).executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS AutoChannel (guild_id INTEGER, owner_id INTEGER, channel_id INTEGER)").executeUpdate();
-        }
-        catch (SQLException e) {e.printStackTrace();}
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'AutoChannel' ('guild_id' INTEGER, 'owner_id' INTEGER, 'channel_id' INTEGER)").executeUpdate();
     }
 
     public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription,

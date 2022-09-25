@@ -45,7 +45,8 @@ public class Main {
         try {
             lUtils = new Utils("src/main/resources/catbot.db");
             lUtils.createTables();
-        } catch (SQLException e) {
+        } catch (SQLException sqlEx) {
+            sqlEx.printStackTrace();
             System.exit(1);
         }
 

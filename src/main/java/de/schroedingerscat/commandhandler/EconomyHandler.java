@@ -22,7 +22,7 @@ import java.util.*;
  * Handles slash commands considering the bot's economy
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 1.0.0 | last edit: 25.09.2022
+ * @version 2.0.0 | last edit: 26.09.2022
  * */
 public class EconomyHandler extends ListenerAdapter {
 

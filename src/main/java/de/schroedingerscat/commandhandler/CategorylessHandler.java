@@ -18,7 +18,7 @@ import java.util.List;
  * Handles slash commands which can't be categorized
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 1.0.0 | last edit: 25.09.2022
+ * @version 2.0.0 | last edit: 26.09.2022
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
@@ -66,12 +66,12 @@ public class CategorylessHandler extends ListenerAdapter {
                 },
                 {
                     // Reaction Roles
-                    {"set_reaction_role", "Sets a role which each member adding the specific emoji will get",
+                    {"add_reaction_role", "Sets a role which each member adding the specific emoji will get",
                                 "role,role,Reaction Role,true",
                                 "channel,channel,Channel in which the message was sent,true",
                                 "string,message,ID of the message for Reaction Role,true",
                                 "string,emoji,Reacting with this will grant the role,true"},
-                    {"del_reaction_role", "Deletes a Reaction Role",
+                    {"remove_reaction_role", "Deletes a Reaction Role",
                             "role,role,Reaction Role,true",
                             "string,message,ID of the message with emotji,true",
                             "string,emoji,Reation which grants a role,true"},
