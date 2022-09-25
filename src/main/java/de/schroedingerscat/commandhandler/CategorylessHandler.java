@@ -72,11 +72,10 @@ public class CategorylessHandler extends ListenerAdapter {
                                 "string,message,ID of the message for Reaction Role,true",
                                 "string,emoji,Reacting with this will grant the role,true"},
                     {"remove_reaction_role", "Deletes a Reaction Role",
-                            "role,role,Reaction Role,true",
                             "string,message,ID of the message with emotji,true",
                             "string,emoji,Reation which grants a role,true"},
                     {"get_reaction_roles", "Displays all Reaction Roles"},
-                    {"del_all", "Deletes all Reaction Roles"}
+                    {"remove_all", "Deletes all Reaction Roles"}
                 },
                 {
                     // Server Settings

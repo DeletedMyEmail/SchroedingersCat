@@ -16,9 +16,7 @@ public class ExceptionHandler extends ListenerAdapter {
     @Override
     public void onException(@Nonnull ExceptionEvent event)
     {
-        System.out.println(
-                "Exception occurren: "+ event
-        );
+        System.out.println("Exception occurred: "+ event);
     }
 
 }
