@@ -131,23 +131,19 @@ public class ReactionRoleHandler extends ListenerAdapter {
             while (lRs.next())
             {
                 Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
-                String lRoleStr = "";
-
-                if (lRole == null) lRoleStr = "unknown role ("+lRs.getLong("role_id")+")";
-                else lRoleStr = lRole.getAsMention();
+                String lRoleStr = "unknown role ("+lRs.getLong("role_id")+")";
+                if (lRole != null) lRoleStr = lRole.getAsMention();
 
                 TextChannel lChannel = lGuild.getTextChannelById(lRs.getLong("channel_id"));
-                String lChannelStr = "";
-
-                if (lChannel == null) lChannelStr = "unknown channel ("+lRs.getLong("channel_id")+")";
-                else lChannelStr = lRole.getAsMention();
+                String lChannelStr = "unknown channel ("+lRs.getLong("channel_id")+")";
+                if (lChannel != null) lRole.getAsMention();
 
                 lFields.add(
                         new String[] {
                                 lRs.getString("emoji"),
                                 "**Role:** "+lRoleStr+
-                                "\n**Message ID:** "+lRs.getLong("message_id")+
-                                "\n**Channel:** "+lChannelStr
+                                "\n**Channel:** "+lChannelStr+
+                                "\n**Message ID:** "+lRs.getLong("message_id")
                         }
                 );
             }
