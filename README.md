@@ -20,9 +20,9 @@ Schroedinger's Cat is an easy-to-use discord bot providing slash commands to mak
 
    - Automated Voice Channel
    - Automated / Reaction Roles
+   - Gambling / Economy
    - Welcome Messages
    - Moderation
-   - Gambling / Economy
    - Cats
   
 ## Examples
