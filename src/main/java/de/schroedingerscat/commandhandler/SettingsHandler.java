@@ -19,7 +19,7 @@ import java.sql.SQLException;
  * */
 public class SettingsHandler extends ListenerAdapter {
 
-    /** Default color for this category to be used for embeds */
+    /** Default color of this category to be used for embeds */
     private static final Color SERVERSETTINGS_COLOR = new Color(252,229,159);
 
     private final Utils utils;

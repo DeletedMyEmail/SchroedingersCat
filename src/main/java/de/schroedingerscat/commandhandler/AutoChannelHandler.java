@@ -22,7 +22,7 @@ import java.util.EnumSet;
  **/
 public class AutoChannelHandler extends ListenerAdapter {
 
-    /** Default color for this category to be used for embeds */
+    /** Default color of this category to be used for embeds */
     private static final Color AUTOCHANNEL_COLOR = new Color(25,196,234);
 
     private final Utils utils;

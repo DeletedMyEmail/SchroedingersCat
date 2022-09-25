@@ -24,7 +24,7 @@ import java.util.List;
  * */
 public class ReactionRoleHandler extends ListenerAdapter {
 
-    /** Default color for this category to be used for embeds */
+    /** Default color of this category to be used for embeds */
     private static final Color REACTION_ROLE_COLOR = new Color(158,242,79);
 
     private final Utils utils;
@@ -111,7 +111,6 @@ public class ReactionRoleHandler extends ListenerAdapter {
             nullEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message, role and emoji", pEvent.getUser())).queue();
         }
-        //lChannel.retrieveMessageById(event.getOption("message").getAsString()).queue();
     }
 
     /**
@@ -171,8 +170,6 @@ public class ReactionRoleHandler extends ListenerAdapter {
             return null;
         }
     }
-
-
 
     // Getter
 

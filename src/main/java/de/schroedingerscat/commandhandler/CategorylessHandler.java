@@ -22,7 +22,7 @@ import java.util.List;
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
-    /** Default color for this category to be used for embeds */
+    /** Default color of this category to be used for embeds */
     private static final Color CATEGORYLESS_COLOR = new Color(192,214,203);
 
     // Command categories

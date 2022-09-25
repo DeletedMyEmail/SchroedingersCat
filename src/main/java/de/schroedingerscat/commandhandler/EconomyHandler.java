@@ -29,7 +29,7 @@ public class EconomyHandler extends ListenerAdapter {
     // Emoji which represents the currency
     private static final String CURRENCY = "<:wiggle:935151967137832990>";
 
-    /** Default color for this category to be used for embeds */
+    /** Default color of this category to be used for embeds */
     private static final Color ECONOMY_COLOR = new Color(234,217,25);
 
     private final Utils utils;
