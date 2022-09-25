@@ -10,6 +10,7 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -118,6 +119,7 @@ public class CategorylessHandler extends ListenerAdapter {
                             "user,user,User to mention,true",
                             "int,amount,How often should the user be mentioned,true"},
                     {"meow", "Meows in your current Voice Channel"},
+                        {"aboutme", "Displays your discord stats"},
                     {"box", "Dead or alive?"}
                 }
             };
@@ -135,6 +137,7 @@ public class CategorylessHandler extends ListenerAdapter {
         {
             case "help" -> helpCommand(event);
             case "embed" -> embedCommand(event);
+            case "aboutme" -> userInfoCommand(event);
         }
     }
 
@@ -223,6 +226,15 @@ public class CategorylessHandler extends ListenerAdapter {
             lBuilder.setDescription(event.getOption("description").getAsString());
 
         event.getHook().editOriginalEmbeds(lBuilder.build()).queue();
+    }
+
+    /**
+     * TODO:
+     *
+     * */
+    private void userInfoCommand(SlashCommandInteractionEvent event)
+    {
+        event.replyEmbeds(utils.createEmbed(CATEGORYLESS_COLOR, event.getUser().getTimeCreated().format(DateTimeFormatter.RFC_1123_DATE_TIME), event.getUser())).queue();
     }
 
     public String[] getCategories() {return categories;}
