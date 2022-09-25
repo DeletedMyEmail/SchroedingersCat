@@ -163,8 +163,21 @@ public class ReactionRoleHandler extends ListenerAdapter {
      * */
     private void removeAllReactionRolesCommand(SlashCommandInteractionEvent pEvent)
     {
-        pEvent.deferReply().queue();
-
+        try
+        {
+            utils.onExecute("DELETE FROM ReactionRole WHERE guild_id = ?", pEvent.getGuild().getIdLong());
+            pEvent.replyEmbeds(
+                    utils.createEmbed(
+                            REACTION_ROLE_COLOR,
+                            ":white_check_mark: All reaction roles removed",
+                            pEvent.getUser()
+                    )
+            ).queue();
+        }
+        catch (SQLException sqlEx) {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+        }
     }
 
     /**
