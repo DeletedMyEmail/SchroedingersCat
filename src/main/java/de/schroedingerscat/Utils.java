@@ -25,7 +25,15 @@ public class Utils {
 
     public void createTables() throws SQLException
     {
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'Economy' ('guild_id' INTEGER, 'user_id' INTEGER, 'bank' INTEGER, 'cash' INTEGER)").executeUpdate();
+            conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS 'Economy' (
+                	'guild_id' INTEGER,
+                	'user_id' INTEGER,
+                	'bank' INTEGER,
+                	'cash' INTEGER,
+                	PRIMARY KEY('guild_id','user_id')
+                );
+                    """).executeUpdate();
 
             conn.prepareStatement("""
                  CREATE TABLE IF NOT EXISTS 'GuildSettings' (
@@ -40,7 +48,6 @@ public class Utils {
                 )
                             """
             ).executeUpdate();
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)").executeUpdate();
 
             conn.prepareStatement("""
                     CREATE TABLE IF NOT EXISTS 'ReactionRole' (
@@ -53,7 +60,11 @@ public class Utils {
                     );
                     """).executeUpdate();
 
+            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)").executeUpdate();
+
             conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'AutoChannel' ('guild_id' INTEGER, 'owner_id' INTEGER, 'channel_id' INTEGER)").executeUpdate();
+
+            conn.commit();
     }
 
     public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription,

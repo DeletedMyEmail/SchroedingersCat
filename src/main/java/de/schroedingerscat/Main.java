@@ -32,20 +32,24 @@ public class Main {
 
     public Main() {
         String lToken = "";
-        try {
+        try
+        {
             File lTokenFile = new File("src/main/resources/tokenFile.txt");
             Scanner lReader = new Scanner(lTokenFile);
             lToken = lReader.nextLine();
             lReader.close();
-        } catch (IOException io) {
+        }
+        catch (IOException io) {
             System.out.println("Could not read token " + io);
         }
 
         Utils lUtils = null;
-        try {
+        try
+        {
             lUtils = new Utils("src/main/resources/catbot.db");
             lUtils.createTables();
-        } catch (SQLException sqlEx) {
+        }
+        catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
             System.exit(1);
         }
