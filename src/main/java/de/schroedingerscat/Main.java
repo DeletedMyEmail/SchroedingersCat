@@ -76,7 +76,7 @@ public class Main {
             JDA = lBuilder.build();
             JDA.awaitReady();
             addSlashCommands(JDA, CategorylessHandler.getCommands());
-        } catch (LoginException | InterruptedException loginException) {
+        } catch (InterruptedException loginException) {
             System.out.println("Login failed");
             System.exit(0);
         }

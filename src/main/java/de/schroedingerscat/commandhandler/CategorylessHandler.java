@@ -3,6 +3,7 @@ package de.schroedingerscat.commandhandler;
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -48,11 +49,11 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"rob", "Robs a user's cash", "user,user,User whose cash you  want to steal,true"},
                     {"top", "Displays the richest people on current server"},
                     {"work", "You earn 1500-2500 wiggles"},
-                    {"spin", "Spins a wheel. You can bet on a color or a specific number", "string,color,Color to bet on (red or black),true","int,field,Your guess on the wheel,false","int,money,Amount of money to bet (leave out to bet all),false"},
+                    {"spin", "Spins a wheel. You can bet on a color (2x) or a specific number (20x)", "string,color,Color to bet on (red or black),false","int,field,Your guess on the wheel (1-36),false","int,money,Amount of money to bet (leave out to bet all),false"},
                     {"give_admin", "Creates money out of nothing and gives it to a user on your server","user,user,User who will earn the money,true","int,amount,Amount of money,true"},
                     {"get_income_roles","Displays all Income Roles"},
-                    {"add_income_role", "Updates or adds an Income Role", "role,role,Income Role,true", "int,income,Amount which is granted every 6h,true"},
-                    {"del_income_role","Deletes an Income Role", "role,role,Income Role which will be deleted,true"}
+                    {"add_income_role", "Updates or adds an income role", "role,role,Income role,true", "int,income,Amount which is distributed every 6h,true"},
+                    {"del_income_role","Deletes an income role", "role,role,Income role which will be deleted,true"}
                 },
                 {
                     // Auto Channel
@@ -177,12 +178,12 @@ public class CategorylessHandler extends ListenerAdapter {
     {
         event.replyEmbeds(utils.createEmbed(CATEGORYLESS_COLOR, "Select a category","", null, false, null, null, null)).addActionRow(
                 SelectMenu.create("HelpMenu").
-                        addOption("Economy","0").
-                        addOption("AutoChannel","1").
-                        addOption("ServerSettings","2").
-                        addOption("ReactionRoles","3").
-                        addOption("Moderation","4").
-                        addOption("Others","5").build()
+                        addOption("Economy","0", Emoji.fromUnicode("U+1FA99")).
+                        addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
+                        addOption("ServerSettings","2", Emoji.fromUnicode("U+1F527")).
+                        addOption("ReactionRoles","3", Emoji.fromUnicode("U+1F3AD")).
+                        addOption("Moderation","4", Emoji.fromUnicode("U+1F6A8")).
+                        addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
 
