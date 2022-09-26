@@ -30,8 +30,8 @@ public class CategorylessHandler extends ListenerAdapter {
     // Command categories
     private static final String[] categories =
             {
-                    "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                    "**:wrench: Server Settings**", "**:rotating_light: Moderation**", "**:grey_question: Others**"
+                "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
+                "**:wrench: Server Settings**", "**:rotating_light: Moderation**", "**:grey_question: Others**"
             };
 
     // All commands and their options

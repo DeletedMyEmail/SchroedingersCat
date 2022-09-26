@@ -16,6 +16,8 @@ import javax.security.auth.login.LoginException;
 import java.io.File;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 
@@ -88,18 +90,18 @@ public class Main {
      *
      * @param pJDA - JDA on which commands will be added
      * */
-    public void addSlashCommands(JDA pJDA, String[][][] pCommands)  {
-
-        //CommandListUpdateAction new_commands = jda.getGuildById("939517124957859881").updateCommands();
-
+    public void addSlashCommands(JDA pJDA, String[][][] pCommands)
+    {
+        List<SlashCommandData> lCommands = new ArrayList<>();
         for(String[][] category : pCommands)
         {
-            for (String[] cmd : category)
+            for (String[] commandStructure : category)
             {
-                SlashCommandData slashCmd = Commands.slash(cmd[0], cmd[1]);
-                for (int i = 2; i < cmd.length; i++)
+                SlashCommandData lSlashCommand = Commands.slash(commandStructure[0], commandStructure[1]);
+                for (int i = 2; i < commandStructure.length; i++)
                 {
-                    OptionType type = switch (cmd[i].split(",")[0]) {
+                    String[] lOptionSettings = commandStructure[i].split(",");
+                    OptionType lType = switch (lOptionSettings[0]) {
                         case "int" -> OptionType.INTEGER;
                         case "number" -> OptionType.NUMBER;
                         case "string" -> OptionType.STRING;
@@ -110,18 +112,13 @@ public class Main {
                         default -> OptionType.UNKNOWN;
                     };
 
-                    String optionname = cmd[i].split(",")[1];
-                    String optionDescription = cmd[i].split(",")[2];
-                    boolean required = cmd[i].split(",")[3].toLowerCase().compareTo("true") == 0;
-
-                    slashCmd.addOption(type, optionname, optionDescription, required);
+                    lSlashCommand.addOption(lType, lOptionSettings[1], lOptionSettings[2], lOptionSettings[3].equals("true"));
                 }
-                pJDA.getGuildById("939517124957859881").upsertCommand(slashCmd).queue();
-                //new_commands.addCommands(slashCmd).queue();
+                lCommands.add(lSlashCommand);
             }
         }
-        //new_commands.queue();
-        System.out.println("Commands added");
+        pJDA.updateCommands().addCommands(lCommands).queue();
+        System.out.println("Commands updated");
     }
 
     public static JDA getJDA() {return JDA; }
