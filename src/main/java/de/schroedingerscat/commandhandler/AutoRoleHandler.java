@@ -74,7 +74,6 @@ public class AutoRoleHandler extends ListenerAdapter {
 
         try
         {
-            utils.insertGuildInSettingsIfNotExist(event.getGuild().getIdLong());
             utils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, event.getGuild().getIdLong());
             event.getHook().editOriginalEmbeds(utils.createEmbed(SettingsHandler.getCategoryColor(), ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", event.getUser())).queue();
         }

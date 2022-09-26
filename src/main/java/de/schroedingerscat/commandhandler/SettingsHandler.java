@@ -4,6 +4,7 @@ import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
+import net.dv8tion.jda.api.events.guild.GuildJoinEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 
@@ -28,70 +29,121 @@ public class SettingsHandler extends ListenerAdapter {
         this.utils = pUtils;
     }
 
+    // Events
+
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
+    public void onGuildJoin(GuildJoinEvent pEvent)
     {
-        switch (event.getName())
+        try {
+            utils.onExecute("INSERT INTO GuildSettings (guild_id) VALUES (?)", pEvent.getGuild().getIdLong());
+        }
+        catch (SQLException ignored) {}
+    }
+
+    @Override
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
+    {
+        try
         {
-            case "get_info" -> getInfoCommand(event);
+            switch (pEvent.getName())
+            {
+                case "get_info" -> getInfoCommand(pEvent);
+                case "set_editor_role" -> setRole(pEvent, "editor");
+                case "set_moderator_role" -> setRole(pEvent, "moderator");
+            }
+        }
+        catch (SQLException sqlEx)
+        {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
 
-    private void getInfoCommand(SlashCommandInteractionEvent event)
+    // Slash Commands
+
+    /**
+     *
+     *
+     * */
+    private void getInfoCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
 
         try
         {
-            utils.insertGuildInSettingsIfNotExist(event.getGuild().getIdLong());
-            ResultSet lRs = utils.onQuery("SELECT * FROM GuildSettings WHERE guild_id = ?", event.getGuild().getIdLong());
+            ResultSet lRs = utils.onQuery("SELECT * FROM GuildSettings WHERE guild_id = ?", pEvent.getGuild().getIdLong());
             lRs.next();
 
-            TextChannel lWelcomeChannel = event.getGuild().getTextChannelById(lRs.getLong("welcome_channel_id"));
+            TextChannel lWelcomeChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("welcome_channel_id"));
             String lWelcomeChannelStr = "None";
             if (lWelcomeChannel != null)
                 lWelcomeChannelStr = lWelcomeChannel.getAsMention();
 
-            TextChannel lLogChannel = event.getGuild().getTextChannelById(lRs.getLong("log_channel_id"));
+            TextChannel lLogChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("log_channel_id"));
             String lLogStr = "None";
             if (lLogChannel != null)
                 lLogStr = lLogChannel.getAsMention();
 
-
-            VoiceChannel lAutoChannel = event.getGuild().getVoiceChannelById(lRs.getLong("auto_channel_id"));
+            VoiceChannel lAutoChannel = pEvent.getGuild().getVoiceChannelById(lRs.getLong("auto_channel_id"));
             String lAutoChannelStr = "None";
             if (lAutoChannel != null)
                 lAutoChannelStr = lAutoChannel.getAsMention();
 
-            Role lAutoRole = event.getGuild().getRoleById(lRs.getLong("auto_role_id"));
+            Role lAutoRole = pEvent.getGuild().getRoleById(lRs.getLong("auto_role_id"));
             String lAutoRoleStr = "None";
             if (lAutoRole != null)
                 lAutoRoleStr = lAutoRole.getAsMention();
 
-            String lScreeningStr = String.valueOf(lRs.getBoolean("screening"));
+            Role lModRole = pEvent.getGuild().getRoleById(lRs.getLong("moderator_role_id"));
+            String lModRoleStr = "None";
+            if (lModRole != null)
+                lModRoleStr = lModRole.getAsMention();
+
+            Role lEditorRole = pEvent.getGuild().getRoleById(lRs.getLong("editor_role_id"));
+            String lEditorRoleStr = "None";
+            if (lEditorRole != null)
+                lEditorRoleStr = lEditorRole.getAsMention();
 
             String lWelcomeMessageStr = lRs.getString("welcome_message");
             if (lWelcomeMessageStr == null || lWelcomeMessageStr.isEmpty())
                 lWelcomeMessageStr = "None";
 
+            String lScreeningStr = String.valueOf(lRs.getBoolean("screening"));
+
             String[][] lFields = {
-                    {"Welcome Channel", lWelcomeChannelStr},
                     {"Welcome Message", lWelcomeMessageStr},
-                    {"Auto Role", lAutoRoleStr},
-                    {"Auto-Channel", lAutoChannelStr},
+                    {"Welcome Channel", lWelcomeChannelStr},
+                    {"Create Custom Channel", lAutoChannelStr},
                     {"Log Channel", lLogStr},
-                    {"Membership Screening", lScreeningStr},
+                    {"Auto Role", lAutoRoleStr},
+                    {"Editor Role", lEditorRoleStr},
+                    {"Moderator Role", lModRoleStr},
+                    {"Rules Screening", lScreeningStr},
+                    {"Place Holder", "Holding Place"}
             };
 
-            event.getHook().editOriginalEmbeds(
-                    utils.createEmbed(SERVERSETTINGS_COLOR, "Server Info", "", lFields, true, null, null, null)).queue();
+            pEvent.getHook().editOriginalEmbeds(
+                    utils.createEmbed(SERVERSETTINGS_COLOR, ":wrench: Server Info", "", lFields, true , null, "https://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands", null)).queue();
         }
         catch (SQLException sqlEx) {
             sqlEx.printStackTrace();
-            event.getHook().editOriginalEmbeds(
-                    utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(
+                    utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
+
+    /**
+     *
+     *
+     * */
+    private void setRole(SlashCommandInteractionEvent pEvent, String pRole) throws SQLException
+    {
+        Role lRole = pEvent.getOption("role").getAsRole();
+
+        utils.onExecute("UPDATE GuildSettings SET "+pRole+"_role_id = ? WHERE guild_id = ?", lRole.getIdLong(), pEvent.getGuild().getIdLong());
+        pEvent.replyEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the "+pRole+" role to "+lRole.getAsMention(), pEvent.getUser())).queue();
+    }
+
 
     public static Color getCategoryColor() {return SERVERSETTINGS_COLOR; }
 }

@@ -30,8 +30,8 @@ public class CategorylessHandler extends ListenerAdapter {
     // Command categories
     private static final String[] categories =
             {
-                    "**» Economy «**", "**» Auto Channel «**", "**» Reaction Roles «**",
-                    "**» Server Settings «**", "**» Moderation «**", "**» Others «**"
+                    "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
+                    "**:wrench: Server Settings**", "**:rotating_light: Moderation**", "**:grey_question: Others**"
             };
 
     // All commands and their options
@@ -57,7 +57,7 @@ public class CategorylessHandler extends ListenerAdapter {
                 },
                 {
                     // Auto Channel
-                    {"set_auto_channel","Sets the Voice Channel for Auto Channel creation", "channel,channel,Voice Channel which creates a new one if someone joins,true"},
+                    {"set_create_channel","Sets the Voice Channel for Auto Channel creation", "channel,channel,Voice Channel which creates a new one if someone joins,true"},
                     {"clear_auto_channel_db", "Resets the Auto Channel database for your server"},
                     {"claim","Get admin in your current Voice Channel if the old admin isn't connected"},
                     {"vcname", "Changes the name of your current Voice Channel if you own it", "string,name,New name for your Voice Channel,true"},
@@ -91,7 +91,9 @@ public class CategorylessHandler extends ListenerAdapter {
                             "bool,screening,Is Rule Screening enabled,true"},
                     {"clear_settings", "Resets all settings"},
                     {"set_log", "Sets the channel where all important commands will be logged",
-                        "channel,channel,Text Channel which will be the log,true"}
+                        "channel,channel,Text Channel which will be the log,true"},
+                    {"set_editor_role", "Sets the role needed to edit any kind of settings with the bot", "role,role,Role needed to edit any kind of settings,true"},
+                    {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                 },
                 {
                     // Moderation
@@ -131,27 +133,29 @@ public class CategorylessHandler extends ListenerAdapter {
         this.utils = pUtils;
     }
 
+    // Events
+
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
     {
-        switch (event.getName())
+        switch (pEvent.getName())
         {
-            case "help" -> helpCommand(event);
-            case "embed" -> embedCommand(event);
-            case "aboutme" -> userInfoCommand(event);
+            case "help" -> helpCommand(pEvent);
+            case "embed" -> embedCommand(pEvent);
+            case "aboutme" -> userInfoCommand(pEvent);
         }
     }
 
     @Override
-    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent event)
+    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent)
     {
-        event.deferEdit().queue();
+        pEvent.deferEdit().queue();
 
-        int lCategoryAsValue = Integer.parseInt(event.getValues().get(0));
+        int lCategoryAsValue = Integer.parseInt(pEvent.getValues().get(0));
 
-        List<String[]> fields = new ArrayList<>();
+        List<String[]> lFields = new ArrayList<>();
         for (String[] cmds : commands[lCategoryAsValue]) {
-            fields.add(new String[] { cmds[0],cmds[1] });
+            lFields.add(new String[] { cmds[0],cmds[1] });
         }
 
         Color lColor = null;
@@ -165,47 +169,59 @@ public class CategorylessHandler extends ListenerAdapter {
         }
 
         MessageEmbed embed = utils.createEmbed(
-                lColor, categories[Integer.parseInt(event.getValues().get(0))]+" Commands", "",
-                fields.toArray(new String[][]{}), true, null, null, null);
-        event.getHook().editOriginalEmbeds(embed).queue();
+                lColor, categories[Integer.parseInt(pEvent.getValues().get(0))]+" Commands", "",
+                lFields.toArray(new String[][]{}), true, null, null, null);
+        pEvent.getHook().editOriginalEmbeds(embed).queue();
     }
+
+    // Slash Commands
 
     /**
      * TODO:
      *
      * */
-    private void helpCommand(SlashCommandInteractionEvent event)
+    private void helpCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.replyEmbeds(utils.createEmbed(CATEGORYLESS_COLOR, "Select a category","", null, false, null, null, null)).addActionRow(
+        pEvent.replyEmbeds(
+                utils.createEmbed(
+                        CATEGORYLESS_COLOR,
+                        "",
+                        "Schroedinger's Cat is **open source**! Source code and example videos can be found on https://github.com/KaitoKunTatsu/SchroedingersCat .\n\n**Select a category to see commands:**",
+                        null,
+                        false,
+                        pEvent.getJDA().getUserById("872475386620026971"),
+                        null,
+                        null)
+        ).addActionRow(
                 SelectMenu.create("HelpMenu").
                         addOption("Economy","0", Emoji.fromUnicode("U+1FA99")).
                         addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
-                        addOption("ServerSettings","2", Emoji.fromUnicode("U+1F527")).
-                        addOption("ReactionRoles","3", Emoji.fromUnicode("U+1F3AD")).
+                        addOption("ReactionRoles","2", Emoji.fromUnicode("U+1F3AD")).
+                        addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
                         addOption("Moderation","4", Emoji.fromUnicode("U+1F6A8")).
                         addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
 
-    private void embedCommand(SlashCommandInteractionEvent event)
+    private void embedCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
         EmbedBuilder lBuilder = new EmbedBuilder();
 
-        lBuilder.setTitle(event.getOption("title").getAsString());
+        lBuilder.setTitle(pEvent.getOption("title").getAsString());
 
         boolean lInline = false;
-        if (event.getOption("inline") != null)
-            lInline = event.getOption("inline").getAsBoolean();
-        if (event.getOption("fieldtitles") != null && event.getOption("fielddescriptions") != null) {
+        if (pEvent.getOption("inline") != null)
+            lInline = pEvent.getOption("inline").getAsBoolean();
+        if (pEvent.getOption("fieldtitles") != null && pEvent.getOption("fielddescriptions") != null) {
 
-            String[] lTitles = event.getOption("fieldtitles").getAsString().split(";");
-            String[] lDescriptions = event.getOption("fielddescriptions").getAsString().split(";");
+            String[] lTitles = pEvent.getOption("fieldtitles").getAsString().split(";");
+            String[] lDescriptions = pEvent.getOption("fielddescriptions").getAsString().split(";");
 
             if (lDescriptions.length != lTitles.length)
             {
-                event.getHook()
-                    .editOriginalEmbeds(utils.createEmbed(Color.red, "",":x: Each field must have a title and description", null, false, event.getUser(), null, null))
+                pEvent.getHook()
+                    .editOriginalEmbeds(utils.createEmbed(Color.red, "",":x: Each field must have a title and description", null, false, pEvent.getUser(), null, null))
                     .queue();
                 return;
             }
@@ -220,13 +236,13 @@ public class CategorylessHandler extends ListenerAdapter {
             }
         }
 
-        if (event.getOption("image") != null)
-            lBuilder.setImage(event.getOption("image").getAsAttachment().getUrl());
+        if (pEvent.getOption("image") != null)
+            lBuilder.setImage(pEvent.getOption("image").getAsAttachment().getUrl());
 
-        if (event.getOption("description") != null)
-            lBuilder.setDescription(event.getOption("description").getAsString());
+        if (pEvent.getOption("description") != null)
+            lBuilder.setDescription(pEvent.getOption("description").getAsString());
 
-        event.getHook().editOriginalEmbeds(lBuilder.build()).queue();
+        pEvent.getHook().editOriginalEmbeds(lBuilder.build()).queue();
     }
 
     /**

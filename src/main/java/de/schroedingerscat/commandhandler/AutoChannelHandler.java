@@ -45,7 +45,7 @@ public class AutoChannelHandler extends ListenerAdapter {
     public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
         switch (pEvent.getName())
         {
-            case "set_auto_channel" -> setAutoChannelCommand(pEvent);
+            case "set_create_channel" -> setAutoChannelCommand(pEvent);
             case "vcname" -> setChannelNameCommand(pEvent);
             case "vclimit" -> setChannelLimitCommand(pEvent);
             case "vckick" -> kickChannelCommand(pEvent);
@@ -128,9 +128,8 @@ public class AutoChannelHandler extends ListenerAdapter {
         {
             try
             {
-                utils.insertGuildInSettingsIfNotExist(pEvent.getGuild().getIdLong());
                 utils.onExecute("UPDATE GuildSettings SET auto_channel_id = ? WHERE guild_id=?",lChannel.getIdLong(), pEvent.getGuild().getIdLong());
-                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Successfully assigned "+lChannel.getAsMention()+" as auto channel", pEvent.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Successfully assigned "+lChannel.getAsMention()+" as create channel", pEvent.getUser())).queue();
             }
             catch (SQLException sqlEx) {
                 pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();

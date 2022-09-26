@@ -44,6 +44,8 @@ public class Utils {
                     'welcome_message' TEXT,
                     'screening'	INTEGER,
                     'log_channel_id' INTEGER,
+                    'editor_role_id' INTEGER,
+                    'moderator_role_id' INTEGER,
                     PRIMARY KEY('guild_id')
                 )
                             """
@@ -68,13 +70,14 @@ public class Utils {
     }
 
     public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription,
-                                    String[][] pFields, boolean inline, User pAuthor, String pUrl, String pFooter)
+                                    String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter)
     {
         EmbedBuilder builder = new EmbedBuilder();
+
         if (!pTitle.isEmpty()) builder.setTitle(pTitle);
         if (!pDescription.isEmpty()) builder.setDescription(pDescription);
         if (pAuthor != null) builder.setAuthor(pAuthor.getAsTag(), null, pAuthor.getAvatarUrl());
-        if (pUrl != null) builder.setImage(pUrl);
+        if (pImageUrl != null) builder.setImage(pImageUrl);
         if (pFooter != null) builder.setFooter(pFooter);
 
         if (pFields != null)
@@ -158,13 +161,5 @@ public class Utils {
     public void onExecute(String pStatement) throws SQLException {
         conn.createStatement().execute(pStatement);
         conn.commit();
-    }
-
-    public void insertGuildInSettingsIfNotExist(long pGuildId) throws SQLException
-    {
-        ResultSet lRs = onQuery("SELECT guild_id FROM GuildSettings WHERE guild_id="+pGuildId);
-        if (lRs.isClosed() || !lRs.next()) {
-            onExecute("INSERT INTO GuildSettings(guild_id) VALUES(?)", pGuildId);
-        }
     }
 }
