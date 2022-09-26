@@ -48,7 +48,7 @@ public class AutoChannelHandler extends ListenerAdapter {
         {
             switch (pEvent.getName())
             {
-                case "set_create_channel" -> setAutoChannelCommand(pEvent);
+                case "set_create_channel" -> setCreateChannel(pEvent);
                 case "vcname" -> setChannelNameCommand(pEvent);
                 case "vclimit" -> setChannelLimitCommand(pEvent);
                 case "vckick" -> kickChannelCommand(pEvent);
@@ -108,8 +108,10 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void setAutoChannelCommand(SlashCommandInteractionEvent pEvent) {
+    private void setCreateChannel(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
         Channel lChannel = pEvent.getOption("channel").getAsChannel();
         if (lChannel.getType() != ChannelType.VOICE)
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Select a voice channel", pEvent.getUser())).queue();
@@ -117,7 +119,7 @@ public class AutoChannelHandler extends ListenerAdapter {
         {
             try
             {
-                utils.onExecute("UPDATE GuildSettings SET auto_channel_id = ? WHERE guild_id=?",lChannel.getIdLong(), pEvent.getGuild().getIdLong());
+                utils.onExecute("UPDATE GuildSettings SET create_channel_id = ? WHERE guild_id=?",lChannel.getIdLong(), pEvent.getGuild().getIdLong());
                 pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Successfully assigned "+lChannel.getAsMention()+" as create channel", pEvent.getUser())).queue();
             }
             catch (SQLException sqlEx) {
@@ -131,8 +133,7 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void setChannelLimitCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void setChannelLimitCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
         Member lMember = pEvent.getMember();
@@ -163,8 +164,7 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void setChannelNameCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void setChannelNameCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
         Member lMember = pEvent.getMember();
@@ -195,8 +195,7 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void claimChannelCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void claimChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
         Member lMember = pEvent.getMember();
@@ -241,8 +240,7 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void kickChannelCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void kickChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
         Member lMember = pEvent.getMember();
@@ -279,8 +277,7 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void banChannelCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void banChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
         Member lMember = pEvent.getMember();
@@ -320,8 +317,10 @@ public class AutoChannelHandler extends ListenerAdapter {
      * */
     private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
+        pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
         utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ?", pEvent.getGuild().getIdLong());
-        pEvent.replyEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Deleted all custom channel", pEvent.getUser())).queue();
+        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Deleted all custom channel", pEvent.getUser())).queue();
     }
 
     // Other private methods
@@ -332,16 +331,11 @@ public class AutoChannelHandler extends ListenerAdapter {
      * @param pChannelId
      * @param pGuild
      * */
-    private Member getCustomChannelOwner(Guild pGuild, long pChannelId)
-    {
-        try
-        {
-            ResultSet lRs = utils.onQuery("SELECT owner_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pGuild.getIdLong(), pChannelId);
-            lRs.next();
+    private Member getCustomChannelOwner(Guild pGuild, long pChannelId) throws SQLException {
+        ResultSet lRs = utils.onQuery("SELECT owner_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pGuild.getIdLong(), pChannelId);
+        lRs.next();
 
-            return pGuild.getMemberById(lRs.getLong("owner_id"));
-        }
-        catch (SQLException sqlEx) { return null;}
+        return pGuild.getMemberById(lRs.getLong("owner_id"));
     }
 
     /**
@@ -351,16 +345,11 @@ public class AutoChannelHandler extends ListenerAdapter {
      * @param pChannelId
      * @param pGuildId
      * */
-    private boolean ownsCustomChannel(long pMemberId, long pChannelId, long pGuildId)
-    {
-        try
-        {
-            ResultSet lRs = utils.onQuery("SELECT owner_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pGuildId, pChannelId);
-            lRs.next();
+    private boolean ownsCustomChannel(long pMemberId, long pChannelId, long pGuildId) throws SQLException {
+        ResultSet lRs = utils.onQuery("SELECT owner_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pGuildId, pChannelId);
+        lRs.next();
 
-            return pMemberId == lRs.getLong("owner_id");
-        }
-        catch (SQLException sqlEx) { return false;}
+        return pMemberId == lRs.getLong("owner_id");
     }
 
     /**
@@ -368,16 +357,12 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pVoice
      * */
-    private boolean isCustomChannel(VoiceChannel pVoice)
+    private boolean isCustomChannel(VoiceChannel pVoice) throws SQLException
     {
-        try
-        {
-            ResultSet lRs = utils.onQuery("SELECT channel_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pVoice.getGuild().getIdLong(), pVoice.getIdLong());
-            lRs.next();
+        ResultSet lRs = utils.onQuery("SELECT channel_id FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pVoice.getGuild().getIdLong(), pVoice.getIdLong());
+        lRs.next();
 
-            return pVoice.getIdLong() == lRs.getLong("channel_id");
-        }
-        catch (SQLException sqlEx) { return false;}
+        return pVoice.getIdLong() == lRs.getLong("channel_id");
     }
 
     /**
@@ -385,35 +370,38 @@ public class AutoChannelHandler extends ListenerAdapter {
      *
      * @param pGuild
      * */
-    private VoiceChannel getAutoCreateChannelForGuild(Guild pGuild)
-    {
+    private VoiceChannel getAutoCreateChannelForGuild(Guild pGuild) throws SQLException {
+        ResultSet lRs = utils.onQuery("SELECT create_channel_id FROM GuildSettings WHERE guild_id = ?", pGuild.getIdLong());
+        lRs.next();
+
+        return pGuild.getVoiceChannelById(lRs.getLong("create_channel_id"));
+    }
+
+
+    private void deleteCustomChannel(VoiceChannel pLeftVoiceChannel) {
         try
         {
-            ResultSet lRs = utils.onQuery("SELECT auto_channel_id FROM GuildSettings WHERE guild_id = ?", pGuild.getIdLong());
-            lRs.next();
-
-            return pGuild.getVoiceChannelById(lRs.getLong("auto_channel_id"));
-        }
-        catch (SQLException sqlEx) { return null;}
-    }
-
-
-    private void deleteCustomChannel(VoiceChannel pLeftVoiceChannel)
-    {
-        if (isCustomChannel(pLeftVoiceChannel) && pLeftVoiceChannel.getMembers().size() < 1)
-        {
-            try
+            if (isCustomChannel(pLeftVoiceChannel) && pLeftVoiceChannel.getMembers().size() < 1)
             {
-                utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pLeftVoiceChannel.getGuild().getIdLong(), pLeftVoiceChannel.getIdLong());
-                pLeftVoiceChannel.delete().queue();
+                try
+                {
+                    utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ? AND channel_id = ?", pLeftVoiceChannel.getGuild().getIdLong(), pLeftVoiceChannel.getIdLong());
+                    pLeftVoiceChannel.delete().queue();
+                }
+                catch (SQLException sqlEx) { sqlEx.printStackTrace();}
             }
-            catch (SQLException sqlEx) { sqlEx.printStackTrace();}
         }
+        catch (SQLException sqlEx) {sqlEx.printStackTrace();}
     }
 
-    private void createCustomChannel(VoiceChannel pJoinedChannel, Member pMember)
-    {
-        VoiceChannel lCreateChannel = getAutoCreateChannelForGuild(pJoinedChannel.getGuild());
+    private void createCustomChannel(VoiceChannel pJoinedChannel, Member pMember) {
+        VoiceChannel lCreateChannel = null;
+        try {
+            lCreateChannel = getAutoCreateChannelForGuild(pJoinedChannel.getGuild());
+        } catch (SQLException sqlEx) {
+            sqlEx.printStackTrace();
+            return;
+        }
 
         // Create custom voice if joined create channel
         if (lCreateChannel != null && lCreateChannel.equals(pJoinedChannel))

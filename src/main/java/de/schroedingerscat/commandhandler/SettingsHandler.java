@@ -48,9 +48,13 @@ public class SettingsHandler extends ListenerAdapter {
             switch (pEvent.getName())
             {
                 case "get_info" -> getInfoCommand(pEvent);
-                case "set_editor_role" -> setRole(pEvent, "editor");
-                case "set_moderator_role" -> setRole(pEvent, "moderator");
+                case "set_editor_role" -> setRoleCommand(pEvent, "editor");
+                case "set_moderator_role" -> setRoleCommand(pEvent, "moderator");
+                case "reset_settings" -> resetSettingsCommand(pEvent);
             }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
@@ -65,85 +69,102 @@ public class SettingsHandler extends ListenerAdapter {
      *
      *
      * */
-    private void getInfoCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void getInfoCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
-        try
-        {
-            ResultSet lRs = utils.onQuery("SELECT * FROM GuildSettings WHERE guild_id = ?", pEvent.getGuild().getIdLong());
-            lRs.next();
+        ResultSet lRs = utils.onQuery("SELECT * FROM GuildSettings WHERE guild_id = ?", pEvent.getGuild().getIdLong());
+        lRs.next();
 
-            TextChannel lWelcomeChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("welcome_channel_id"));
-            String lWelcomeChannelStr = "None";
-            if (lWelcomeChannel != null)
-                lWelcomeChannelStr = lWelcomeChannel.getAsMention();
+        TextChannel lWelcomeChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("welcome_channel_id"));
+        String lWelcomeChannelStr = "None";
+        if (lWelcomeChannel != null)
+            lWelcomeChannelStr = lWelcomeChannel.getAsMention();
 
-            TextChannel lLogChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("log_channel_id"));
-            String lLogStr = "None";
-            if (lLogChannel != null)
-                lLogStr = lLogChannel.getAsMention();
+        TextChannel lLogChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("log_channel_id"));
+        String lLogStr = "None";
+        if (lLogChannel != null)
+            lLogStr = lLogChannel.getAsMention();
 
-            VoiceChannel lAutoChannel = pEvent.getGuild().getVoiceChannelById(lRs.getLong("auto_channel_id"));
-            String lAutoChannelStr = "None";
-            if (lAutoChannel != null)
-                lAutoChannelStr = lAutoChannel.getAsMention();
+        VoiceChannel lAutoChannel = pEvent.getGuild().getVoiceChannelById(lRs.getLong("create_channel_id"));
+        String lAutoChannelStr = "None";
+        if (lAutoChannel != null)
+            lAutoChannelStr = lAutoChannel.getAsMention();
 
-            Role lAutoRole = pEvent.getGuild().getRoleById(lRs.getLong("auto_role_id"));
-            String lAutoRoleStr = "None";
-            if (lAutoRole != null)
-                lAutoRoleStr = lAutoRole.getAsMention();
+        Role lAutoRole = pEvent.getGuild().getRoleById(lRs.getLong("auto_role_id"));
+        String lAutoRoleStr = "None";
+        if (lAutoRole != null)
+            lAutoRoleStr = lAutoRole.getAsMention();
 
-            Role lModRole = pEvent.getGuild().getRoleById(lRs.getLong("moderator_role_id"));
-            String lModRoleStr = "None";
-            if (lModRole != null)
-                lModRoleStr = lModRole.getAsMention();
+        Role lModRole = pEvent.getGuild().getRoleById(lRs.getLong("moderator_role_id"));
+        String lModRoleStr = "None";
+        if (lModRole != null)
+            lModRoleStr = lModRole.getAsMention();
 
-            Role lEditorRole = pEvent.getGuild().getRoleById(lRs.getLong("editor_role_id"));
-            String lEditorRoleStr = "None";
-            if (lEditorRole != null)
-                lEditorRoleStr = lEditorRole.getAsMention();
+        Role lEditorRole = pEvent.getGuild().getRoleById(lRs.getLong("editor_role_id"));
+        String lEditorRoleStr = "None";
+        if (lEditorRole != null)
+            lEditorRoleStr = lEditorRole.getAsMention();
 
-            String lWelcomeMessageStr = lRs.getString("welcome_message");
-            if (lWelcomeMessageStr == null || lWelcomeMessageStr.isEmpty())
-                lWelcomeMessageStr = "None";
+        String lWelcomeMessageStr = lRs.getString("welcome_message");
+        if (lWelcomeMessageStr == null || lWelcomeMessageStr.isEmpty())
+            lWelcomeMessageStr = "None";
 
-            String lScreeningStr = String.valueOf(lRs.getBoolean("screening"));
+        String lScreeningStr = String.valueOf(lRs.getBoolean("screening"));
 
-            String[][] lFields = {
-                    {"Welcome Message", lWelcomeMessageStr},
-                    {"Welcome Channel", lWelcomeChannelStr},
-                    {"Create Custom Channel", lAutoChannelStr},
-                    {"Log Channel", lLogStr},
-                    {"Auto Role", lAutoRoleStr},
-                    {"Editor Role", lEditorRoleStr},
-                    {"Moderator Role", lModRoleStr},
-                    {"Rules Screening", lScreeningStr},
-                    {"Place Holder", "Holding Place"}
-            };
+        String[][] lFields = {
+                {"Welcome Message", lWelcomeMessageStr},
+                {"Welcome Channel", lWelcomeChannelStr},
+                {"Create Custom Channel", lAutoChannelStr},
+                {"Log Channel", lLogStr},
+                {"Auto Role", lAutoRoleStr},
+                {"Editor Role", lEditorRoleStr},
+                {"Moderator Role", lModRoleStr},
+                {"Rules Screening", lScreeningStr},
+                {"Place Holder", "Holding Place"}
+        };
 
-            pEvent.getHook().editOriginalEmbeds(
-                    utils.createEmbed(SERVERSETTINGS_COLOR, ":wrench: Server Info", "", lFields, true , null, "https://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands", null)).queue();
-        }
-        catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(
-                    utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
-        }
+        pEvent.getHook().editOriginalEmbeds(
+                utils.createEmbed(SERVERSETTINGS_COLOR, ":wrench: Server Info", "", lFields, true , null, "https://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands", null)).queue();
+
     }
 
     /**
      *
      *
      * */
-    private void setRole(SlashCommandInteractionEvent pEvent, String pRole) throws SQLException
+    private void setRoleCommand(SlashCommandInteractionEvent pEvent, String pRole) throws SQLException
     {
+        pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
         Role lRole = pEvent.getOption("role").getAsRole();
 
         utils.onExecute("UPDATE GuildSettings SET "+pRole+"_role_id = ? WHERE guild_id = ?", lRole.getIdLong(), pEvent.getGuild().getIdLong());
-        pEvent.replyEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the "+pRole+" role to "+lRole.getAsMention(), pEvent.getUser())).queue();
+        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the "+pRole+" role to "+lRole.getAsMention(), pEvent.getUser())).queue();
     }
 
+    /**
+     *
+     *
+     * */
+    private void resetSettingsCommand(SlashCommandInteractionEvent pEvent) throws SQLException
+    {
+        pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
+        utils.onExecute(
+                "UPDATE GuildSettings SET" +
+                        " editor_role_id = null, moderator_role_id = null, welcome_message = null, welcome_channel_id = null , log_channel_id = null, screening = false, create_channel_id = null, auto_role_id = null" +
+                        " WHERE guild_id = ?",
+                pEvent.getGuild().getIdLong());
+        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Server settings reset", pEvent.getUser())).queue();
+    }
+
+    // Other private methods
+
+
+
+    // Getter
 
     public static Color getCategoryColor() {return SERVERSETTINGS_COLOR; }
 }

@@ -47,7 +47,7 @@ public class EconomyHandler extends ListenerAdapter {
             public void run() {
                 distributeIncome();
             }
-        }, 1, 10000);
+        }, 1, 21600000);
 
     }
 
@@ -69,13 +69,17 @@ public class EconomyHandler extends ListenerAdapter {
                 case "work" -> workCommand(pEvent);
                 case "spin" -> spinCommand(pEvent);
                 case "get_income_roles" -> getIncomeRolesCommand(pEvent);
-                case "del_income_role" -> deleteIncomeRoleCommand(pEvent);
+                case "remove_income_role" -> removeIncomeRoleCommand(pEvent);
                 case "add_income_role" -> addIncomeRoleCommand(pEvent);
                 case "give" -> giveCommmand(pEvent);
                 case "give_admin" -> giveAdminCommand(pEvent);
             }
         }
-        catch (SQLException sqlEx) {
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
+        catch (SQLException sqlEx)
+        {
             sqlEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
@@ -471,6 +475,8 @@ public class EconomyHandler extends ListenerAdapter {
     private void addIncomeRoleCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
         long lRoleId = pEvent.getOption("role").getAsRole().getIdLong();
         long lIncome = pEvent.getOption("income").getAsLong();
         String lDescription;
@@ -519,25 +525,27 @@ public class EconomyHandler extends ListenerAdapter {
     /**
      *
      *
-     * @param event - SlashCommandInteractionEvent triggered by member
+     * @param pEvent - SlashCommandInteractionEvent triggered by member
      * */
-    private void deleteIncomeRoleCommand(SlashCommandInteractionEvent event) throws SQLException
+    private void removeIncomeRoleCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
-        event.deferReply().queue();
-        Role role = event.getOption("role").getAsRole();
+        pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
-        if (utils.onQuery("SELECT * FROM IncomeRole where guild_id="+event.getGuild().getIdLong()+
+        Role role = pEvent.getOption("role").getAsRole();
+
+        if (utils.onQuery("SELECT * FROM IncomeRole where guild_id="+pEvent.getGuild().getIdLong()+
                 " AND role_id="+role.getIdLong()).isClosed())
         {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
-                    ":x: There is no income connected with "+role.getAsMention(),null, false, event.getUser(), null, null)).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
+                    ":x: There is no income connected with "+role.getAsMention(),null, false, pEvent.getUser(), null, null)).queue();
         }
         else
         {
-            utils.onExecute("DELETE FROM IncomeRole WHERE guild_id="+event.getGuild().getIdLong()+
+            utils.onExecute("DELETE FROM IncomeRole WHERE guild_id="+pEvent.getGuild().getIdLong()+
                                         " AND role_id="+role.getIdLong());
-            event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
-                    ":white_check_mark: Income Role "+role.getAsMention()+" deleted",null, false, event.getUser(), null, null)).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+                    ":white_check_mark: Income Role "+role.getAsMention()+" removed",null, false, pEvent.getUser(), null, null)).queue();
         }
     }
 
@@ -549,11 +557,10 @@ public class EconomyHandler extends ListenerAdapter {
     private void giveCommmand(SlashCommandInteractionEvent event) throws SQLException
     {
         event.deferReply().queue();
+
         User lUser = event.getUser();
         User lOtherUser = event.getOption("user").getAsUser();
         long lUsersCash = getWealth(lUser.getIdLong(), event.getGuild().getIdLong())[1];
-        long lOtherUsersCash = getWealth(lOtherUser.getIdLong(), event.getGuild().getIdLong())[1];
-
         long lAmount = lUsersCash;
         if (event.getOption("amount") != null) lAmount = event.getOption("amount").getAsLong();
 
@@ -591,17 +598,20 @@ public class EconomyHandler extends ListenerAdapter {
      *
      *
      * */
-    private void giveAdminCommand(SlashCommandInteractionEvent event) throws SQLException
+    private void giveAdminCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
-        event.deferReply().queue();
-        long lAmount = event.getOption("amount").getAsLong();
-        User lUserToGiveTo = event.getOption("user").getAsUser();
-        increaseBankOrCash(lUserToGiveTo.getIdLong(), event.getGuild().getIdLong(), lAmount, "cash");
+        pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "admin", pEvent.getHook())) return;
 
-        event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+        pEvent.deferReply().queue();
+        long lAmount = pEvent.getOption("amount").getAsLong();
+        User lUserToGiveTo = pEvent.getOption("user").getAsUser();
+        increaseBankOrCash(lUserToGiveTo.getIdLong(), pEvent.getGuild().getIdLong(), lAmount, "cash");
+
+        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                 ":white_check_mark: You gave **"+NumberFormat.getInstance()
                         .format(lAmount)+"** "+ CURRENCY +" to "+lUserToGiveTo.getAsMention(),null,
-                false, event.getUser(), null, null)).queue();
+                false, pEvent.getUser(), null, null)).queue();
     }
 
     // Other private commands

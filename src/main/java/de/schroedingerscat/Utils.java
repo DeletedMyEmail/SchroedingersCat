@@ -1,8 +1,13 @@
 package de.schroedingerscat;
 
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.Permission;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import org.jetbrains.annotations.NotNull;
 
 import java.awt.*;
@@ -40,7 +45,7 @@ public class Utils {
                     'guild_id' INTEGER,
                     'welcome_channel_id' INTEGER,
                     'auto_role_id' INTEGER,
-                    'auto_channel_id' INTEGER,
+                    'create_channel_id' INTEGER,
                     'welcome_message' TEXT,
                     'screening'	INTEGER,
                     'log_channel_id' INTEGER,
@@ -93,6 +98,32 @@ public class Utils {
     public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor)
     {
         return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
+    }
+
+    public boolean authorizeMember(Member pMember, String pPermission) throws SQLException
+    {
+        if (pMember.hasPermission(Permission.ADMINISTRATOR)) return true;
+        if (pPermission.equals("admin")) return false;
+
+        ResultSet lRs = onQuery("SELECT "+pPermission.toLowerCase()+"_role_id FROM GuildSettings WHERE guild_id = ?", pMember.getGuild());
+        lRs.next();
+
+        Role lRoleNeeded = pMember.getGuild().getRoleById(lRs.getLong(pPermission+"_role_id"));
+        return lRoleNeeded != null && pMember.getRoles().contains(lRoleNeeded);
+    }
+
+    public boolean memberNotAuthorized(Member pMember, String pPermission, InteractionHook pEventHook) throws SQLException
+    {
+        if (authorizeMember(pMember, pPermission)) return false;
+        pEventHook.editOriginalEmbeds(createEmbed(Color.red, ":x: You don'#t have the permissions to use"+pPermission+" commands", pMember.getUser())).queue();
+        return true;
+    }
+
+    public boolean memberNotAuthorized(Member pMember, String pPermission, SlashCommandInteractionEvent pEvent) throws SQLException
+    {
+        if (authorizeMember(pMember, pPermission)) return false;
+        pEvent.replyEmbeds(createEmbed(Color.red, ":x: You don't have the permissions to use"+pPermission+" commands", pMember.getUser())).queue();
+        return true;
     }
 
     /**

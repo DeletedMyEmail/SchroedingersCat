@@ -11,6 +11,7 @@ import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"give_admin", "Creates money out of nothing and gives it to a user on your server","user,user,User who will earn the money,true","int,amount,Amount of money,true"},
                     {"get_income_roles","Displays all Income Roles"},
                     {"add_income_role", "Updates or adds an income role", "role,role,Income role,true", "int,income,Amount which is distributed every 6h,true"},
-                    {"del_income_role","Deletes an income role", "role,role,Income role which will be deleted,true"}
+                    {"remove_income_role","Deletes an income role", "role,role,Income role which will be deleted,true"}
                 },
                 {
                     // Auto Channel
@@ -89,7 +90,7 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"set_auto_role", "Sets the role which will be added to every new member",
                             "role,role,Auto Role,true",
                             "bool,screening,Is Rule Screening enabled,true"},
-                    {"clear_settings", "Resets all settings"},
+                    {"reset_settings", "Resets all settings"},
                     {"set_log", "Sets the channel where all important commands will be logged",
                         "channel,channel,Text Channel which will be the log,true"},
                     {"set_editor_role", "Sets the role needed to edit any kind of settings with the bot", "role,role,Role needed to edit any kind of settings,true"},
@@ -138,11 +139,21 @@ public class CategorylessHandler extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
     {
-        switch (pEvent.getName())
+        try
         {
-            case "help" -> helpCommand(pEvent);
-            case "embed" -> embedCommand(pEvent);
-            case "aboutme" -> userInfoCommand(pEvent);
+            switch (pEvent.getName()) {
+                case "help" -> helpCommand(pEvent);
+                case "embed" -> embedCommand(pEvent);
+                case "aboutme" -> userInfoCommand(pEvent);
+            }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
+        catch (SQLException sqlEx)
+        {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
 
@@ -203,9 +214,11 @@ public class CategorylessHandler extends ListenerAdapter {
         ).queue();
     }
 
-    private void embedCommand(SlashCommandInteractionEvent pEvent)
+    private void embedCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "moderator", pEvent.getHook())) return;
+
         EmbedBuilder lBuilder = new EmbedBuilder();
 
         lBuilder.setTitle(pEvent.getOption("title").getAsString());

@@ -27,18 +27,28 @@ public class AutoRoleHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
     {
-        if ("set_auto_role".equals(event.getName()))
-            setAutoRole(event);
+        if ("set_auto_role".equals(pEvent.getName())) {
+            try {
+                setAutoRole(pEvent);
+            }
+            catch (NumberFormatException numEx) {
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            }
+            catch (SQLException sqlEx)
+            {
+                sqlEx.printStackTrace();
+                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            }
+        }
     }
 
     @Override
-    public void onGuildMemberUpdatePending(@Nonnull GuildMemberUpdatePendingEvent event)
+    public void onGuildMemberUpdatePending(@Nonnull GuildMemberUpdatePendingEvent pEvent)
     {
-        System.out.println(event.getNewPending() + " yeet " + event.getOldPending());
-        if (!event.getNewPending())
-            addRoleToMember(event.getGuild(), event.getMember(), true);
+        if (!pEvent.getNewPending())
+            addRoleToMember(pEvent.getGuild(), pEvent.getMember(), true);
 
     }
 
@@ -65,20 +75,21 @@ public class AutoRoleHandler extends ListenerAdapter {
         addRoleToMember(event.getGuild(), event.getMember(), false);
     }
 
-    private void setAutoRole(SlashCommandInteractionEvent event)
+    private void setAutoRole(SlashCommandInteractionEvent pEvent) throws SQLException
     {
-        event.deferReply().queue();
+        pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
-        Role lRole = event.getOption("role").getAsRole();
-        boolean lScreeningEnabled = event.getOption("screening").getAsBoolean();
+        Role lRole = pEvent.getOption("role").getAsRole();
+        boolean lScreeningEnabled = pEvent.getOption("screening").getAsBoolean();
 
         try
         {
-            utils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, event.getGuild().getIdLong());
-            event.getHook().editOriginalEmbeds(utils.createEmbed(SettingsHandler.getCategoryColor(), ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", event.getUser())).queue();
+            utils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, pEvent.getGuild().getIdLong());
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SettingsHandler.getCategoryColor(), ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx) {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", event.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
 }

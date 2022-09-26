@@ -37,14 +37,24 @@ public class ReactionRoleHandler extends ListenerAdapter {
     // Events
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent event)
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
     {
-        switch (event.getName())
+        try
         {
-            case "add_reaction_role" -> addReactionRole((event));
-            case "get_reaction_roles" -> getReactionRolesCommand(event);
-            case "remove_reaction_role" -> removeReactionRoleCommand(event);
-            case "remove_all" -> removeAllReactionRolesCommand(event);
+            switch (pEvent.getName()) {
+                case "add_reaction_role" -> addReactionRole((pEvent));
+                case "get_reaction_roles" -> getReactionRolesCommand(pEvent);
+                case "remove_reaction_role" -> removeReactionRoleCommand(pEvent);
+                case "remove_all" -> removeAllReactionRolesCommand(pEvent);
+            }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
+        catch (SQLException sqlEx)
+        {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
 
@@ -81,9 +91,10 @@ public class ReactionRoleHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void addReactionRole(SlashCommandInteractionEvent pEvent)
-    {
+    private void addReactionRole(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
         try
         {
             TextChannel lChannel = pEvent.getOption("channel").getAsChannel().asTextChannel();
@@ -121,9 +132,10 @@ public class ReactionRoleHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void removeReactionRoleCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void removeReactionRoleCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
         try
         {
             TextChannel lChannel = getChannelForMessage(pEvent.getGuild(), pEvent.getOption("message").getAsLong());
@@ -152,9 +164,6 @@ public class ReactionRoleHandler extends ListenerAdapter {
         catch (NullPointerException nullEx) {
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
-        catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-        }
     }
 
     /**
@@ -162,99 +171,77 @@ public class ReactionRoleHandler extends ListenerAdapter {
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */
-    private void removeAllReactionRolesCommand(SlashCommandInteractionEvent pEvent)
-    {
-        try
-        {
-            utils.onExecute("DELETE FROM ReactionRole WHERE guild_id = ?", pEvent.getGuild().getIdLong());
-            pEvent.replyEmbeds(
-                    utils.createEmbed(
-                            REACTION_ROLE_COLOR,
-                            ":white_check_mark: All reaction roles removed",
-                            pEvent.getUser()
-                    )
-            ).queue();
-        }
-        catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
-        }
-    }
-
-    /**
-     *
-     *
-     * @param pEvent    Event triggered by a user using a slash command
-     * */
-    private void getReactionRolesCommand(SlashCommandInteractionEvent pEvent)
+    private void removeAllReactionRolesCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+
+        utils.onExecute("DELETE FROM ReactionRole WHERE guild_id = ?", pEvent.getGuild().getIdLong());
+        pEvent.getHook().editOriginalEmbeds(
+                utils.createEmbed(
+                        REACTION_ROLE_COLOR,
+                        ":white_check_mark: All reaction roles removed",
+                        pEvent.getUser()
+                )
+        ).queue();
+    }
+
+    /**
+     *
+     *
+     * @param pEvent    Event triggered by a user using a slash command
+     * */
+    private void getReactionRolesCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
+        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent)) return;
+        pEvent.deferReply().queue();
+
         Guild lGuild = pEvent.getGuild();
-        try
+
+        ResultSet lRs = utils.onQuery("SELECT * FROM ReactionRole WHERE guild_id = ?", lGuild.getIdLong());
+        List<String[]> lFields = new ArrayList<>();
+
+        while (lRs.next())
         {
-            ResultSet lRs = utils.onQuery("SELECT * FROM ReactionRole WHERE guild_id = ?", lGuild.getIdLong());
-            List<String[]> lFields = new ArrayList<>();
+            Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
+            String lRoleStr = "unknown role ("+lRs.getLong("role_id")+")";
+            if (lRole != null) lRoleStr = lRole.getAsMention();
 
-            while (lRs.next())
-            {
-                Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
-                String lRoleStr = "unknown role ("+lRs.getLong("role_id")+")";
-                if (lRole != null) lRoleStr = lRole.getAsMention();
+            TextChannel lChannel = lGuild.getTextChannelById(lRs.getLong("channel_id"));
+            String lChannelStr = "unknown channel ("+lRs.getLong("channel_id")+")";
+            if (lChannel != null) lChannelStr = lChannel.getAsMention();
 
-                TextChannel lChannel = lGuild.getTextChannelById(lRs.getLong("channel_id"));
-                String lChannelStr = "unknown channel ("+lRs.getLong("channel_id")+")";
-                if (lChannel != null) lChannelStr = lChannel.getAsMention();
-
-                lFields.add(
-                        new String[] {
-                                lRs.getString("emoji"),
-                                "**Role:** "+lRoleStr+
-                                "\n**Channel:** "+lChannelStr+
-                                "\n**Message ID:** "+lRs.getLong("message_id")
-                        }
-                );
-            }
-
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(REACTION_ROLE_COLOR,"Reaction Roles", "", lFields.toArray(new String[][]{}), true, null, null, null)).queue();
+            lFields.add(
+                    new String[] {
+                            lRs.getString("emoji"),
+                            "**Role:** "+lRoleStr+
+                            "\n**Channel:** "+lChannelStr+
+                            "\n**Message ID:** "+lRs.getLong("message_id")
+                    }
+            );
         }
-        catch (SQLException sqlEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message, role and emoji", pEvent.getUser())).queue();
-        }
-        catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-        }
+
+        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(REACTION_ROLE_COLOR,"Reaction Roles", "", lFields.toArray(new String[][]{}), true, null, null, null)).queue();
+
     }
 
     // Other private methods
 
-    private TextChannel getChannelForMessage(Guild pGuild, long pMessageId)
-    {
-        try
-        {
-            ResultSet lRs = utils.onQuery("SELECT channel_id FROM ReactionRole WHERE guild_id = ? AND message_id = ?",pGuild.getIdLong(), pMessageId);
-            lRs.next();
+    private TextChannel getChannelForMessage(Guild pGuild, long pMessageId) throws SQLException {
+        ResultSet lRs = utils.onQuery("SELECT channel_id FROM ReactionRole WHERE guild_id = ? AND message_id = ?",pGuild.getIdLong(), pMessageId);
+        lRs.next();
 
-            return pGuild.getTextChannelById(lRs.getLong("channel_id"));
-        }
-        catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
-            return null;
-        }
+        return pGuild.getTextChannelById(lRs.getLong("channel_id"));
+
     }
 
-    private Role getReactionRole(Guild pGuild, long pMessageId, String pEmoji)
-    {
-        try
-        {
-            ResultSet lRs = utils.onQuery("SELECT role_id FROM ReactionRole WHERE guild_id = ? AND message_id = ? AND emoji = ?",pGuild.getIdLong(), pMessageId, pEmoji);
+    private Role getReactionRole(Guild pGuild, long pMessageId, String pEmoji) {
+        try {
+            ResultSet lRs = utils.onQuery("SELECT role_id FROM ReactionRole WHERE guild_id = ? AND message_id = ? AND emoji = ?", pGuild.getIdLong(), pMessageId, pEmoji);
             lRs.next();
 
             return pGuild.getRoleById(lRs.getLong("role_id"));
         }
-        catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
-            return null;
-        }
+        catch(SQLException sqlEx) {return null;}
     }
 
     // Getter
