@@ -154,6 +154,14 @@ public class CategorylessHandler extends ListenerAdapter {
             sqlEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+        }
     }
 
     @Override

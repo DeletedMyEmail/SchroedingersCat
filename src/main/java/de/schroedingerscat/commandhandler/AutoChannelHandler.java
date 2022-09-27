@@ -9,8 +9,11 @@ import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
 import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -38,12 +41,42 @@ public class AutoChannelHandler extends ListenerAdapter {
     // Events
 
     @Override
+    public void onUserContextInteraction(UserContextInteractionEvent pEvent)
+    {
+        try
+        {
+            switch (pEvent.getName())
+            {
+                case "kick custom channel" -> processKickCustomRequest(pEvent, pEvent.getMember(), pEvent.getTargetMember());
+                case "ban custom channel" -> processBanCustomRequest(pEvent, pEvent.getMember(), pEvent.getTargetMember());
+            }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
+        catch (SQLException sqlEx)
+        {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+        }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+        }
+    }
+
+    @Override
     /**
      *  Redirects the event to method handling it if the slash command belongs to this category
      *
      *  @param pEvent   Event triggered by a user using a slash command
      * */
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
+    {
         try
         {
             switch (pEvent.getName())
@@ -51,8 +84,8 @@ public class AutoChannelHandler extends ListenerAdapter {
                 case "set_create_channel" -> setCreateChannel(pEvent);
                 case "vcname" -> setChannelNameCommand(pEvent);
                 case "vclimit" -> setChannelLimitCommand(pEvent);
-                case "vckick" -> kickChannelCommand(pEvent);
-                case "vcban" -> banChannelCommand(pEvent);
+                case "vckick" -> processKickCustomRequest(pEvent, pEvent.getMember(), pEvent.getOption("user").getAsMember());
+                case "vcban" -> processBanCustomRequest(pEvent, pEvent.getMember(), pEvent.getOption("user").getAsMember());
                 case "claim" -> claimChannelCommand(pEvent);
             }
         }
@@ -63,6 +96,14 @@ public class AutoChannelHandler extends ListenerAdapter {
         {
             sqlEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+        }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -237,79 +278,80 @@ public class AutoChannelHandler extends ListenerAdapter {
         }
     }
 
-    /**
-     * Kicks the user defined in the slash command option "user" out of the current custom voice channel the user who triggered the event is connected to if they own it
-     *
-     * @param pEvent    Event triggered by a user using a slash command
-     * */
-    private void kickChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
-        pEvent.deferReply().queue();
-
-        Member lMember = pEvent.getMember();
-        VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
-        Member lMemberToKick = pEvent.getOption("user").getAsMember();
+    private void processKickCustomRequest(InteractionHook pHook, Member pMember, Member pMemberToKick) throws SQLException {
+        VoiceChannel lCurrentVoice = (VoiceChannel) pMember.getVoiceState().getChannel();
 
         if (lCurrentVoice == null)
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pMember.getUser())).queue();
 
-        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),pEvent.getGuild().getIdLong()))
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pEvent.getUser())).queue();
+        else if (!ownsCustomChannel(pMember.getIdLong(), lCurrentVoice.getIdLong(),pMember.getGuild().getIdLong()))
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pMember.getUser())).queue();
 
-        else if (lMemberToKick == null)
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User not found", pEvent.getUser())).queue();
+        else if (pMemberToKick == null)
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User not found", pMember.getUser())).queue();
 
-        else if (lMemberToKick.getVoiceState().getChannel() == null || !lMemberToKick.getVoiceState().getChannel().equals(lCurrentVoice))
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User isn't connected to your voice channel", pEvent.getUser())).queue();
+        else if (pMemberToKick.equals(pMember))
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You can't kick yourself", pMember.getUser())).queue();
+
+        else if (pMemberToKick.getVoiceState().getChannel() == null || !pMemberToKick.getVoiceState().getChannel().equals(lCurrentVoice))
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User isn't connected to your voice channel", pMember.getUser())).queue();
 
         else
         {
-            pEvent.getGuild().kickVoiceMember(lMemberToKick).queue();
-            pEvent.getHook().editOriginalEmbeds(
+            pMember.getGuild().kickVoiceMember(pMemberToKick).queue();
+            pHook.editOriginalEmbeds(
                     utils.createEmbed(
                             AUTOCHANNEL_COLOR,
-                            ":white_check_mark: Kicked "+lMemberToKick.getAsMention()+" from "+lCurrentVoice.getAsMention(),
-                            pEvent.getUser()
+                            ":white_check_mark: Kicked "+pMemberToKick.getAsMention()+" from "+lCurrentVoice.getAsMention(),
+                            pMember.getUser()
                     )
             ).queue();
         }
     }
 
-    /**
-     * Bans the user defined in the slash command option "user" out of the current custom voice channel the user who triggered the event is connected to if they own it
-     *
-     * @param pEvent    Event triggered by a user using a slash command
-     * */
-    private void banChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
+    private void processKickCustomRequest(GenericCommandInteractionEvent pEvent, Member pMember, Member pMemberToKick) throws SQLException
+    {
         pEvent.deferReply().queue();
+        processKickCustomRequest(pEvent.getHook(), pMember, pMemberToKick);
+    }
 
-        Member lMember = pEvent.getMember();
-        VoiceChannel lCurrentVoice = (VoiceChannel) lMember.getVoiceState().getChannel();
-        Member lMemberToBan = pEvent.getOption("user").getAsMember();
-
+    private void processBanCustomRequest(InteractionHook pHook, Member pMember, Member pMemberToBan) throws SQLException {
+        VoiceChannel lCurrentVoice = (VoiceChannel) pMember.getVoiceState().getChannel();
         if (lCurrentVoice == null)
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pEvent.getUser())).queue();
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You're not connected to a voice channel", pMember.getUser())).queue();
 
-        else if (!ownsCustomChannel(lMember.getIdLong(), lCurrentVoice.getIdLong(),pEvent.getGuild().getIdLong()))
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pEvent.getUser())).queue();
+        else if (!ownsCustomChannel(pMember.getIdLong(), lCurrentVoice.getIdLong(),pMember.getGuild().getIdLong()))
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You don't own your current voice channel", pMember.getUser())).queue();
 
-        else if (lMemberToBan == null)
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Member not found", pEvent.getUser())).queue();
+        else if (pMemberToBan == null)
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User not found", pMember.getUser())).queue();
+
+        else if (pMemberToBan.equals(pMember))
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You can't ban yourself", pMember.getUser())).queue();
+
+        else if (pMemberToBan.getVoiceState().getChannel() == null || !pMemberToBan.getVoiceState().getChannel().equals(lCurrentVoice))
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, ":x: User isn't connected to your voice channel", pMember.getUser())).queue();
 
         else
         {
+            lCurrentVoice.getManager().putPermissionOverride(pMemberToBan, null, EnumSet.of(Permission.VOICE_CONNECT)).queue();
+            if (pMemberToBan.getVoiceState().getChannel() != null && pMemberToBan.getVoiceState().getChannel().equals(lCurrentVoice))
+                pMember.getGuild().kickVoiceMember(pMemberToBan).queue();
 
-            lCurrentVoice.getManager().putPermissionOverride(lMemberToBan, null, EnumSet.of(Permission.VOICE_CONNECT)).queue();
-            if (lMemberToBan.getVoiceState().getChannel() != null && lMemberToBan.getVoiceState().getChannel().equals(lCurrentVoice))
-                pEvent.getGuild().kickVoiceMember(lMemberToBan).queue();
-
-            pEvent.getHook().editOriginalEmbeds(
+            pHook.editOriginalEmbeds(
                     utils.createEmbed(
                             AUTOCHANNEL_COLOR,
-                            ":white_check_mark: Banned "+lMemberToBan.getAsMention()+" from "+lCurrentVoice.getAsMention(),
-                            pEvent.getUser()
+                            ":white_check_mark: Banned "+pMemberToBan.getAsMention()+" from "+lCurrentVoice.getAsMention(),
+                            pMember.getUser()
                     )
             ).queue();
         }
+    }
+
+    private void processBanCustomRequest(GenericCommandInteractionEvent pEvent, Member pMember, Member pMemberToKick) throws SQLException
+    {
+        pEvent.deferReply().queue();
+        processBanCustomRequest(pEvent.getHook(), pMember, pMemberToKick);
     }
 
     // Other private methods

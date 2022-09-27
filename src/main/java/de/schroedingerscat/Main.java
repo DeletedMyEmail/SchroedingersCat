@@ -6,7 +6,9 @@ import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
 import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
@@ -92,7 +94,7 @@ public class Main {
      * */
     public void addSlashCommands(JDA pJDA, String[][][] pCommands)
     {
-        List<SlashCommandData> lCommands = new ArrayList<>();
+        List<CommandData> lCommands = new ArrayList<>();
         for(String[][] category : pCommands)
         {
             for (String[] commandStructure : category)
@@ -117,6 +119,11 @@ public class Main {
                 lCommands.add(lSlashCommand);
             }
         }
+        lCommands.add(Commands.context(Command.Type.USER, "kick custom channel"));
+        lCommands.add(Commands.context(Command.Type.USER, "ban custom channel"));
+        lCommands.add(Commands.context(Command.Type.USER, "bal"));
+        lCommands.add(Commands.context(Command.Type.USER, "give"));
+        lCommands.add(Commands.context(Command.Type.USER, "rob"));
         pJDA.updateCommands().addCommands(lCommands).queue();
         System.out.println("Commands updated");
     }

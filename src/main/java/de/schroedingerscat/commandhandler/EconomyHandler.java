@@ -3,13 +3,20 @@ package de.schroedingerscat.commandhandler;
 import de.schroedingerscat.Main;
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
+import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.components.text.TextInput;
+import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -36,11 +43,14 @@ public class EconomyHandler extends ListenerAdapter {
 
     // HashMap<GuildId, List<Object>{color,number,List<Object>{user,boolean,amount}, List<Channel>},
     private final HashMap<Long, HashMap<Long, Long[]>> currentSpins;
+    // giver's id, receiver's id
+    private final HashMap<Long, Long> receiverFromGiveCommand;
     private final Utils utils;
 
     public EconomyHandler(Utils pUtils) {
         this.utils = pUtils;
         currentSpins = new HashMap<>();
+        receiverFromGiveCommand = new HashMap<>();
 
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -55,6 +65,73 @@ public class EconomyHandler extends ListenerAdapter {
     // Events
 
     @Override
+    public void onModalInteraction(@Nonnull ModalInteractionEvent pEvent) {
+        try {
+            if (pEvent.getModalId().equals("givemodal")) {
+                pEvent.deferReply().queue();
+                giveCommmand(
+                        pEvent.getHook(),
+                        pEvent.getMember(),
+                        pEvent.getGuild().getMemberById(receiverFromGiveCommand.get(pEvent.getMember().getIdLong())),
+                        Long.parseLong(pEvent.getValue("amount").getAsString())
+                );
+            }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
+        catch (SQLException sqlEx)
+        {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+        }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+        }
+    }
+
+    @Override
+    public void onUserContextInteraction(UserContextInteractionEvent pEvent)
+    {
+        try
+        {
+            switch (pEvent.getName())
+            {
+                case "bal" -> balCommand(pEvent, pEvent.getTargetMember());
+                case "rob" -> robCommand(pEvent, pEvent.getTargetMember());
+                case "give" -> {
+                    receiverFromGiveCommand.put(pEvent.getUser().getIdLong(), pEvent.getTargetMember().getIdLong());
+                    pEvent.replyModal(
+                            Modal.create("givemodal", "Give Command")
+                                    .addActionRow(TextInput.create("amount", "Amount of money to give", TextInputStyle.SHORT).build())
+                                    .build()).queue();
+                }
+            }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
+        catch (SQLException sqlEx)
+        {
+            sqlEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+        }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+        }
+    }
+
+    @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
     {
         try
@@ -64,7 +141,7 @@ public class EconomyHandler extends ListenerAdapter {
                 case "bal" -> balCommand(pEvent);
                 case "top" -> topCommand(pEvent);
                 case "crime" -> crimeCommand(pEvent);
-                case "rob" -> robCommand(pEvent);
+                case "rob" -> robCommand(pEvent,pEvent.getOption("user").getAsMember());
                 case "dep" -> depCommand(pEvent);
                 case "with" -> withCommand(pEvent);
                 case "work" -> workCommand(pEvent);
@@ -84,6 +161,14 @@ public class EconomyHandler extends ListenerAdapter {
             sqlEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+        }
     }
 
     @Override
@@ -100,36 +185,58 @@ public class EconomyHandler extends ListenerAdapter {
                     pEvent.getHook().editOriginalEmbeds(topEmbed(pEvent.getGuild().getIdLong(), "Cash")).queue();
             }
         }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+        }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
+        catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+        }
+        catch (Exception ex) {
+            ex.printStackTrace();
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+        }
     }
 
-    // Slash Commands
+    // Commands
 
     /**
      *
      *
-     * @param event - SlashCommandInteractionEvent triggered by member
+     * @param pHook
      * */
-    private void balCommand(@NotNull SlashCommandInteractionEvent event) throws SQLException
+    private void balCommand(@NotNull InteractionHook pHook, @NotNull Member pMember, Member pUserWhoseBalance) throws SQLException
     {
-        event.deferReply().queue();
-        User user;
-        if(event.getOption("user") != null) user = event.getOption("user").getAsUser();
-        else user = event.getUser();
+        if (pUserWhoseBalance == null) pUserWhoseBalance = pMember;
 
-        long[] wealth = getWealth(user.getIdLong(), event.getGuild().getIdLong());
-        String[][] fields = {
+        long[] lWealth = getWealth(pUserWhoseBalance.getIdLong(), pMember.getGuild().getIdLong());
+        String[][] lFields = {
                 {"Bank",NumberFormat.getInstance()
-                        .format(wealth[0])+" "+CURRENCY },
+                        .format(lWealth[0])+" "+CURRENCY },
                 {"Cash",NumberFormat.getInstance()
-                        .format(wealth[1])+" "+CURRENCY},
+                        .format(lWealth[1])+" "+CURRENCY},
         };
 
-        event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", "", fields, false, user, null, null)).queue();
+        pHook.editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", "", lFields, false, pUserWhoseBalance.getUser(), null, null)).queue();
+    }
+
+    private void balCommand(@NotNull GenericCommandInteractionEvent pEvent, Member pOtherMember) throws SQLException
+    {
+        pEvent.deferReply().queue();
+        balCommand(pEvent.getHook(), pEvent.getMember(), pOtherMember);
+    }
+
+    private void balCommand(@NotNull SlashCommandInteractionEvent pEvent) throws SQLException
+    {
+        pEvent.deferReply().queue();
+        if (pEvent.getOption("user") == null)
+            balCommand(pEvent.getHook(), pEvent.getMember(), null);
+        else balCommand(pEvent.getHook(), pEvent.getMember(), pEvent.getOption("user").getAsMember());
     }
 
     /**
@@ -329,24 +436,28 @@ public class EconomyHandler extends ListenerAdapter {
         }
     }
 
+    private void robCommand(@NotNull GenericCommandInteractionEvent pEvent, Member pMemberToRob) throws SQLException
+    {
+        pEvent.deferReply().queue();
+        robCommand(pEvent.getHook(), pEvent.getMember(), pMemberToRob);
+    }
+
     /**
      *
      *
      * */
-    private void robCommand(SlashCommandInteraction pEvent) throws SQLException
+    private void robCommand(InteractionHook pHook, Member pRobber, Member pMemberToRob) throws SQLException
     {
-        pEvent.deferReply().queue();
-
-        if (pEvent.getOption("user").getAsUser().equals(pEvent.getUser()))
+        if (pRobber.equals(pMemberToRob))
         {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
+            pHook.editOriginalEmbeds(utils.createEmbed(
                     Color.red, "", ":x: You can't rob yourself",
-                    null, false, pEvent.getUser(), null, null)).queue();
+                    null, false, pRobber.getUser(), null, null)).queue();
             return;
         }
 
-        long lMemberToRobCash = getWealth(pEvent.getOption("user").getAsUser().getIdLong(), pEvent.getGuild().getIdLong())[1];
-        long[] lRobberWealth = getWealth(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong());
+        long lMemberToRobCash = getWealth(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong())[1];
+        long[] lRobberWealth = getWealth(pRobber.getUser().getIdLong(), pRobber.getGuild().getIdLong());
 
         if (lMemberToRobCash <= 0)
         {
@@ -354,23 +465,23 @@ public class EconomyHandler extends ListenerAdapter {
             if (lRobberWealth[0] > 3)
             {
                 long lostValue = (long) (lRobberWealth[0]*0.25);
-                increaseBankOrCash(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), -lostValue, "cash");
+                increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), -lostValue, "cash");
                 lDescription += " You got caught robbing and paid **"+NumberFormat.getInstance()
                         .format(lostValue)+"** "+ CURRENCY;
             }
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
+            pHook.editOriginalEmbeds(utils.createEmbed(
                     ECONOMY_COLOR, "", lDescription,
-                    null, false, pEvent.getUser(), null, null)).queue();
+                    null, false, pRobber.getUser(), null, null)).queue();
         }
         else
         {
-            increaseBankOrCash(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), +lMemberToRobCash, "cash");
-            increaseBankOrCash(pEvent.getOption("user").getAsUser().getIdLong(), pEvent.getGuild().getIdLong(), -lRobberWealth[1], "cash");
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
+            increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), +lMemberToRobCash, "cash");
+            increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lRobberWealth[1], "cash");
+            pHook.editOriginalEmbeds(utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Successfully robbed "+
-                            pEvent.getOption("user").getAsMember().getAsMention()+" and got **"+NumberFormat.getInstance()
+                            pMemberToRob.getAsMention()+" and got **"+NumberFormat.getInstance()
                             .format(lMemberToRobCash)+"** "+CURRENCY,
-                    null, false, pEvent.getUser(), null, null)).queue();
+                    null, false, pRobber.getUser(), null, null)).queue();
         }
     }
 
@@ -548,48 +659,52 @@ public class EconomyHandler extends ListenerAdapter {
         }
     }
 
+    private void giveCommmand(@NotNull SlashCommandInteractionEvent pEvent) throws SQLException
+    {
+        pEvent.deferReply().queue();
+        long lAmount = -1;
+        if (pEvent.getOption("amount") != null) lAmount = pEvent.getOption("amount").getAsLong();
+
+        giveCommmand(pEvent.getHook(), pEvent.getMember(), pEvent.getOption("user").getAsMember(), lAmount);
+    }
+
     /**
      *
      *
-     * @param event - SlashCommandInteractionEvent triggered by member
+     * @param pHook
      * */
-    private void giveCommmand(SlashCommandInteractionEvent event) throws SQLException
+    private void giveCommmand(InteractionHook pHook, Member pGiver, Member pReciever, long pAmount) throws SQLException
     {
-        event.deferReply().queue();
+        long lGiversCash = getWealth(pGiver.getIdLong(), pGiver.getGuild().getIdLong())[1];
+        if (pAmount == -1) pAmount = lGiversCash;
 
-        User lUser = event.getUser();
-        User lOtherUser = event.getOption("user").getAsUser();
-        long lUsersCash = getWealth(lUser.getIdLong(), event.getGuild().getIdLong())[1];
-        long lAmount = lUsersCash;
-        if (event.getOption("amount") != null) lAmount = event.getOption("amount").getAsLong();
-
-        if (lUser.equals(lOtherUser))
+        if (pGiver.equals(pReciever))
         {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, "",
                     ":x: You can't give yourself money",null,
-                    false, event.getUser(), null, null)).queue();
+                    false, pGiver.getUser(), null, null)).queue();
         }
-        else if (lAmount <= 0)
+        else if (pAmount <= 0)
         {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, "",
                     ":x: Can't give less than 1 "+ CURRENCY,null,
-                    false, event.getUser(), null, null)).queue();
+                    false, pGiver.getUser(), null, null)).queue();
         }
-        else if (lUsersCash < lAmount)
+        else if (lGiversCash < pAmount)
         {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, "",
                     ":x: You don't have enough "+ CURRENCY,null,
-                    false, event.getUser(), null, null)).queue();
+                    false, pGiver.getUser(), null, null)).queue();
         }
         else
         {
-            increaseBankOrCash(lUser.getIdLong(), event.getGuild().getIdLong(), -lAmount, "cash");
-            increaseBankOrCash(lOtherUser.getIdLong(), event.getGuild().getIdLong(), lAmount, "cash");
+            increaseBankOrCash(pGiver.getIdLong(), pGiver.getGuild().getIdLong(), -pAmount, "cash");
+            increaseBankOrCash(pReciever.getIdLong(), pGiver.getGuild().getIdLong(), pAmount, "cash");
 
-            event.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+            pHook.editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You gave **"+NumberFormat.getInstance()
-                            .format(lAmount)+ "** "+CURRENCY +" to "+lOtherUser.getAsMention(),null,
-                    false, event.getUser(), null, null)).queue();
+                            .format(pAmount)+ "** "+CURRENCY +" to "+pReciever.getAsMention(),null,
+                    false, pGiver.getUser(), null, null)).queue();
         }
     }
 
