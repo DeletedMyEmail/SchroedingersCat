@@ -59,7 +59,6 @@ public class CategorylessHandler extends ListenerAdapter {
                 {
                     // Auto Channel
                     {"set_create_channel","Sets the Voice Channel for Auto Channel creation", "channel,channel,Voice Channel which creates a new one if someone joins,true"},
-                    {"clear_auto_channel_db", "Resets the Auto Channel database for your server"},
                     {"claim","Get admin in your current Voice Channel if the old admin isn't connected"},
                     {"vcname", "Changes the name of your current Voice Channel if you own it", "string,name,New name for your Voice Channel,true"},
                     {"vckick", "Kicks a user from your current Voice Channel", "user,user,User who will be kicked,true"},

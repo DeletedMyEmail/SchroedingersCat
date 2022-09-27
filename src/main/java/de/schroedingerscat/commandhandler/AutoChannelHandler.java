@@ -54,8 +54,10 @@ public class AutoChannelHandler extends ListenerAdapter {
                 case "vckick" -> kickChannelCommand(pEvent);
                 case "vcban" -> banChannelCommand(pEvent);
                 case "claim" -> claimChannelCommand(pEvent);
-                case "clear_auto_channel_db" -> clearAutoChannelDatabaseCommand(pEvent);
             }
+        }
+        catch (NumberFormatException numEx) {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
@@ -308,19 +310,6 @@ public class AutoChannelHandler extends ListenerAdapter {
                     )
             ).queue();
         }
-    }
-
-    /**
-     * Deletes all the registered custom channel in the database connected to the guild the event was triggered in
-     *
-     * @param pEvent    Event triggered by a user using a slash command
-     * */
-    private void clearAutoChannelDatabaseCommand(SlashCommandInteractionEvent pEvent) throws SQLException
-    {
-        pEvent.deferReply().queue();
-        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
-        utils.onExecute("DELETE FROM AutoChannel WHERE guild_id = ?", pEvent.getGuild().getIdLong());
-        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(AUTOCHANNEL_COLOR, ":white_check_mark: Deleted all custom channel", pEvent.getUser())).queue();
     }
 
     // Other private methods
