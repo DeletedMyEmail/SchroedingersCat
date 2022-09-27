@@ -105,7 +105,7 @@ public class Utils {
         if (pMember.hasPermission(Permission.ADMINISTRATOR)) return true;
         if (pPermission.equals("admin")) return false;
 
-        ResultSet lRs = onQuery("SELECT "+pPermission.toLowerCase()+"_role_id FROM GuildSettings WHERE guild_id = ?", pMember.getGuild());
+        ResultSet lRs = onQuery("SELECT "+pPermission.toLowerCase()+"_role_id FROM GuildSettings WHERE guild_id = ?", pMember.getGuild().getIdLong());
         lRs.next();
 
         Role lRoleNeeded = pMember.getGuild().getRoleById(lRs.getLong(pPermission+"_role_id"));
@@ -115,14 +115,14 @@ public class Utils {
     public boolean memberNotAuthorized(Member pMember, String pPermission, InteractionHook pEventHook) throws SQLException
     {
         if (authorizeMember(pMember, pPermission)) return false;
-        pEventHook.editOriginalEmbeds(createEmbed(Color.red, ":x: You don'#t have the permissions to use"+pPermission+" commands", pMember.getUser())).queue();
+        pEventHook.editOriginalEmbeds(createEmbed(Color.red, ":x: You don't have the permissions to use "+pPermission+" commands", pMember.getUser())).queue();
         return true;
     }
 
     public boolean memberNotAuthorized(Member pMember, String pPermission, SlashCommandInteractionEvent pEvent) throws SQLException
     {
         if (authorizeMember(pMember, pPermission)) return false;
-        pEvent.replyEmbeds(createEmbed(Color.red, ":x: You don't have the permissions to use"+pPermission+" commands", pMember.getUser())).queue();
+        pEvent.replyEmbeds(createEmbed(Color.red, ":x: You don't have the permissions to use "+pPermission+" commands", pMember.getUser())).queue();
         return true;
     }
 

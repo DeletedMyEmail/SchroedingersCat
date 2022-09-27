@@ -34,6 +34,7 @@ public class EconomyHandler extends ListenerAdapter {
     /** Default color of this category to be used for embeds */
     private static final Color ECONOMY_COLOR = new Color(234,217,25);
 
+    // HashMap<GuildId, List<Object>{color,number,List<Object>{user,boolean,amount}, List<Channel>},
     private final HashMap<Long, HashMap<Long, Long[]>> currentSpins;
     private final Utils utils;
 
@@ -99,7 +100,8 @@ public class EconomyHandler extends ListenerAdapter {
                     pEvent.getHook().editOriginalEmbeds(topEmbed(pEvent.getGuild().getIdLong(), "Cash")).queue();
             }
         }
-        catch (SQLException sqlEx) {
+        catch (SQLException sqlEx)
+        {
             sqlEx.printStackTrace();
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
@@ -380,6 +382,7 @@ public class EconomyHandler extends ListenerAdapter {
     private void spinCommand(SlashCommandInteraction pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
+
         long lGuildId = pEvent.getGuild().getIdLong();
         long lUserId = pEvent.getUser().getIdLong();
         long lUsersCash = getWealth(lUserId,lGuildId)[1];
@@ -394,26 +397,22 @@ public class EconomyHandler extends ListenerAdapter {
             lField = fieldOption.getAsInt();
 
 
-        long lAmount = lUsersCash;
+        long lAmountToBet = lUsersCash;
         if (pEvent.getOption("money") != null)
-        {
-            lAmount = pEvent.getOption("money").getAsLong();
-        }
+            lAmountToBet = pEvent.getOption("money").getAsLong();
 
         if (lColor == -1)
-        {
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
                     Color.red, "", ":x: Please choose red or black as color",
                     null, false, pEvent.getUser(), null, null
             )).queue();
-        }
-        else if (lAmount > getWealth(lUserId, lGuildId)[1] || lAmount <= 0)
-        {
+
+        else if (lAmountToBet > getWealth(lUserId, lGuildId)[1] || lAmountToBet <= 0)
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
                     Color.red, "", ":x: You don't have enough money or the entered amount is less than 1",
                     null, false, pEvent.getUser(), null, null
             )).queue();
-        }
+
         else
         {
             if (currentSpins.containsKey(lGuildId))
@@ -428,13 +427,13 @@ public class EconomyHandler extends ListenerAdapter {
                 }
                 else
                 {
-                    currentSpins.get(lGuildId).put(lUserId, new Long[] { pEvent.getChannel().getIdLong(), lColor, lField, lAmount});
+                    currentSpins.get(lGuildId).put(lUserId, new Long[] { pEvent.getChannel().getIdLong(), lColor, lField, lAmountToBet});
                 }
             }
             else
             {
                 HashMap<Long, Long[]> guildMap = new HashMap<>();
-                guildMap.put(lUserId, new Long[] { lColor, lField, lAmount});
+                guildMap.put(lUserId, new Long[] { lColor, lField, lAmountToBet});
                 currentSpins.put(lGuildId, guildMap);
 
                 Timer timer = new Timer();
@@ -450,7 +449,7 @@ public class EconomyHandler extends ListenerAdapter {
             }
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
-                            .format(lAmount)+"** "+CURRENCY, null,
+                            .format(lAmountToBet)+"** "+CURRENCY, null,
                     false, pEvent.getUser(), null, "10 sec remaining")).queue();
 
 
