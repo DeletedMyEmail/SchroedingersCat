@@ -495,47 +495,67 @@ public class EconomyHandler extends ListenerAdapter {
     {
         pEvent.deferReply().queue();
 
-        long lGuildId = pEvent.getGuild().getIdLong();
-        long lUserId = pEvent.getUser().getIdLong();
-        long lUsersCash = getWealth(lUserId,lGuildId)[1];
-        long lAmountToBet = lUsersCash;
-        String lBetOnTheWheel = "";
+        Guild lGuild = pEvent.getGuild();
+        User lUser = pEvent.getUser();
+        long lUsersCash = getWealth(lUser.getIdLong(),lGuild.getIdLong())[1];
+        final long lAmountToBet;
+        String lBetOnTheWheel = "red";
 
         if (pEvent.getOption("money") != null)
             lAmountToBet = pEvent.getOption("money").getAsLong();
+        else lAmountToBet = lUsersCash;
 
         if (lAmountToBet > lUsersCash || lAmountToBet <= 0)
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
                     Color.red, "", ":x: You don't have enough money or the entered amount is less than 1",
-                    null, false, pEvent.getUser(), null, null
+                    null, false, lUser, null, null
             )).queue();
 
         else
         {
-            Object[] lGuildSpinData = currentSpins.get(lGuildId);
-            if (lGuildSpinData != null)
+            Object[] lGuildSpinData = currentSpins.get(lGuild.getIdLong());
+            if (lGuildSpinData == null)
             {
                 // [0]: String[] lSpinResult ; [1]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
-                // ((String[]) lGuildSpinData[0]) = {};
+                Random lRnd = new Random();
+                String lWheelnumber = Integer.toString(lRnd.nextInt(36)+1);
+                String lWheelColor = "red";
+                if (lRnd.nextBoolean()) lWheelColor = "black";
 
-            }
-            else
-            {
+                currentSpins.put(lGuild.getIdLong(),new Object[]{
+                        new String[] {
+                                lWheelColor,
+                                lWheelnumber
+                        },
+                        new ArrayList<String[]>(){{
+                            add(new String[]{
+                                lUser.getId(),
+                                lBetOnTheWheel,
+                                Long.toString(lAmountToBet)
+                            });
+                        }},
+
+
+                });
+
                 Timer timer = new Timer();
                 timer.schedule(new TimerTask()
                 {
                     @Override
                     public void run() {
-
+                        spinResult(lGuild);
                     }
                 }, 10000);
+            }
+            else
+            {
 
             }
 
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
                             .format(lAmountToBet)+"** "+CURRENCY, null,
-                    false, pEvent.getUser(), null, null)).queue();
+                    false, lUser, null, null)).queue();
         }
 
     }

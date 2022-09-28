@@ -50,7 +50,7 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"rob", "Robs a user's cash", "user,user,User whose cash you  want to steal,true"},
                     {"top", "Displays the richest people on current server"},
                     {"work", "You earn 1500-2500 wiggles"},
-                    {"spin", "Spins a wheel. You can bet on a color (2x) or a specific number (20x)", "string,color,Color to bet on (red or black),false","int,field,Your guess on the wheel (1-36),false","int,money,Amount of money to bet (leave out to bet all),false"},
+                    {"spin", "Spins a wheel. You can bet on a color (2x) or a specific number (20x)", "string,guess,Color (red or black) or number (1-36) to bet on,true","int,money,Amount of money to bet (leave out to bet all),false"},
                     {"give_admin", "Creates money out of nothing and gives it to a user on your server","user,user,User who will earn the money,true","int,amount,Amount of money,true"},
                     {"get_income_roles","Displays all Income Roles"},
                     {"add_income_role", "Updates or adds an income role", "role,role,Income role,true", "int,income,Amount which is distributed every 6h,true"},
