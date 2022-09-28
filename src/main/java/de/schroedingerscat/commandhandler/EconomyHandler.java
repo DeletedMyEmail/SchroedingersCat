@@ -2,6 +2,7 @@ package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Main;
 import de.schroedingerscat.Utils;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
@@ -42,7 +43,7 @@ public class EconomyHandler extends ListenerAdapter {
     private static final Color ECONOMY_COLOR = new Color(234,217,25);
 
     // HashMap<GuildId, List<Object>{color,number,List<Object>{user,boolean,amount}, List<Channel>},
-    private final HashMap<Long, HashMap<Long, Long[]>> currentSpins;
+    private final HashMap<Long, Object[]> currentSpins;
     // giver's id, receiver's id
     private final HashMap<Long, Long> receiverFromGiveCommand;
     private final Utils utils;
@@ -497,28 +498,13 @@ public class EconomyHandler extends ListenerAdapter {
         long lGuildId = pEvent.getGuild().getIdLong();
         long lUserId = pEvent.getUser().getIdLong();
         long lUsersCash = getWealth(lUserId,lGuildId)[1];
-
-        long lColor = -1;
-        if (pEvent.getOption("color").getAsString().equals("red")) { lColor = 0;}
-        else if (pEvent.getOption("color").getAsString().equals("black")) { lColor = 1;}
-
-        long lField = -1;
-        OptionMapping fieldOption = pEvent.getOption("field");
-        if (fieldOption != null)
-            lField = fieldOption.getAsInt();
-
-
         long lAmountToBet = lUsersCash;
+        String lBetOnTheWheel = "";
+
         if (pEvent.getOption("money") != null)
             lAmountToBet = pEvent.getOption("money").getAsLong();
 
-        if (lColor == -1)
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
-                    Color.red, "", ":x: Please choose red or black as color",
-                    null, false, pEvent.getUser(), null, null
-            )).queue();
-
-        else if (lAmountToBet > getWealth(lUserId, lGuildId)[1] || lAmountToBet <= 0)
+        if (lAmountToBet > lUsersCash || lAmountToBet <= 0)
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
                     Color.red, "", ":x: You don't have enough money or the entered amount is less than 1",
                     null, false, pEvent.getUser(), null, null
@@ -526,55 +512,88 @@ public class EconomyHandler extends ListenerAdapter {
 
         else
         {
-            if (currentSpins.containsKey(lGuildId))
+            Object[] lGuildSpinData = currentSpins.get(lGuildId);
+            if (lGuildSpinData != null)
             {
-                if (currentSpins.get(lGuildId).containsKey(lUserId))
-                {
-                    pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
-                            Color.red, "", ":x: You already bet in this round",
-                            null, false, pEvent.getUser(), null, null
-                    )).queue();
-                    return;
-                }
-                else
-                {
-                    currentSpins.get(lGuildId).put(lUserId, new Long[] { pEvent.getChannel().getIdLong(), lColor, lField, lAmountToBet});
-                }
+                // [0]: String[] lSpinResult ; [1]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
+                // ((String[]) lGuildSpinData[0]) = {};
+
             }
             else
             {
-                HashMap<Long, Long[]> guildMap = new HashMap<>();
-                guildMap.put(lUserId, new Long[] { lColor, lField, lAmountToBet});
-                currentSpins.put(lGuildId, guildMap);
-
                 Timer timer = new Timer();
                 timer.schedule(new TimerTask()
                 {
                     @Override
                     public void run() {
-                        spinResult();
-                        this.cancel();
+
                     }
                 }, 10000);
 
             }
+
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
                             .format(lAmountToBet)+"** "+CURRENCY, null,
-                    false, pEvent.getUser(), null, "10 sec remaining")).queue();
-
-
+                    false, pEvent.getUser(), null, null)).queue();
         }
 
     }
 
     /**
-     *  TODO
+     *
      *
      * */
-    private static void spinResult()
+    private void spinResult(Guild pGuild)
     {
-        System.out.println("Spin Result");
+        Object[] lSpinsOnGuild = currentSpins.get(pGuild.getIdLong());
+        if (lSpinsOnGuild == null) return;
+
+        // [0]: String[] lSpinResult ; [1]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
+
+        List<String[]> lMembersAndTheirBets = (List<String[]>) lSpinsOnGuild[1];
+        String[] lSpinResult = ((String[]) lSpinsOnGuild[0]);
+        List<Long> lChannelIds = (List<Long>) lSpinsOnGuild[2];
+        StringBuilder lDescription = new StringBuilder();
+
+        lDescription.append("The wheel landed on: **"+lSpinResult[0]+" "+lSpinResult[1]+"**");
+
+        lMembersAndTheirBets.forEach(memberAndBet -> {
+            Member lMember = pGuild.getMemberById(memberAndBet[0]);
+            if (lMember == null) return;
+
+            long lAmountWonOrLost;
+            if (memberAndBet[1].compareTo(lSpinResult[0]) == 0)
+            {
+                lAmountWonOrLost = Long.parseLong(memberAndBet[2])*2;
+                lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+            }
+            else if (memberAndBet[1].compareTo(lSpinResult[1]) == 0)
+            {
+                lAmountWonOrLost = Long.parseLong(memberAndBet[2])*20;
+                lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+            }
+            else
+            {
+                lAmountWonOrLost = -Long.parseLong(memberAndBet[2]);
+                lDescription.append(lMember.getAsMention()+" **lost "+NumberFormat.getInstance().format(-lAmountWonOrLost)+"**\n");
+            }
+
+            try {
+                increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
+            }
+            catch (SQLException sqlEx)
+            {
+                lDescription.append("Database error");
+            }
+        });
+
+        lChannelIds.forEach(channelId -> {
+            TextChannel lTextChannel = pGuild.getTextChannelById(channelId);
+            if (lTextChannel != null)
+                lTextChannel.sendMessageEmbeds(utils.createEmbed(ECONOMY_COLOR, "Gambling Results", lDescription.toString(), null, false, null, null, null)).queue();
+        });
+
     }
 
     /**
