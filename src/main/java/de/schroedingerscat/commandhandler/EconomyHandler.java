@@ -514,6 +514,8 @@ public class EconomyHandler extends ListenerAdapter {
         else
         {
             Object[] lGuildSpinData = currentSpins.get(lGuild.getIdLong());
+            increaseBankOrCash(lUser.getIdLong(), lGuild.getIdLong(), -lAmountToBet, "cash");
+
             if (lGuildSpinData == null)
             {
                 // [0]: String[] lSpinResult ; [1]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
@@ -534,8 +536,9 @@ public class EconomyHandler extends ListenerAdapter {
                                 Long.toString(lAmountToBet)
                             });
                         }},
-
-
+                        new ArrayList<Long>(){{
+                            add(pEvent.getChannel().getIdLong());
+                        }},
                 });
 
                 Timer timer = new Timer();
@@ -549,12 +552,22 @@ public class EconomyHandler extends ListenerAdapter {
             }
             else
             {
-
+                List<String[]> lUsersSpinning = (ArrayList<String[]>) currentSpins.get(lGuild.getIdLong())[1];
+                lUsersSpinning.add(
+                    new String[]{
+                        lUser.getId(),
+                        lBetOnTheWheel,
+                        Long.toString(lAmountToBet)
+                    }
+                );
+                List<Long> lGamblingChannels = (ArrayList<Long>) currentSpins.get(lGuild.getIdLong())[2];
+                if (!lGamblingChannels.contains(pEvent.getChannel().getIdLong()))
+                    lGamblingChannels.add(pEvent.getChannel().getIdLong());
             }
 
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
-                            .format(lAmountToBet)+"** "+CURRENCY, null,
+                            .format(lAmountToBet)+"** "+CURRENCY+ " on **"+lBetOnTheWheel+"**", null,
                     false, lUser, null, null)).queue();
         }
 
@@ -571,40 +584,44 @@ public class EconomyHandler extends ListenerAdapter {
 
         // [0]: String[] lSpinResult ; [1]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
 
-        List<String[]> lMembersAndTheirBets = (List<String[]>) lSpinsOnGuild[1];
+        List<String[]> lMembersAndTheirBets = (ArrayList<String[]>) lSpinsOnGuild[1];
         String[] lSpinResult = ((String[]) lSpinsOnGuild[0]);
-        List<Long> lChannelIds = (List<Long>) lSpinsOnGuild[2];
+        List<Long> lChannelIds = (ArrayList<Long>) lSpinsOnGuild[2];
         StringBuilder lDescription = new StringBuilder();
 
-        lDescription.append("The wheel landed on: **"+lSpinResult[0]+" "+lSpinResult[1]+"**");
+        currentSpins.remove(pGuild.getIdLong());
 
+        lDescription.append("The wheel landed on: **"+lSpinResult[0]+" "+lSpinResult[1]+"**\n\n");
         lMembersAndTheirBets.forEach(memberAndBet -> {
             Member lMember = pGuild.getMemberById(memberAndBet[0]);
             if (lMember == null) return;
 
-            long lAmountWonOrLost;
             if (memberAndBet[1].compareTo(lSpinResult[0]) == 0)
             {
-                lAmountWonOrLost = Long.parseLong(memberAndBet[2])*2;
-                lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+                long lAmountWonOrLost = Long.parseLong(memberAndBet[2])*2;
+                try {
+                    increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
+                    lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+                }
+                catch (SQLException sqlEx)
+                {
+                    lDescription.append("Database error");
+                }
             }
             else if (memberAndBet[1].compareTo(lSpinResult[1]) == 0)
             {
-                lAmountWonOrLost = Long.parseLong(memberAndBet[2])*20;
-                lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+                long lAmountWonOrLost = Long.parseLong(memberAndBet[2])*20;
+                try {
+                    increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
+                    lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+                }
+                catch (SQLException sqlEx)
+                {
+                    lDescription.append("Database error");
+                }
             }
-            else
-            {
-                lAmountWonOrLost = -Long.parseLong(memberAndBet[2]);
-                lDescription.append(lMember.getAsMention()+" **lost "+NumberFormat.getInstance().format(-lAmountWonOrLost)+"**\n");
-            }
-
-            try {
-                increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
-            }
-            catch (SQLException sqlEx)
-            {
-                lDescription.append("Database error");
+            else {
+                lDescription.append(lMember.getAsMention()+" **lost "+NumberFormat.getInstance().format(-Long.parseLong(memberAndBet[2]))+"**\n");
             }
         });
 
