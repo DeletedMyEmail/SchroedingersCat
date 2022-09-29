@@ -118,9 +118,6 @@ public class CategorylessHandler extends ListenerAdapter {
                         "bool,inline,Format fields inline,false",
                         "string,fieldtitles,Field titles seperated by semicolon,false",
                         "string,fielddescriptions,Field descriptions seperated by semicolons,false"},
-                    {"ping", "Mentions a user x times",
-                            "user,user,User to mention,true",
-                            "int,amount,How often should the user be mentioned,true"},
                     {"meow", "Meows in your current Voice Channel"},
                         {"aboutme", "Displays your discord stats"},
                     {"box", "Dead or alive?"}
@@ -144,6 +141,7 @@ public class CategorylessHandler extends ListenerAdapter {
                 case "help" -> helpCommand(pEvent);
                 case "embed" -> embedCommand(pEvent);
                 case "aboutme" -> userInfoCommand(pEvent);
+                case "links" -> linkCommand(pEvent);
             }
         }
         catch (NumberFormatException numEx) {
@@ -218,6 +216,23 @@ public class CategorylessHandler extends ListenerAdapter {
                         addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
                         addOption("Moderation","4", Emoji.fromUnicode("U+1F6A8")).
                         addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
+        ).queue();
+    }
+
+    private void linkCommand(SlashCommandInteractionEvent pEvent)
+    {
+        pEvent.replyEmbeds(
+                utils.createEmbed(
+                        CATEGORYLESS_COLOR,
+                        "Links",
+                        "**Support Server**\nhttps://www.discord.gg/XUqU4MpFFF\n\n" +
+                                "**Invite Link**\nhttps://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands\n\n" +
+                                "**Source Code And Examples**\nhttps://github.com/KaitoKunTatsu/SchroedingersCat",
+                        null,
+                        false,
+                        pEvent.getJDA().getUserById("872475386620026971"),
+                        null,
+                        null)
         ).queue();
     }
 

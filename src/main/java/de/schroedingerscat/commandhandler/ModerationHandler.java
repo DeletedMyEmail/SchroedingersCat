@@ -26,24 +26,4 @@ public class ModerationHandler extends ListenerAdapter {
 
     public static Color getCategoryColor() {return MODERATION_COLOR; }
 
-    @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
-    {
-        try
-        {
-            switch (pEvent.getName()) {
-                case "" -> {}
-            }
-        }
-        catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-        }
-        /*catch (
-                SQLException sqlEx)
-        {
-            sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
-        }*/
-    }
-
 }
