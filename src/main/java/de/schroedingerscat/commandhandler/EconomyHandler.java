@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Handles slash commands considering the bot's economy
@@ -497,9 +498,24 @@ public class EconomyHandler extends ListenerAdapter {
 
         Guild lGuild = pEvent.getGuild();
         User lUser = pEvent.getUser();
-        long lUsersCash = getWealth(lUser.getIdLong(),lGuild.getIdLong())[1];
+        final long lUsersCash = getWealth(lUser.getIdLong(),lGuild.getIdLong())[1];
         final long lAmountToBet;
-        String lBetOnTheWheel = "red";
+        final String lBetOnTheWheel;
+
+        OptionMapping lGuessOption = pEvent.getOption("guess");
+        if (lGuessOption != null && (
+                lGuessOption.getAsString().equals("red")
+                || lGuessOption.getAsString().equals("black")
+                || (utils.isInteger(lGuessOption.getAsString()) && 0 < lGuessOption.getAsInt() && lGuessOption.getAsInt() < 37))
+        )
+            lBetOnTheWheel = lGuessOption.getAsString();
+        else {
+            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
+                    Color.red, "", ":x: Your guess can only be a color (red, black) or a number between 1 (inclusive) and 36 (inclusive)",
+                    null, false, lUser, null, null
+            )).queue();
+            return;
+        }
 
         if (pEvent.getOption("money") != null)
             lAmountToBet = pEvent.getOption("money").getAsLong();
@@ -525,6 +541,7 @@ public class EconomyHandler extends ListenerAdapter {
                 if (lRnd.nextBoolean()) lWheelColor = "black";
 
                 currentSpins.put(lGuild.getIdLong(),new Object[]{
+                        System.currentTimeMillis(),
                         new String[] {
                                 lWheelColor,
                                 lWheelnumber
@@ -552,7 +569,7 @@ public class EconomyHandler extends ListenerAdapter {
             }
             else
             {
-                List<String[]> lUsersSpinning = (ArrayList<String[]>) currentSpins.get(lGuild.getIdLong())[1];
+                List<String[]> lUsersSpinning = (ArrayList<String[]>) currentSpins.get(lGuild.getIdLong())[2];
                 lUsersSpinning.add(
                     new String[]{
                         lUser.getId(),
@@ -560,15 +577,16 @@ public class EconomyHandler extends ListenerAdapter {
                         Long.toString(lAmountToBet)
                     }
                 );
-                List<Long> lGamblingChannels = (ArrayList<Long>) currentSpins.get(lGuild.getIdLong())[2];
+                List<Long> lGamblingChannels = (ArrayList<Long>) currentSpins.get(lGuild.getIdLong())[3];
                 if (!lGamblingChannels.contains(pEvent.getChannel().getIdLong()))
                     lGamblingChannels.add(pEvent.getChannel().getIdLong());
             }
+            int lTimeLeft = 10- (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - (Long) currentSpins.get(lGuild.getIdLong())[0]);
 
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
                             .format(lAmountToBet)+"** "+CURRENCY+ " on **"+lBetOnTheWheel+"**", null,
-                    false, lUser, null, null)).queue();
+                    false, lUser, null, lTimeLeft+" seconds remaining")).queue();
         }
 
     }
@@ -584,9 +602,9 @@ public class EconomyHandler extends ListenerAdapter {
 
         // [0]: String[] lSpinResult ; [1]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
 
-        List<String[]> lMembersAndTheirBets = (ArrayList<String[]>) lSpinsOnGuild[1];
-        String[] lSpinResult = ((String[]) lSpinsOnGuild[0]);
-        List<Long> lChannelIds = (ArrayList<Long>) lSpinsOnGuild[2];
+        List<String[]> lMembersAndTheirBets = (ArrayList<String[]>) lSpinsOnGuild[2];
+        String[] lSpinResult = ((String[]) lSpinsOnGuild[1]);
+        List<Long> lChannelIds = (ArrayList<Long>) lSpinsOnGuild[3];
         StringBuilder lDescription = new StringBuilder();
 
         currentSpins.remove(pGuild.getIdLong());

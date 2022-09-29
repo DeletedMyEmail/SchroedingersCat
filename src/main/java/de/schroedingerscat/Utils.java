@@ -193,4 +193,26 @@ public class Utils {
         conn.createStatement().execute(pStatement);
         conn.commit();
     }
+
+    public boolean isInteger(String pString) {
+        if (pString == null || pString.isEmpty())
+            return false;
+
+        int length = pString.length();
+        int i = 0;
+
+        if (pString.charAt(0) == '-') {
+            if (length == 1) {
+                return false;
+            }
+            i = 1;
+        }
+        for (; i < length; i++) {
+            char c = pString.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
 }
