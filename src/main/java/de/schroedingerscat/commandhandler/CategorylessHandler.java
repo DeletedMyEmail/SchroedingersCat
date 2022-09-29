@@ -112,7 +112,7 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"links", "Returns all links considering the bot"},
                     {"cat", "Returns a cute cat pic"},
                     {"embed", "Creates a custom embed",
-                        "int,color,Color as decimal,true",
+                        "string,color,Color as hex code,true",
                         "string,title,Embed title,true",
                         "string,description,Embed description,false",
                         "bool,inline,Format fields inline,false",
@@ -228,6 +228,11 @@ public class CategorylessHandler extends ListenerAdapter {
 
         EmbedBuilder lBuilder = new EmbedBuilder();
 
+        String lHexCode = pEvent.getOption("color").getAsString();
+        if (!lHexCode.startsWith("#"))
+            lHexCode = "#"+lHexCode;
+
+        lBuilder.setColor(Color.decode(lHexCode));
         lBuilder.setTitle(pEvent.getOption("title").getAsString());
 
         boolean lInline = false;
