@@ -80,6 +80,8 @@ public class TrackScheduler extends AudioEventAdapter {
             player.playTrack(this.trackQueue.element().getLeft());
     }
 
+    public void clearQueue() {this.trackQueue.clear();}
+
     public boolean isEmpty() {return this.trackQueue.isEmpty();}
 
     public void setTextChannel(TextChannel pTextChannel) {this.commandChannel = pTextChannel; }

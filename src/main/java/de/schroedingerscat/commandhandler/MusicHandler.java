@@ -69,6 +69,7 @@ public class MusicHandler extends ListenerAdapter {
         if (allowedToUseCommand(pEvent.getHook()))
         {
             pEvent.getGuild().getAudioManager().closeAudioConnection();
+            playerManager.getGuildMusicManager(pEvent.getGuild()).getTrackScheduler().clearQueue();
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Left your voice channel", pEvent.getUser())).queue();
         }
     }

@@ -101,7 +101,7 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"disconnect", "Disconnects the bot from your current voice channel"},
                     {"pause", "Pauses the current track playing in your voice channel"},
                     {"resume", "Resumes stopped track"},
-                    {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"}
+                    {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"},
                 },
                 {
                     // Others
