@@ -2,9 +2,11 @@ package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
 import de.schroedingerscat.music.PlayerManager;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.awt.*;
@@ -33,19 +35,18 @@ public class MusicHandler extends ListenerAdapter {
     {
         switch (pEvent.getName())
         {
-            case "play_track" -> playTrackHandlerCommand(pEvent);
+            case "play_track" -> playTrackCommand(pEvent);
             case "disconnect" -> disconnectCommand(pEvent);
+            case "pause" -> pauseCommand(pEvent);
+            case "resume" -> resumeCommand(pEvent);
+            case "skip" ->skipCommand(pEvent);
         }
     }
 
-    private void playTrackHandlerCommand(SlashCommandInteractionEvent pEvent)
+    private void playTrackCommand(SlashCommandInteractionEvent pEvent)
     {
         pEvent.deferReply().queue();
-        if (!pEvent.getMember().getVoiceState().inAudioChannel())
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You need to be in a voice channel to play music", pEvent.getUser())).queue();
-        else if (pEvent.getGuild().getSelfMember().getVoiceState().inAudioChannel())
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: The cat is already connected to a channel", pEvent.getUser())).queue();
-        else
+        if (allowedToUseCommand(pEvent.getHook()))
         {
             AudioManager lAudioManager = pEvent.getGuild().getAudioManager();
             VoiceChannel lVoiceChannel = (VoiceChannel) pEvent.getMember().getVoiceState().getChannel();
@@ -57,25 +58,55 @@ public class MusicHandler extends ListenerAdapter {
             if (!isUrl(lTrackUrl))
                 lTrackUrl = "ytsearch:"+lTrackUrl+" audio";
 
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Searching for your track...", pEvent.getUser())).queue();
-            playerManager.loadAndPlay(pEvent.getHook(), lTrackUrl);
+            playerManager.loadAndPlay(pEvent.getHook(), pEvent.getChannel().asTextChannel(), lTrackUrl);
         }
     }
 
     private void disconnectCommand(SlashCommandInteractionEvent pEvent)
     {
         pEvent.deferReply().queue();
-        if (!pEvent.getGuild().getSelfMember().getVoiceState().inAudioChannel())
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: The cat is not connected to a channel", pEvent.getUser())).queue();
-
-        else if (!pEvent.getMember().getVoiceState().inAudioChannel() || !pEvent.getMember().getVoiceState().getChannel().equals(pEvent.getGuild().getSelfMember().getVoiceState().getChannel()))
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You need to be connect to the same voice channel as the cat", pEvent.getUser())).queue();
-
-        else
+        if (allowedToUseCommand(pEvent.getHook()))
         {
             pEvent.getGuild().getAudioManager().closeAudioConnection();
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Left your voice channel", pEvent.getUser())).queue();
         }
+    }
+
+    private void pauseCommand(SlashCommandInteractionEvent pEvent)
+    {
+
+    }
+
+    private void resumeCommand(SlashCommandInteractionEvent pEvent)
+    {
+
+    }
+
+    private void skipCommand(SlashCommandInteractionEvent pEvent)
+    {
+        int lAmountToSkip = 1;
+        if (pEvent.getOption("amount") != null)
+            lAmountToSkip = pEvent.getOption("amount").getAsInt();
+        if (lAmountToSkip < 1)
+            pEvent.replyEmbeds(Utils.createEmbed(Color.red, ":x:  You can't skip less than 1 track",pEvent.getUser())).queue();
+        else {
+            pEvent.deferReply().queue();
+            playerManager.getGuildMusicManager(pEvent.getGuild()).getTrackScheduler().skipTracks(lAmountToSkip);
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Skipped **"+lAmountToSkip+"** track(s)",pEvent.getUser())).queue();
+        }
+    }
+
+    private boolean allowedToUseCommand(InteractionHook pHook) {
+        Member lMember = pHook.getInteraction().getMember();
+        if (!lMember.getVoiceState().inAudioChannel()) {
+            pHook.editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You need to be in a voice channel to use this command", lMember.getUser())).queue();
+            return false;
+        }
+        if (pHook.getInteraction().getGuild().getSelfMember().getVoiceState().inAudioChannel() && lMember.getGuild().getSelfMember().getVoiceState().equals(lMember.getVoiceState().getChannel())) {
+            pHook.editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: The cat is connected to another channel", lMember.getUser())).queue();
+            return false;
+        }
+        return true;
     }
 
     private boolean isUrl(String pUrl)

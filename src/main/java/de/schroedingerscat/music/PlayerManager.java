@@ -11,6 +11,7 @@ import de.schroedingerscat.Main;
 import de.schroedingerscat.Utils;
 import de.schroedingerscat.commandhandler.MusicHandler;
 import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 
 import java.awt.*;
@@ -48,34 +49,24 @@ public class PlayerManager {
         });
     }
 
-    public void loadAndPlay(InteractionHook pHook, String pTrackUrl)
+    public void loadAndPlay(InteractionHook pHook, TextChannel pChannel, String pTrackUrl)
     {
         GuildMusicManager lGuildMusicManager = getGuildMusicManager(pHook.getInteraction().getGuild());
+        lGuildMusicManager.getTrackScheduler().setTextChannel(pChannel);
         playerManager.loadItemOrdered(lGuildMusicManager, pTrackUrl, new AudioLoadResultHandler()
         {
 
             @Override
-            public void trackLoaded(AudioTrack pTrack) {
-                lGuildMusicManager.getTrackScheduler().queueTrack(pTrack);
-                pHook.editOriginalEmbeds(Utils.createEmbed(
-                        MusicHandler.getCategoryColor(),
-                        ":white_check_mark: Adding **"+pTrack.getInfo().title+"** by **"+pTrack.getInfo().author+"** to queue",
-                        Main.getJDA().getUserById("872475386620026971"))
-                ).queue();
+            public void trackLoaded(AudioTrack pTrack)
+            {
+                respond(pTrack, lGuildMusicManager, pHook);
             }
 
             @Override
-            public void playlistLoaded(AudioPlaylist pAudioPlaylist) {
-                if (pAudioPlaylist.getTracks().isEmpty()) return;
-
-                AudioTrack lTrack = pAudioPlaylist.getTracks().get(0);
-
-                lGuildMusicManager.getTrackScheduler().queueTrack(lTrack);
-                pHook.editOriginalEmbeds(Utils.createEmbed(
-                        MusicHandler.getCategoryColor(),
-                        ":white_check_mark: Adding **"+lTrack.getInfo().title+"** by **"+lTrack.getInfo().author+"** to queue",
-                        Main.getJDA().getUserById("872475386620026971"))
-                ).queue();
+            public void playlistLoaded(AudioPlaylist pAudioPlaylist)
+            {
+                if (!pAudioPlaylist.getTracks().isEmpty())
+                    respond(pAudioPlaylist.getTracks().get(0), lGuildMusicManager, pHook);
             }
 
             @Override
@@ -84,13 +75,29 @@ public class PlayerManager {
                 pHook.editOriginalEmbeds(Utils.createEmbed(
                         Color.red,
                         ":x: Track not found",
-                        Main.getJDA().getUserById("872475386620026971")))
+                                pHook.getInteraction().getUser()))
                         .queue();
             }
 
             @Override
             public void loadFailed(FriendlyException pEx) {
+                pHook.editOriginalEmbeds(Utils.createEmbed(
+                                Color.red,
+                                ":x: Loading track failed",
+                                pHook.getInteraction().getUser()))
+                        .queue();
+            }
 
+            private void respond(AudioTrack pTrack, GuildMusicManager lGuildMusicManager, InteractionHook pHook) {
+                lGuildMusicManager.getTrackScheduler().queueTrack(pTrack, pHook.getInteraction().getUser().getAsMention());
+                String lPlayingOrAdded = "Added to queue:";
+                if (lGuildMusicManager.getTrackScheduler().isEmpty()) lPlayingOrAdded = "Playing:";
+
+                pHook.editOriginalEmbeds(Utils.createEmbed(
+                        MusicHandler.getCategoryColor(),
+                        ":white_check_mark: "+lPlayingOrAdded+" `"+pTrack.getInfo().title+"` by `"+pTrack.getInfo().author+"`",
+                        pHook.getInteraction().getUser())
+                ).queue();
             }
         });
     }

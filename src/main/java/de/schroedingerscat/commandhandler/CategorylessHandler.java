@@ -22,7 +22,7 @@ import java.util.List;
  * Handles slash commands which can't be categorized
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 2.0.0 | last edit: 26.09.2022
+ * @version 2.0.0 | last edit: 30.09.2022
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
@@ -98,7 +98,10 @@ public class CategorylessHandler extends ListenerAdapter {
                 {
                     // Music
                     {"play_track", "Takes an url or song title, searches on youtube an plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
-                    {"disconnect", "Disconnects the bot from your current voice channel"}
+                    {"disconnect", "Disconnects the bot from your current voice channel"},
+                    {"pause", "Pauses the current track playing in your voice channel"},
+                    {"resume", "Resumes stopped track"},
+                    {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"}
                 },
                 {
                     // Others
@@ -135,7 +138,7 @@ public class CategorylessHandler extends ListenerAdapter {
                 case "help" -> helpCommand(pEvent);
                 case "embed" -> embedCommand(pEvent);
                 case "aboutme" -> userInfoCommand(pEvent);
-                case "links" -> linkCommand(pEvent);
+                case "links" -> linksCommand(pEvent);
             }
         }
         catch (NumberFormatException numEx) {
@@ -213,7 +216,7 @@ public class CategorylessHandler extends ListenerAdapter {
         ).queue();
     }
 
-    private void linkCommand(SlashCommandInteractionEvent pEvent)
+    private void linksCommand(SlashCommandInteractionEvent pEvent)
     {
         pEvent.replyEmbeds(
                 Utils.createEmbed(
@@ -221,7 +224,8 @@ public class CategorylessHandler extends ListenerAdapter {
                         "Links",
                         "**Support Server**\nhttps://www.discord.gg/XUqU4MpFFF\n\n" +
                                 "**Invite Link**\nhttps://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands\n\n" +
-                                "**Source Code And Examples**\nhttps://github.com/KaitoKunTatsu/SchroedingersCat",
+                                "**Source Code And Examples**\nhttps://github.com/KaitoKunTatsu/SchroedingersCat\n\n" +
+                                "**TopGG**\nhttps://top.gg/bot/872475386620026971",
                         null,
                         false,
                         pEvent.getJDA().getUserById("872475386620026971"),
