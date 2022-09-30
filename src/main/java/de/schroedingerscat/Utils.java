@@ -74,32 +74,6 @@ public class Utils {
             conn.commit();
     }
 
-    public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription,
-                                    String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter)
-    {
-        EmbedBuilder builder = new EmbedBuilder();
-
-        if (!pTitle.isEmpty()) builder.setTitle(pTitle);
-        if (!pDescription.isEmpty()) builder.setDescription(pDescription);
-        if (pAuthor != null) builder.setAuthor(pAuthor.getAsTag(), null, pAuthor.getAvatarUrl());
-        if (pImageUrl != null) builder.setImage(pImageUrl);
-        if (pFooter != null) builder.setFooter(pFooter);
-
-        if (pFields != null)
-            for (String[] field : pFields)
-            {
-                builder.addField(field[0], field[1], inline);
-            }
-
-        builder.setColor(pColor);
-        return builder.build();
-    }
-
-    public MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor)
-    {
-        return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
-    }
-
     public boolean authorizeMember(Member pMember, String pPermission) throws SQLException
     {
         if (pMember.hasPermission(Permission.ADMINISTRATOR)) return true;
@@ -132,24 +106,7 @@ public class Utils {
      * @return a {@link ResultSet} containing the result of your SQL statement
      * */
     public ResultSet onQuery(String pStatement, Object... pSet) throws SQLException {
-        PreparedStatement stmt = conn.prepareStatement(pStatement);
-        if (pSet != null)
-        {
-            for (int i = 0; i < pSet.length; i++) {
-                if (Blob.class.equals(pSet[i].getClass())) stmt.setBlob(i + 1, (Blob) pSet[i]);
-                else if (byte[].class.equals(pSet[i].getClass())) stmt.setBytes(i + 1, (byte[]) pSet[i]);
-                else if (byte.class.equals(pSet[i].getClass())) stmt.setByte(i + 1, (byte) pSet[i]);
-                else if (String.class.equals(pSet[i].getClass())) stmt.setString(i + 1, (String) pSet[i]);
-                else if (Integer.class.equals(pSet[i].getClass())) stmt.setInt(i + 1, (Integer) pSet[i]);
-                else if (Long.class.equals(pSet[i].getClass())) stmt.setLong(i + 1, (Long) pSet[i]);
-                else if (Boolean.class.equals(pSet[i].getClass())) stmt.setBoolean(i + 1, (Boolean) pSet[i]);
-                else if (Double.class.equals(pSet[i].getClass())) stmt.setDouble(i + 1, (Double) pSet[i]);
-                else if (Date.class.equals(pSet[i].getClass())) stmt.setDate(i + 1, (Date) pSet[i]);
-            }
-        }
-        ResultSet rs = stmt.executeQuery();
-        stmt.clearParameters();
-        return rs;
+        return insertVaraibles(pStatement, pSet).executeQuery();
     }
 
     /**
@@ -165,25 +122,8 @@ public class Utils {
      * @param pSet Each ? in the statment will be replaced with the content of this array
      * */
     public void onExecute(String pStatement, Object... pSet) throws SQLException {
-        PreparedStatement stmt = conn.prepareStatement(pStatement);
-        if (pSet != null)
-        {
-            for (int i=0; i < pSet.length; i++)
-            {
-                if (Blob.class.equals(pSet[i].getClass())) stmt.setBlob(i + 1, (Blob) pSet[i]);
-                else if (byte[].class.equals(pSet[i].getClass())) stmt.setBytes(i + 1, (byte[]) pSet[i]);
-                else if (byte.class.equals(pSet[i].getClass())) stmt.setByte(i + 1, (byte) pSet[i]);
-                else if (String.class.equals(pSet[i].getClass())) stmt.setString(i + 1, (String) pSet[i]);
-                else if (Integer.class.equals(pSet[i].getClass())) stmt.setInt(i + 1, (Integer) pSet[i]);
-                else if (Long.class.equals(pSet[i].getClass())) stmt.setLong(i + 1, (Long) pSet[i]);
-                else if (Boolean.class.equals(pSet[i].getClass())) stmt.setBoolean(i + 1, (Boolean) pSet[i]);
-                else if (Double.class.equals(pSet[i].getClass())) stmt.setDouble(i + 1, (Double) pSet[i]);
-                else if (Date.class.equals(pSet[i].getClass())) stmt.setDate(i + 1, (Date) pSet[i]);
-            }
-        }
-        stmt.execute();
+        insertVaraibles(pStatement, pSet).execute();
         conn.commit();
-        stmt.clearParameters();
     }
 
     /**
@@ -214,5 +154,51 @@ public class Utils {
             }
         }
         return true;
+    }
+
+    private PreparedStatement insertVaraibles(String pStatement, Object[] pSet) throws SQLException {
+        PreparedStatement lStatement = conn.prepareStatement(pStatement);
+        if (pSet != null)
+        {
+            for (int i=0; i < pSet.length; i++)
+            {
+                if (Blob.class.equals(pSet[i].getClass())) lStatement.setBlob(i + 1, (Blob) pSet[i]);
+                else if (byte[].class.equals(pSet[i].getClass())) lStatement.setBytes(i + 1, (byte[]) pSet[i]);
+                else if (byte.class.equals(pSet[i].getClass())) lStatement.setByte(i + 1, (byte) pSet[i]);
+                else if (String.class.equals(pSet[i].getClass())) lStatement.setString(i + 1, (String) pSet[i]);
+                else if (Integer.class.equals(pSet[i].getClass())) lStatement.setInt(i + 1, (Integer) pSet[i]);
+                else if (Long.class.equals(pSet[i].getClass())) lStatement.setLong(i + 1, (Long) pSet[i]);
+                else if (Boolean.class.equals(pSet[i].getClass())) lStatement.setBoolean(i + 1, (Boolean) pSet[i]);
+                else if (Double.class.equals(pSet[i].getClass())) lStatement.setDouble(i + 1, (Double) pSet[i]);
+                else if (Date.class.equals(pSet[i].getClass())) lStatement.setDate(i + 1, (Date) pSet[i]);
+            }
+        }
+        return lStatement;
+    }
+
+    public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription,
+                                           String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter)
+    {
+        EmbedBuilder builder = new EmbedBuilder();
+
+        if (!pTitle.isEmpty()) builder.setTitle(pTitle);
+        if (!pDescription.isEmpty()) builder.setDescription(pDescription);
+        if (pAuthor != null) builder.setAuthor(pAuthor.getName(), null, pAuthor.getAvatarUrl());
+        if (pImageUrl != null) builder.setImage(pImageUrl);
+        if (pFooter != null) builder.setFooter(pFooter);
+
+        if (pFields != null)
+            for (String[] field : pFields)
+            {
+                builder.addField(field[0], field[1], inline);
+            }
+
+        builder.setColor(pColor);
+        return builder.build();
+    }
+
+    public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor)
+    {
+        return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
     }
 }

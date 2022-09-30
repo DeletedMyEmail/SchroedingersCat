@@ -26,7 +26,7 @@ import java.util.List;
 public class ReactionRoleHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    private static final Color REACTION_ROLE_COLOR = new Color(158,242,79);
+    private static final Color REACTION_ROLE_COLOR = new Color(87, 77, 229);
 
     private final Utils utils;
 

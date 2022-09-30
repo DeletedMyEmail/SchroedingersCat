@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -26,13 +27,13 @@ import java.util.List;
 public class CategorylessHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    private static final Color CATEGORYLESS_COLOR = new Color(192,214,203);
+    private static final Color CATEGORYLESS_COLOR = new Color(165, 172, 167);
 
     // Command categories
     private static final String[] categories =
             {
                 "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                "**:wrench: Server Settings**", "**:rotating_light: Moderation**", "**:grey_question: Others**"
+                "**:wrench: Server Settings**", "**:musical_note: Music**", "**:grey_question: Others**"
             };
 
     // All commands and their options
@@ -81,7 +82,6 @@ public class CategorylessHandler extends ListenerAdapter {
                 },
                 {
                     // Server Settings
-                    //**Note:** The `Schroedinger's Cat` role has to be higher than normal user to manage roles, and you have to be an admin to use this commands
                     {"get_info", "Displays the server settings"},
                     {"set_welcome", "Sets the channel and text for Welcome Messages",
                             "channel,channel,Channel where the messages will be send,true",
@@ -96,15 +96,9 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                 },
                 {
-                    // Moderation
-                    {"clear", "Deletes a specified amount of messages in your text channel",
-                        "int,amount, Amount of messages to delete,true"},
-                    {"kick", "Kicks a user from the server and sends him a private message with the reason",
-                        "user,user,User you want to kick,true",
-                        "string,reason,Reason for this action,false"},
-                    {"ban", "Bans a user from the server and sends him a private message with the reason",
-                                "user,user,User you want to ban,true",
-                                "string,reason,Reason for this action,false"}
+                    // Music
+                    {"play_track", "Takes an url or song title, searches on youtube an plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
+                    {"disconnect", "Disconnects the bot from your current voice channel"}
                 },
                 {
                     // Others
@@ -119,7 +113,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         "string,fieldtitles,Field titles seperated by semicolon,false",
                         "string,fielddescriptions,Field descriptions seperated by semicolons,false"},
                     {"meow", "Meows in your current Voice Channel"},
-                        {"aboutme", "Displays your discord stats"},
+                    {"aboutme", "Displays your discord stats"},
                     {"box", "Dead or alive?"}
                 }
             };
@@ -133,7 +127,7 @@ public class CategorylessHandler extends ListenerAdapter {
     // Events
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent pEvent)
     {
         try
         {
@@ -145,20 +139,20 @@ public class CategorylessHandler extends ListenerAdapter {
             }
         }
         catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
         catch (NullPointerException nullEx) {
             nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -180,11 +174,11 @@ public class CategorylessHandler extends ListenerAdapter {
             case 1 -> lColor = AutoChannelHandler.getCategoryColor();
             case 2 -> lColor = ReactionRoleHandler.getCategoryColor();
             case 3 -> lColor = SettingsHandler.getCategoryColor();
-            case 4 -> lColor = ModerationHandler.getCategoryColor();
+            case 4 -> lColor = MusicHandler.getCategoryColor();
             case 5 -> lColor = CATEGORYLESS_COLOR;
         }
 
-        MessageEmbed embed = utils.createEmbed(
+        MessageEmbed embed = Utils.createEmbed(
                 lColor, categories[Integer.parseInt(pEvent.getValues().get(0))]+" Commands", "",
                 lFields.toArray(new String[][]{}), true, null, null, null);
         pEvent.getHook().editOriginalEmbeds(embed).queue();
@@ -193,13 +187,13 @@ public class CategorylessHandler extends ListenerAdapter {
     // Slash Commands
 
     /**
-     * TODO:
+     *
      *
      * */
     private void helpCommand(SlashCommandInteractionEvent pEvent)
     {
         pEvent.replyEmbeds(
-                utils.createEmbed(
+                Utils.createEmbed(
                         CATEGORYLESS_COLOR,
                         "",
                         "Schroedinger's Cat is **open source**! Source code and example videos can be found on https://github.com/KaitoKunTatsu/SchroedingersCat .\n\n**Select a category to see commands:**",
@@ -214,7 +208,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
                         addOption("ReactionRoles","2", Emoji.fromUnicode("U+1F3AD")).
                         addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
-                        addOption("Moderation","4", Emoji.fromUnicode("U+1F6A8")).
+                        addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
                         addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
@@ -222,7 +216,7 @@ public class CategorylessHandler extends ListenerAdapter {
     private void linkCommand(SlashCommandInteractionEvent pEvent)
     {
         pEvent.replyEmbeds(
-                utils.createEmbed(
+                Utils.createEmbed(
                         CATEGORYLESS_COLOR,
                         "Links",
                         "**Support Server**\nhttps://www.discord.gg/XUqU4MpFFF\n\n" +
@@ -261,7 +255,7 @@ public class CategorylessHandler extends ListenerAdapter {
             if (lDescriptions.length != lTitles.length)
             {
                 pEvent.getHook()
-                    .editOriginalEmbeds(utils.createEmbed(Color.red, "",":x: Each field must have a title and description", null, false, pEvent.getUser(), null, null))
+                    .editOriginalEmbeds(Utils.createEmbed(Color.red, "",":x: Each field must have a title and description", null, false, pEvent.getUser(), null, null))
                     .queue();
                 return;
             }
@@ -286,12 +280,11 @@ public class CategorylessHandler extends ListenerAdapter {
     }
 
     /**
-     * TODO:
-     *
+     * TODO
      * */
     private void userInfoCommand(SlashCommandInteractionEvent event)
     {
-        event.replyEmbeds(utils.createEmbed(CATEGORYLESS_COLOR, event.getUser().getTimeCreated().format(DateTimeFormatter.RFC_1123_DATE_TIME), event.getUser())).queue();
+        event.replyEmbeds(Utils.createEmbed(CATEGORYLESS_COLOR, event.getUser().getTimeCreated().format(DateTimeFormatter.RFC_1123_DATE_TIME), event.getUser())).queue();
     }
 
     public String[] getCategories() {return categories;}

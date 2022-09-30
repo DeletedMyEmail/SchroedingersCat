@@ -70,7 +70,7 @@ public class Main {
                 new ReactionRoleHandler(lUtils),
                 new SettingsHandler(lUtils),
                 new CategorylessHandler(lUtils),
-                new ModerationHandler(lUtils),
+                new MusicHandler(),
                 new ExceptionHandler()
         );
 

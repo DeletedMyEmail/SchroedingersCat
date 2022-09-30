@@ -27,7 +27,7 @@ import java.time.format.DateTimeFormatter;
 public class SettingsHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    private static final Color SERVERSETTINGS_COLOR = new Color(252,229,159);
+    private static final Color SERVERSETTINGS_COLOR = new Color(243, 214, 93);
 
     private final Utils utils;
 

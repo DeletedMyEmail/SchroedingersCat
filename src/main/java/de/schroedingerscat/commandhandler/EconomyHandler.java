@@ -81,20 +81,20 @@ public class EconomyHandler extends ListenerAdapter {
             }
         }
         catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
         catch (NullPointerException nullEx) {
             nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -117,20 +117,20 @@ public class EconomyHandler extends ListenerAdapter {
             }
         }
         catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
         catch (NullPointerException nullEx) {
             nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -157,20 +157,20 @@ public class EconomyHandler extends ListenerAdapter {
             }
         }
         catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
         catch (NullPointerException nullEx) {
             nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -189,20 +189,20 @@ public class EconomyHandler extends ListenerAdapter {
             }
         }
         catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
         catch (NullPointerException nullEx) {
             nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -225,7 +225,7 @@ public class EconomyHandler extends ListenerAdapter {
                         .format(lWealth[1])+" "+CURRENCY},
         };
 
-        pHook.editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", "", lFields, false, pUserWhoseBalance.getUser(), null, null)).queue();
+        pHook.editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "", "", lFields, false, pUserWhoseBalance.getUser(), null, null)).queue();
     }
 
     private void balCommand(@NotNull GenericCommandInteractionEvent pEvent, Member pOtherMember) throws SQLException
@@ -260,7 +260,7 @@ public class EconomyHandler extends ListenerAdapter {
         increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
         setCooldownInMillis(lMemberId, lGuildId, 0, 180000);
         pEvent.getHook().editOriginalEmbeds(
-                utils.createEmbed(
+                Utils.createEmbed(
                         ECONOMY_COLOR,
                         "",
                         ":white_check_mark: You earned **"+ NumberFormat.getInstance()
@@ -293,14 +293,14 @@ public class EconomyHandler extends ListenerAdapter {
             increaseBankOrCash(lMemberId, lGuildId, -lGainedMoney, "cash");
             String description = ":x: You got caught while commiting a crime and paid **"+NumberFormat.getInstance()
                     .format(lGainedMoney)+"** "+CURRENCY;
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "", description, null, false, pEvent.getUser(), null, null)).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "", description, null, false, pEvent.getUser(), null, null)).queue();
         }
         else
         {
             increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
             setCooldownInMillis(lMemberId, lGuildId, 1, 360000);
             pEvent.getHook().editOriginalEmbeds(
-                    utils.createEmbed(
+                    Utils.createEmbed(
                             ECONOMY_COLOR,
                             "",
                             ":white_check_mark: You earned **"+NumberFormat.getInstance()
@@ -327,7 +327,7 @@ public class EconomyHandler extends ListenerAdapter {
                 Button.success("EconomyCashButton", Emoji.fromUnicode("U+1F4B5").getAsReactionCode()+" Cash values")
         };
         pEvent.getHook().
-                editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "Choose which amount you want to see", pEvent.getUser())).
+                editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "Choose which amount you want to see", pEvent.getUser())).
                 setActionRow(lButtons).queue();
     }
     /**
@@ -366,7 +366,7 @@ public class EconomyHandler extends ListenerAdapter {
             lDescription = "There aren't any users with "+pCashOrBank.toLowerCase()+" value";
         }
 
-        lEmbed = utils.createEmbed(ECONOMY_COLOR, "TOP "+pCashOrBank.toUpperCase()+" VALUES",
+        lEmbed = Utils.createEmbed(ECONOMY_COLOR, "TOP "+pCashOrBank.toUpperCase()+" VALUES",
                 lDescription, null, false, null, null, null);
         return lEmbed;
     }
@@ -388,14 +388,14 @@ public class EconomyHandler extends ListenerAdapter {
 
         if (lAmount > lUsersWealth[0])
         {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(
+            event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: The given amount is higher than your bank value",
                     null, false, event.getUser(), null, null)).queue();
 
         }
         else if (lAmount <= 0)
         {
-            event.getHook().editOriginalEmbeds(utils.createEmbed(
+            event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: You can't with less than 1",
                     null, false, event.getUser(), null, null)).queue();
         }
@@ -403,7 +403,7 @@ public class EconomyHandler extends ListenerAdapter {
         {
             increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), +lAmount, "cash");
             increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), -lAmount, "bank");
-            event.getHook().editOriginalEmbeds(utils.createEmbed(
+            event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Withdrawed **"+NumberFormat.getInstance()
                             .format(lAmount)+"** "+ CURRENCY +" from your bank",
                     null, false, event.getUser(), null, null)).queue();
@@ -425,19 +425,19 @@ public class EconomyHandler extends ListenerAdapter {
             lAmountToDep = event.getOption("amount").getAsLong();
 
         if (lAmountToDep > lWealth[1])
-            event.getHook().editOriginalEmbeds(utils.createEmbed(
+            event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: The given amount is higher than your cash value",
                     null, false, event.getUser(), null, null)).queue();
 
         else if (lAmountToDep < 1)
-            event.getHook().editOriginalEmbeds(utils.createEmbed(
+            event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: You can't deposite less than 1",
                     null, false, event.getUser(), null, null)).queue();
 
         else
         {
             setBankAndCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), lWealth[0]+lAmountToDep, lWealth[1]-lAmountToDep);
-            event.getHook().editOriginalEmbeds(utils.createEmbed(
+            event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Deposited **"+NumberFormat.getInstance()
                             .format(lAmountToDep)+ "** "+CURRENCY +" to your bank",
                     null, false, event.getUser(), null, null)).queue();
@@ -460,7 +460,7 @@ public class EconomyHandler extends ListenerAdapter {
     {
         if (pRobber.equals(pMemberToRob))
         {
-            pHook.editOriginalEmbeds(utils.createEmbed(
+            pHook.editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: You can't rob yourself",
                     null, false, pRobber.getUser(), null, null)).queue();
             return;
@@ -480,7 +480,7 @@ public class EconomyHandler extends ListenerAdapter {
                 lDescription = ":x: You got caught robbing "+pMemberToRob.getAsMention()+" and paid **"+NumberFormat.getInstance()
                         .format(lostValue)+"** "+ CURRENCY;
             }
-            pHook.editOriginalEmbeds(utils.createEmbed(
+            pHook.editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", lDescription,
                     null, false, pRobber.getUser(), null, null)).queue();
         }
@@ -489,7 +489,7 @@ public class EconomyHandler extends ListenerAdapter {
             increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), +lMemberToRobCash, "cash");
             increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lRobberWealth[1], "cash");
             setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
-            pHook.editOriginalEmbeds(utils.createEmbed(
+            pHook.editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Successfully robbed "+
                             pMemberToRob.getAsMention()+" and got **"+NumberFormat.getInstance()
                             .format(lMemberToRobCash)+"** "+CURRENCY,
@@ -520,7 +520,7 @@ public class EconomyHandler extends ListenerAdapter {
         )
             lBetOnTheWheel = lGuessOption.getAsString();
         else {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: Your guess can only be a color (red, black) or a number between 1 (inclusive) and 36 (inclusive)",
                     null, false, lUser, null, null
             )).queue();
@@ -532,7 +532,7 @@ public class EconomyHandler extends ListenerAdapter {
         else lAmountToBet = lUsersCash;
 
         if (lAmountToBet > lUsersCash || lAmountToBet <= 0)
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: You don't have enough money or the entered amount is less than 1",
                     null, false, lUser, null, null
             )).queue();
@@ -593,7 +593,7 @@ public class EconomyHandler extends ListenerAdapter {
             }
             int lTimeLeft = 10- (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - (Long) currentSpins.get(lGuild.getIdLong())[0]);
 
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
                             .format(lAmountToBet)+"** "+CURRENCY+ " on **"+lBetOnTheWheel+"**", null,
                     false, lUser, null, lTimeLeft+" seconds remaining")).queue();
