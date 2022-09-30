@@ -6,6 +6,15 @@ import net.dv8tion.jda.api.audio.AudioSendHandler;
 
 import java.nio.ByteBuffer;
 
+/**
+ *
+ * Credits:<br>
+ * <a href="https://github.com/sedmelluq/lavaplayer">Lavaplayer</a> <br>
+ * <a href="https://youtu.be/1ClKoOCeeIQ">Some help for audio classes</a>
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 2.0.0 | last edit: 30.09.2022
+ * */
 public class AudioPlayerSendHandler implements AudioSendHandler {
 
     private final AudioPlayer audioPlayer;

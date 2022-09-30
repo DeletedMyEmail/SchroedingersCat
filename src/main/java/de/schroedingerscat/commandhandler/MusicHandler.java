@@ -1,7 +1,6 @@
 package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
-import de.schroedingerscat.music.GuildMusicManager;
 import de.schroedingerscat.music.PlayerManager;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -12,6 +11,12 @@ import java.awt.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 
+/**
+ *
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 2.0.0 | last edit: 30.09.2022
+ * */
 public class MusicHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
