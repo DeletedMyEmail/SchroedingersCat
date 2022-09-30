@@ -1,5 +1,6 @@
 package de.schroedingerscat.commandhandler;
 
+import de.schroedingerscat.Main;
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.Channel;
@@ -44,6 +45,7 @@ public class SettingsHandler extends ListenerAdapter {
             utils.onExecute("INSERT INTO GuildSettings (guild_id) VALUES (?)", pEvent.getGuild().getIdLong());
         }
         catch (SQLException ignored) {}
+        Main.updateBotListApi();
     }
 
     @Override

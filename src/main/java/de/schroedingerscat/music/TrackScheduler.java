@@ -55,7 +55,9 @@ public class TrackScheduler extends AudioEventAdapter {
     @Override
     public void onTrackEnd(AudioPlayer pPlayer, AudioTrack pTrack, AudioTrackEndReason pEndReason)
     {
-        if (pEndReason.mayStartNext )
+        if (trackQueue.isEmpty())
+            commandChannel.getGuild().getAudioManager().closeAudioConnection();
+        else if (pEndReason.mayStartNext )
             this.player.startTrack(this.trackQueue.element().getLeft(), false);
     }
 
@@ -69,10 +71,13 @@ public class TrackScheduler extends AudioEventAdapter {
     {
         if (pAmountOfTracks > trackQueue.size())
             pAmountOfTracks = trackQueue.size();
-        for (int i = 1; i < trackQueue.size(); ++i) {
+        for (int i = 1; i < pAmountOfTracks; ++i) {
             trackQueue.remove();
         }
-        player.playTrack(this.trackQueue.element().getLeft());
+        if (trackQueue.isEmpty())
+            player.stopTrack();
+        else
+            player.playTrack(this.trackQueue.element().getLeft());
     }
 
     public boolean isEmpty() {return this.trackQueue.isEmpty();}

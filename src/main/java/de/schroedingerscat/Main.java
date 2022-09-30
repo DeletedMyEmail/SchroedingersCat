@@ -13,6 +13,7 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
+import org.discordbots.api.client.DiscordBotListAPI;
 
 import javax.security.auth.login.LoginException;
 import java.io.File;
@@ -33,32 +34,39 @@ import java.util.Scanner;
 public class Main {
 
     private static JDA JDA;
+    private static DiscordBotListAPI botListAPI;
 
-    public Main() {
-        String lToken = "";
+    public static void initBotAndApi()
+    {
+
+        String lBotToken = "";
+        String lApiToken = "";
+        Utils lUtils = null;
+
         try
         {
             File lTokenFile = new File("src/main/resources/tokenFile.txt");
             Scanner lReader = new Scanner(lTokenFile);
-            lToken = lReader.nextLine();
-            lReader.close();
-        }
-        catch (IOException io) {
-            System.out.println("Could not read token " + io);
-        }
+            lBotToken = lReader.nextLine();
+            if (lReader.hasNext())
+                lApiToken = lReader.nextLine();
 
-        Utils lUtils = null;
-        try
-        {
+            lReader.close();
+
             lUtils = new Utils("src/main/resources/catbot.db");
             lUtils.createTables();
         }
-        catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
+        catch (IOException | SQLException ex) {
+            ex.printStackTrace();
             System.exit(1);
         }
 
-        JDABuilder lBuilder = JDABuilder.createDefault(lToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
+        botListAPI = new DiscordBotListAPI.Builder()
+                .token(lApiToken)
+                .botId("872475386620026971")
+                .build();
+
+        JDABuilder lBuilder = JDABuilder.createDefault(lBotToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_BANS);
 
         lBuilder.setMemberCachePolicy(MemberCachePolicy.ALL);
@@ -77,15 +85,7 @@ public class Main {
         lBuilder.setStatus(OnlineStatus.ONLINE);
         lBuilder.setActivity(Activity.watching("/help"));
 
-        try {
-            JDA = lBuilder.build();
-            JDA.awaitReady();
-            addSlashCommands(JDA, CategorylessHandler.getCommands());
-        } catch (InterruptedException loginException) {
-            System.out.println("Login failed");
-            System.exit(0);
-        }
-
+        JDA = lBuilder.build();
     }
 
     /**
@@ -93,7 +93,7 @@ public class Main {
      *
      * @param pJDA - JDA on which commands will be added
      * */
-    public void addSlashCommands(JDA pJDA, String[][][] pCommands)
+    public static void addSlashCommands(JDA pJDA, String[][][] pCommands)
     {
         List<CommandData> lCommands = new ArrayList<>();
         for(String[][] category : pCommands)
@@ -129,9 +129,16 @@ public class Main {
         System.out.println("Commands updated");
     }
 
+    public static void updateBotListApi() {
+        if (botListAPI != null)
+            botListAPI.setStats(JDA.getGuilds().size());
+    }
+
     public static JDA getJDA() {return JDA; }
 
-    public static void main(String[] args) {
-        new Main();
+    public static void main(String[] args) throws InterruptedException {
+        Main.initBotAndApi();
+        Main.getJDA().awaitReady();
+        Main.addSlashCommands(Main.JDA, CategorylessHandler.getCommands());
     }
 }

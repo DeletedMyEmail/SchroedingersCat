@@ -1,5 +1,6 @@
 package de.schroedingerscat.commandhandler;
 
+import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import de.schroedingerscat.Utils;
 import de.schroedingerscat.music.PlayerManager;
 import net.dv8tion.jda.api.entities.Member;
@@ -74,23 +75,43 @@ public class MusicHandler extends ListenerAdapter {
 
     private void pauseCommand(SlashCommandInteractionEvent pEvent)
     {
+        pEvent.deferReply().queue();
+        if (!allowedToUseCommand(pEvent.getHook())) return;
 
+        AudioPlayer lGuildsPlayer = playerManager.getGuildMusicManager(pEvent.getGuild()).getPlayer();
+        if (lGuildsPlayer.isPaused())
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Track is already paused",pEvent.getUser())).queue();
+        else {
+            lGuildsPlayer.setPaused(true);
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Paused track: `"+lGuildsPlayer.getPlayingTrack().getInfo().title+"`",pEvent.getUser())).queue();
+        }
     }
 
     private void resumeCommand(SlashCommandInteractionEvent pEvent)
     {
+        pEvent.deferReply().queue();
+        if (!allowedToUseCommand(pEvent.getHook())) return;
 
+        AudioPlayer lGuildsPlayer = playerManager.getGuildMusicManager(pEvent.getGuild()).getPlayer();
+        if (!lGuildsPlayer.isPaused())
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Track already playing",pEvent.getUser())).queue();
+        else {
+            lGuildsPlayer.setPaused(false);
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Resumed track: `"+lGuildsPlayer.getPlayingTrack().getInfo().title+"`",pEvent.getUser())).queue();
+        }
     }
 
     private void skipCommand(SlashCommandInteractionEvent pEvent)
     {
+        pEvent.deferReply().queue();
+        if (!allowedToUseCommand(pEvent.getHook())) return;
+
         int lAmountToSkip = 1;
         if (pEvent.getOption("amount") != null)
             lAmountToSkip = pEvent.getOption("amount").getAsInt();
         if (lAmountToSkip < 1)
-            pEvent.replyEmbeds(Utils.createEmbed(Color.red, ":x:  You can't skip less than 1 track",pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x:  You can't skip less than 1 track",pEvent.getUser())).queue();
         else {
-            pEvent.deferReply().queue();
             playerManager.getGuildMusicManager(pEvent.getGuild()).getTrackScheduler().skipTracks(lAmountToSkip);
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(MUSIC_COLOR, ":white_check_mark: Skipped **"+lAmountToSkip+"** track(s)",pEvent.getUser())).queue();
         }
