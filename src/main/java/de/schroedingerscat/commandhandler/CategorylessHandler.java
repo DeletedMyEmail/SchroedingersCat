@@ -114,10 +114,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         "string,description,Embed description,false",
                         "bool,inline,Format fields inline,false",
                         "string,fieldtitles,Field titles seperated by semicolon,false",
-                        "string,fielddescriptions,Field descriptions seperated by semicolons,false"},
-                    {"meow", "Meows in your current Voice Channel"},
-                    {"aboutme", "Displays your discord stats"},
-                    {"box", "Dead or alive?"}
+                        "string,fielddescriptions,Field descriptions seperated by semicolons,false"}
                 }
             };
 
@@ -137,7 +134,6 @@ public class CategorylessHandler extends ListenerAdapter {
             switch (pEvent.getName()) {
                 case "help" -> helpCommand(pEvent);
                 case "embed" -> embedCommand(pEvent);
-                case "aboutme" -> userInfoCommand(pEvent);
                 case "links" -> linksCommand(pEvent);
             }
         }
@@ -162,6 +158,8 @@ public class CategorylessHandler extends ListenerAdapter {
     @Override
     public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent)
     {
+        if (!pEvent.getComponent().getId().equals("HelpMenu")) return;
+
         pEvent.deferEdit().queue();
 
         int lCategoryAsValue = Integer.parseInt(pEvent.getValues().get(0));
@@ -283,12 +281,9 @@ public class CategorylessHandler extends ListenerAdapter {
         pEvent.getHook().editOriginalEmbeds(lBuilder.build()).queue();
     }
 
-    /**
-     * TODO
-     * */
-    private void userInfoCommand(SlashCommandInteractionEvent event)
+    private void catCommand(SlashCommandInteractionEvent pEvent)
     {
-        event.replyEmbeds(Utils.createEmbed(CATEGORYLESS_COLOR, event.getUser().getTimeCreated().format(DateTimeFormatter.RFC_1123_DATE_TIME), event.getUser())).queue();
+
     }
 
     public String[] getCategories() {return categories;}

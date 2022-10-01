@@ -7,15 +7,17 @@ import com.sedmelluq.discord.lavaplayer.source.AudioSourceManagers;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
 import com.sedmelluq.discord.lavaplayer.track.AudioPlaylist;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import de.schroedingerscat.Main;
 import de.schroedingerscat.Utils;
 import de.schroedingerscat.commandhandler.MusicHandler;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.LayoutComponent;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
 
-import java.awt.*;
+import java.awt.Color;
 import java.util.HashMap;
+import java.util.List;
 
 /**
  *
@@ -49,7 +51,7 @@ public class PlayerManager {
         });
     }
 
-    public void loadAndPlay(InteractionHook pHook, TextChannel pChannel, String pTrackUrl)
+    public void loadAndPlay(InteractionHook pHook, TextChannel pChannel, String pTrackUrl, boolean pIsSearch)
     {
         GuildMusicManager lGuildMusicManager = getGuildMusicManager(pHook.getInteraction().getGuild());
         lGuildMusicManager.getTrackScheduler().setTextChannel(pChannel);
@@ -59,14 +61,34 @@ public class PlayerManager {
             @Override
             public void trackLoaded(AudioTrack pTrack)
             {
-                respond(pTrack, lGuildMusicManager, pHook);
+                lGuildMusicManager.getTrackScheduler().queueTrack(pTrack, pHook.getInteraction().getUser().getAsMention());
+                String lPlayingOrAdded = "Added to queue:";
+                if (lGuildMusicManager.getTrackScheduler().isEmpty()) lPlayingOrAdded = "Playing:";
+
+                pHook.editOriginalEmbeds(Utils.createEmbed(
+                        MusicHandler.getCategoryColor(),
+                        ":white_check_mark: "+lPlayingOrAdded+" `"+pTrack.getInfo().title+"` by `"+pTrack.getInfo().author+"`",
+                        pHook.getInteraction().getUser())
+                ).queue();
             }
 
             @Override
             public void playlistLoaded(AudioPlaylist pAudioPlaylist)
             {
-                if (!pAudioPlaylist.getTracks().isEmpty())
-                    respond(pAudioPlaylist.getTracks().get(0), lGuildMusicManager, pHook);
+                if (!pIsSearch) return;
+
+                SelectMenu.Builder lMenu = SelectMenu.create("TrackSelection");
+                List<AudioTrack> lTracks = pAudioPlaylist.getTracks();
+                StringBuilder lDescription = new StringBuilder("**Choose one of the following search results:**\n\n");
+                for (int i = 0; i < lTracks.size() && i < 10; i++)
+                {
+                    lMenu.addOption(
+                            lTracks.get(i).getInfo().title + " by " + lTracks.get(i).getInfo().author,
+                            lTracks.get(i).getIdentifier()
+                    );
+                    lDescription.append("**").append(i+1).append(".** ").append(lTracks.get(i).getInfo().title).append(" by ").append(lTracks.get(i).getInfo().author).append("\n");
+                }
+                pHook.editOriginalEmbeds(Utils.createEmbed(MusicHandler.getCategoryColor(), lDescription.toString(), pHook.getJDA().getSelfUser())).setActionRow(lMenu.build()).queue();
             }
 
             @Override
@@ -86,18 +108,6 @@ public class PlayerManager {
                                 ":x: Loading track failed",
                                 pHook.getInteraction().getUser()))
                         .queue();
-            }
-
-            private void respond(AudioTrack pTrack, GuildMusicManager lGuildMusicManager, InteractionHook pHook) {
-                lGuildMusicManager.getTrackScheduler().queueTrack(pTrack, pHook.getInteraction().getUser().getAsMention());
-                String lPlayingOrAdded = "Added to queue:";
-                if (lGuildMusicManager.getTrackScheduler().isEmpty()) lPlayingOrAdded = "Playing:";
-
-                pHook.editOriginalEmbeds(Utils.createEmbed(
-                        MusicHandler.getCategoryColor(),
-                        ":white_check_mark: "+lPlayingOrAdded+" `"+pTrack.getInfo().title+"` by `"+pTrack.getInfo().author+"`",
-                        pHook.getInteraction().getUser())
-                ).queue();
             }
         });
     }

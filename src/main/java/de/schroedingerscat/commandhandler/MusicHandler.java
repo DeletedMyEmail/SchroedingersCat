@@ -4,12 +4,15 @@ import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import de.schroedingerscat.Utils;
 import de.schroedingerscat.music.PlayerManager;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.AudioManager;
 
+import javax.annotation.Nonnull;
 import java.awt.*;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -44,22 +47,32 @@ public class MusicHandler extends ListenerAdapter {
         }
     }
 
-    private void playTrackCommand(SlashCommandInteractionEvent pEvent)
+    @Override
+    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent)
     {
+        if (!pEvent.getComponent().getId().equals("TrackSelection")) return;
         pEvent.deferReply().queue();
-        if (allowedToUseCommand(pEvent.getHook()))
+        playTrackCommand(pEvent.getHook(), pEvent.getValues().get(0), pEvent.getChannel().asTextChannel());
+    }
+
+    private void playTrackCommand(SlashCommandInteractionEvent pEvent) {
+        pEvent.deferReply().queue();
+        playTrackCommand(pEvent.getHook(), pEvent.getOption("track").getAsString(), pEvent.getChannel().asTextChannel());
+    }
+
+    private void playTrackCommand(InteractionHook pHook, String pTrackUrlOrName, TextChannel pChannel)
+    {
+        if (allowedToUseCommand(pHook))
         {
-            AudioManager lAudioManager = pEvent.getGuild().getAudioManager();
-            VoiceChannel lVoiceChannel = (VoiceChannel) pEvent.getMember().getVoiceState().getChannel();
+            AudioManager lAudioManager = pHook.getInteraction().getGuild().getAudioManager();
+            VoiceChannel lVoiceChannel = (VoiceChannel) pHook.getInteraction().getMember().getVoiceState().getChannel();
 
-            lAudioManager.openAudioConnection(lVoiceChannel);
-
-            String lTrackUrl = pEvent.getOption("track").getAsString();
-
-            if (!isUrl(lTrackUrl))
-                lTrackUrl = "ytsearch:"+lTrackUrl+" audio";
-
-            playerManager.loadAndPlay(pEvent.getHook(), pEvent.getChannel().asTextChannel(), lTrackUrl);
+            if (!isUrl(pTrackUrlOrName)) {
+                pTrackUrlOrName = "ytsearch:" + pTrackUrlOrName + " audio";
+            }
+            if (!lAudioManager.isConnected())
+                lAudioManager.openAudioConnection(lVoiceChannel);
+            playerManager.loadAndPlay(pHook, pChannel, pTrackUrlOrName, true);
         }
     }
 
@@ -124,7 +137,7 @@ public class MusicHandler extends ListenerAdapter {
             pHook.editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You need to be in a voice channel to use this command", lMember.getUser())).queue();
             return false;
         }
-        if (pHook.getInteraction().getGuild().getSelfMember().getVoiceState().inAudioChannel() && lMember.getGuild().getSelfMember().getVoiceState().equals(lMember.getVoiceState().getChannel())) {
+        if (lMember.getGuild().getSelfMember().getVoiceState().inAudioChannel() && !lMember.getGuild().getSelfMember().getVoiceState().getChannel().equals(lMember.getVoiceState().getChannel())) {
             pHook.editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: The cat is connected to another channel", lMember.getUser())).queue();
             return false;
         }
