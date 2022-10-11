@@ -27,10 +27,10 @@ Schroedinger's Cat is an easy-to-use discord bot providing slash commands to mak
   
 ## Links
 
-  **TopGG**<br>
+  #### TopGG <br>
   https://top.gg/de/bot/872475386620026971<br>
   <br>
-  **Support Server**<br>
+  #### Support Server <br>
   https://discord.gg/XUqU4MpFFF
 
 ## Examples
