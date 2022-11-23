@@ -97,7 +97,7 @@ public class CategorylessHandler extends ListenerAdapter {
                 },
                 {
                     // Music
-                    {"play_track", "Takes an url or song title, searches on youtube an plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
+                    {"play_track", "Takes an url or song title, searches on youtube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
                     {"disconnect", "Disconnects the bot from your current voice channel"},
                     {"pause", "Pauses the current track playing in your voice channel"},
                     {"resume", "Resumes stopped track"},
