@@ -22,12 +22,12 @@ Schroedinger's Cat is an easy-to-use discord bot providing slash commands to mak
    - Automated / Reaction Roles
    - Gambling / Economy
    - Welcome Messages
-   - Music
+   - Music (implemented but deactivated)
    - Cats
   
 ## Links
 
-  #### TopGG <br>
+  #### Top.gg <br>
   https://top.gg/de/bot/872475386620026971<br>
   
   #### Support Server <br>
