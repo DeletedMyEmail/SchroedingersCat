@@ -8,14 +8,19 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 
 /**
@@ -95,14 +100,13 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"set_editor_role", "Sets the role needed to edit any kind of settings with the bot", "role,role,Role needed to edit any kind of settings,true"},
                     {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                 },
-                {
-                    // Music
+                /*{       MUSIC
                     {"play_track", "Takes an url or song title, searches on youtube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
                     {"disconnect", "Disconnects the bot from your current voice channel"},
                     {"pause", "Pauses the current track playing in your voice channel"},
                     {"resume", "Resumes stopped track"},
                     {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"},
-                },
+                },*/
                 {
                     // Others
                     {"help", "Gives information about the commands"},
@@ -135,6 +139,7 @@ public class CategorylessHandler extends ListenerAdapter {
                 case "help" -> helpCommand(pEvent);
                 case "embed" -> embedCommand(pEvent);
                 case "links" -> linksCommand(pEvent);
+                case "cat" -> catCommand(pEvent);
             }
         }
         catch (NumberFormatException numEx) {
@@ -281,9 +286,12 @@ public class CategorylessHandler extends ListenerAdapter {
         pEvent.getHook().editOriginalEmbeds(lBuilder.build()).queue();
     }
 
-    private void catCommand(SlashCommandInteractionEvent pEvent)
-    {
-
+    private void catCommand(SlashCommandInteractionEvent pEvent) throws FileNotFoundException {
+        pEvent.deferReply().queue();
+        int lNum = new Random().nextInt(21);
+        FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".png");
+        MessageEmbed lEmbed = Utils.createEmbed(CATEGORYLESS_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.png",null);
+        pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
     }
 
     public String[] getCategories() {return categories;}
