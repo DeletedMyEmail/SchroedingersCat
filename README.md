@@ -4,7 +4,7 @@
 
 <div>
    <a href="https://top.gg/bot/872475386620026971">
-      <img src="https://top.gg/api/widget/872475386620026971.svg">
+      <img src="https://top.gg/api/widget/servers/872475386620026971.svg">
    </a>
    <a href="https://www.discord.gg/XUqU4MpFFF">
       <img src="https://discordapp.com/api/guilds/872891293733388320/widget.png">
