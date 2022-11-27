@@ -426,7 +426,7 @@ public class AutoChannelHandler extends ListenerAdapter {
     }
 
     private void createCustomChannel(VoiceChannel pJoinedChannel, Member pMember) {
-        VoiceChannel lCreateChannel = null;
+        VoiceChannel lCreateChannel;
         try {
             lCreateChannel = getAutoCreateChannelForGuild(pJoinedChannel.getGuild());
         } catch (SQLException sqlEx) {
@@ -437,7 +437,7 @@ public class AutoChannelHandler extends ListenerAdapter {
         // Create custom voice if joined create channel
         if (lCreateChannel != null && lCreateChannel.equals(pJoinedChannel))
         {
-            pJoinedChannel.getGuild().createVoiceChannel(pMember.getEffectiveName()).queue(channel ->
+            pJoinedChannel.getGuild().createVoiceChannel(pMember.getEffectiveName(), lCreateChannel.getParentCategory()).setPosition(lCreateChannel.getPosition()+1).queue(channel ->
                     {
                         try
                         {
@@ -446,13 +446,11 @@ public class AutoChannelHandler extends ListenerAdapter {
                                     pJoinedChannel.getGuild().getIdLong(),
                                     pMember.getIdLong(),
                                     channel.getIdLong());
+                            pJoinedChannel.getGuild().moveVoiceMember(pMember, channel).queue();
                         }
-                        catch(SQLException sqlException)
-                        {
+                        catch(SQLException sqlException) {
                             sqlException.printStackTrace();
-                            return;
                         }
-                        pJoinedChannel.getGuild().moveVoiceMember(pMember, channel).queue();
                     }
             );
         }
