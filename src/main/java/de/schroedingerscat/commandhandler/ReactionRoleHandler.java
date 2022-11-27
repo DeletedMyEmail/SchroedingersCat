@@ -129,8 +129,7 @@ public class ReactionRoleHandler extends ListenerAdapter {
                 }
             });
         }
-        catch (NullPointerException nullEx) {
-            nullEx.printStackTrace();
+        catch (NullPointerException | IllegalStateException ex) {
             pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
     }

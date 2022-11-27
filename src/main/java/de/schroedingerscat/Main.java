@@ -1,5 +1,6 @@
 package de.schroedingerscat;
 
+import KLibrary.utils.SystemUtils;
 import de.schroedingerscat.commandhandler.*;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -28,49 +29,43 @@ import java.util.Scanner;
  * Main class for Schroder's Cat Discord Bot <br/>
  * Starts every essential instance, database connection and the JDA
  *
- * @author Joshua | KaitoKunTatsu
- * @version v2.0
- * */
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 2.0.0 | last edit: 25.09.2022
+ **/
 public class Main {
 
     private static JDA JDA;
     private static DiscordBotListAPI botListAPI;
 
-    public static void initBotAndApi()
-    {
+    /**
+     *
+     *
+     *
+     * */
+    public static void initBotAndApi() throws SQLException, IOException {
+        String lAppPath = SystemUtils.getLocalApplicationPath()+"/SchroedingersCat";
+        SystemUtils.createDirIfNotExists(lAppPath);
+        new File(lAppPath+"catbot.db").createNewFile();
+        Utils lUtils = new Utils(lAppPath+"/catbot.db");
+        lUtils.createTables();
+        File lTokenFile = new File(lAppPath+"/tokenfile.txt");
+        lTokenFile.createNewFile();
+        Scanner lReader = new Scanner(lTokenFile);
+        String lBotToken = lReader.nextLine();
 
-        String lBotToken = "";
-        String lApiToken = "";
-        Utils lUtils = null;
-
-        try
-        {
-            File lTokenFile = new File("src/main/resources/tokenFile.txt");
-            Scanner lReader = new Scanner(lTokenFile);
-            lBotToken = lReader.nextLine();
-            if (lReader.hasNext())
-                lApiToken = lReader.nextLine();
-
-            lReader.close();
-
-            lUtils = new Utils("src/main/resources/catbot.db");
-            lUtils.createTables();
-        }
-        catch (IOException | SQLException ex) {
-            ex.printStackTrace();
-            System.exit(1);
-        }
-
-        botListAPI = new DiscordBotListAPI.Builder()
-                .token(lApiToken)
-                .botId("872475386620026971")
-                .build();
+        if (lReader.hasNext())
+            botListAPI = new DiscordBotListAPI.Builder()
+                    .token(lReader.nextLine())
+                    .botId("872475386620026971")
+                    .build();
+        else
+            botListAPI = null;
+        lReader.close();
 
         JDABuilder lBuilder = JDABuilder.createDefault(lBotToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_BANS);
 
         lBuilder.setMemberCachePolicy(MemberCachePolicy.ALL);
-
         lBuilder.addEventListeners(
                 new AutoChannelHandler(lUtils),
                 new AutoRoleHandler(lUtils),
@@ -78,7 +73,7 @@ public class Main {
                 new ReactionRoleHandler(lUtils),
                 new SettingsHandler(lUtils),
                 new CategorylessHandler(lUtils),
-                new MusicHandler(),
+                //new MusicHandler(),
                 new ExceptionHandler()
         );
 
@@ -91,7 +86,7 @@ public class Main {
     /**
      *
      *
-     * @param pJDA - JDA on which commands will be added
+     *
      * */
     public static void addSlashCommands(JDA pJDA, String[][][] pCommands)
     {
@@ -129,14 +124,24 @@ public class Main {
         System.out.println("Commands updated");
     }
 
+    /**
+     *
+     *
+     *
+     * */
     public static void updateBotListApi() {
         if (botListAPI != null)
             botListAPI.setStats(JDA.getGuilds().size());
     }
 
+    /**
+     *
+     *
+     *
+     * */
     public static JDA getJDA() {return JDA; }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, SQLException, IOException {
         Main.initBotAndApi();
         Main.getJDA().awaitReady();
         Main.addSlashCommands(Main.JDA, CategorylessHandler.getCommands());
