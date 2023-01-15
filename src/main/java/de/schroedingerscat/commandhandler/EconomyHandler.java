@@ -345,7 +345,7 @@ public class EconomyHandler extends ListenerAdapter {
         String lDescription = "";
         int lCounter = 1;
 
-        lRs = utils.onQuery("SELECT DISTINCT user_id, "+pCashOrBank.toLowerCase()+" FROM Economy WHERE guild_id="+pGuildId+" ORDER BY cash DESC LIMIT 10");
+        lRs = utils.onQuery("SELECT DISTINCT user_id, "+pCashOrBank.toLowerCase()+" FROM Economy WHERE guild_id="+pGuildId+" ORDER BY cash "+pCashOrBank.toLowerCase()+" DESC LIMIT 10");
 
         while(lRs.next() && lCounter < 11)
         {
