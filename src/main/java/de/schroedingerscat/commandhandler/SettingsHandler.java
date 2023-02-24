@@ -1,6 +1,6 @@
 package de.schroedingerscat.commandhandler;
 
-import de.schroedingerscat.Main;
+import de.schroedingerscat.BotApplication;
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.entities.Role;
 import net.dv8tion.jda.api.entities.channel.Channel;
@@ -30,22 +30,23 @@ public class SettingsHandler extends ListenerAdapter {
     /** Default color of this category to be used for embeds */
     private static final Color SERVERSETTINGS_COLOR = new Color(243, 214, 93);
 
+    private final BotApplication botApplication;
     private final Utils utils;
 
-    public SettingsHandler(Utils pUtils) {
+    public SettingsHandler(Utils pUtils, BotApplication pBotApplication) {
         this.utils = pUtils;
+        this.botApplication = pBotApplication;
     }
 
     // Events
 
     @Override
-    public void onGuildJoin(GuildJoinEvent pEvent)
-    {
+    public void onGuildJoin(GuildJoinEvent pEvent) {
         try {
             utils.onExecute("INSERT INTO GuildSettings (guild_id) VALUES (?)", pEvent.getGuild().getIdLong());
         }
         catch (SQLException ignored) {}
-        Main.updateBotListApi();
+        botApplication.updateBotListApi();
     }
 
     @Override
@@ -63,7 +64,7 @@ public class SettingsHandler extends ListenerAdapter {
                             pEvent.getUser().getAsMention()
                         )
                         .addEmbeds(
-                                utils.createEmbed(
+                                Utils.createEmbed(
                                         SERVERSETTINGS_COLOR,
                                         "",
                                         lMessage,
@@ -95,20 +96,20 @@ public class SettingsHandler extends ListenerAdapter {
             }
         }
         catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx)
         {
             sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
         catch (NullPointerException nullEx) {
             nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
         }
         catch (Exception ex) {
             ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
         }
     }
 
@@ -173,7 +174,7 @@ public class SettingsHandler extends ListenerAdapter {
         };
 
         pEvent.getHook().editOriginalEmbeds(
-                utils.createEmbed(SERVERSETTINGS_COLOR, ":wrench: Server Info", "", lFields, true , null, "https://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands", null)).queue();
+                Utils.createEmbed(SERVERSETTINGS_COLOR, ":wrench: Server Info", "", lFields, true , null, "https://discord.com/api/oauth2/authorize?client_id=872475386620026971&permissions=1101960473814&scope=bot%20applications.commands", null)).queue();
 
     }
 
@@ -181,40 +182,37 @@ public class SettingsHandler extends ListenerAdapter {
      *
      *
      * */
-    private void setRoleCommand(SlashCommandInteractionEvent pEvent, String pRole) throws SQLException
-    {
+    private void setRoleCommand(SlashCommandInteractionEvent pEvent, String pRole) throws SQLException {
         pEvent.deferReply().queue();
         if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
         Role lRole = pEvent.getOption("role").getAsRole();
 
         utils.onExecute("UPDATE GuildSettings SET "+pRole+"_role_id = ? WHERE guild_id = ?", lRole.getIdLong(), pEvent.getGuild().getIdLong());
-        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the "+pRole+" role to "+lRole.getAsMention(), pEvent.getUser())).queue();
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the "+pRole+" role to "+lRole.getAsMention(), pEvent.getUser())).queue();
     }
 
-    private void setWelcomeCommand(SlashCommandInteractionEvent pEvent) throws SQLException
-    {
+    private void setWelcomeCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
         if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
         Channel lChannel = pEvent.getOption("channel").getAsChannel();
         if (lChannel.getType() != ChannelType.TEXT) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Please select a proper text channel", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Please select a proper text channel", pEvent.getUser())).queue();
             return;
         }
 
         String lMessage = pEvent.getOption("message").getAsString();
 
         utils.onExecute("UPDATE GuildSettings SET welcome_channel_id = ?, welcome_message = ? WHERE guild_id = ?", lChannel.getIdLong(), lMessage, pEvent.getGuild().getIdLong());
-        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the welcome channel to "+lChannel.getAsMention()+" and the message: **"+lMessage+"**", pEvent.getUser())).queue();
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the welcome channel to "+lChannel.getAsMention()+" and the message: **"+lMessage+"**", pEvent.getUser())).queue();
     }
 
     /**
      *
      *
      * */
-    private void resetSettingsCommand(SlashCommandInteractionEvent pEvent) throws SQLException
-    {
+    private void resetSettingsCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
         if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
@@ -223,14 +221,8 @@ public class SettingsHandler extends ListenerAdapter {
                         " editor_role_id = null, moderator_role_id = null, welcome_message = null, welcome_channel_id = null , log_channel_id = null, screening = false, create_channel_id = null, auto_role_id = null" +
                         " WHERE guild_id = ?",
                 pEvent.getGuild().getIdLong());
-        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Server settings reset", pEvent.getUser())).queue();
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Server settings reset", pEvent.getUser())).queue();
     }
-
-    // Other private methods
-
-
-
-    // Getter
 
     public static Color getCategoryColor() {return SERVERSETTINGS_COLOR; }
 }

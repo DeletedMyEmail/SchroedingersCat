@@ -1,6 +1,6 @@
 package de.schroedingerscat.commandhandler;
 
-import de.schroedingerscat.Main;
+import de.schroedingerscat.BotApplication;
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
@@ -18,6 +18,7 @@ import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
+import org.discordbots.api.client.entity.Bot;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -48,10 +49,13 @@ public class EconomyHandler extends ListenerAdapter {
     private final HashMap<Long, HashMap<Long, Long[]>> commandsCooldown;
     // giver's id, receiver's id
     private final HashMap<Long, Long> receiverFromGiveCommand;
+    private final BotApplication botApplication;
     private final Utils utils;
 
-    public EconomyHandler(Utils pUtils) {
+    public EconomyHandler(Utils pUtils, BotApplication pBotApplication) {
         this.utils = pUtils;
+        this.botApplication = pBotApplication;
+
         currentSpins = new HashMap<>();
         receiverFromGiveCommand = new HashMap<>();
         commandsCooldown = new HashMap<>();
@@ -338,8 +342,7 @@ public class EconomyHandler extends ListenerAdapter {
      *                    If it's not "cash" or "bank", the embed will display an empty list
      * @return Returns the mentioned embed
      * */
-    private MessageEmbed topEmbed(long pGuildId, String pCashOrBank) throws SQLException
-    {
+    private MessageEmbed topEmbed(long pGuildId, String pCashOrBank) throws SQLException {
         MessageEmbed lEmbed;
         ResultSet lRs;
         String lDescription = "";
@@ -349,7 +352,7 @@ public class EconomyHandler extends ListenerAdapter {
 
         while(lRs.next() && lCounter < 11)
         {
-            Member member = Main.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong("user_id"));
+            Member member = botApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong("user_id"));
             if (member == null)
                 utils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong("user_id"), pGuildId);
 
@@ -828,7 +831,7 @@ public class EconomyHandler extends ListenerAdapter {
             while(lRs.next()) {
                 try
                 {
-                    Guild lGuild = Main.getJDA().getGuildById(lRs.getLong("guild_id"));
+                    Guild lGuild = botApplication.getJDA().getGuildById(lRs.getLong("guild_id"));
                     Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
                     List<Member> lMemberWithRole = lGuild.findMembersWithRoles(lRole).get();
                     lMemberWithRole.forEach(member -> {

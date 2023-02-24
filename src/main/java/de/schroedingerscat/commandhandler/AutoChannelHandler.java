@@ -234,7 +234,7 @@ public class AutoChannelHandler extends ListenerAdapter {
     }
 
     /**
-     * Changes to owner of the custom channel the member who triggered the event is currently connected to themself
+     * Changes to owner of the custom channel the member who triggered the event is currently connected to themselves
      *
      * @param pEvent    Event triggered by a user using a slash command
      * */

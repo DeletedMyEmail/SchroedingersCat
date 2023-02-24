@@ -13,11 +13,9 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.sql.SQLException;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -35,19 +33,18 @@ public class CategorylessHandler extends ListenerAdapter {
     private static final Color CATEGORYLESS_COLOR = new Color(165, 172, 167);
 
     // Command categories
-    private static final String[] categories =
+    private static final String[] CATEGORIES =
             {
                 "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                "**:wrench: Server Settings**",// "**:musical_note: Music**",
+                "**:wrench: Server Settings**", // "**:musical_note: Music**",
                 "**:grey_question: Others**"
             };
 
     // All commands and their options
-    private static final String[][][] commands =
+    private static final String[][][] COMMANDS =
             {
-                {
                     // Name | Description | options (type, name, description, required)
-
+                {
                     // Economy
                     {"bal", "Displays balance of specific user", "user,user,User whose wealth you want to see,false"},
                     {"dep", "Deposites your money to your bank", "int,amount,Amount of money you want to deposite,false"},
@@ -101,13 +98,13 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"set_editor_role", "Sets the role needed to edit any kind of settings with the bot", "role,role,Role needed to edit any kind of settings,true"},
                     {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                 },
-                /*{       MUSIC
+                {       // Music
                     {"play_track", "Takes an url or song title, searches on youtube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
                     {"disconnect", "Disconnects the bot from your current voice channel"},
                     {"pause", "Pauses the current track playing in your voice channel"},
                     {"resume", "Resumes stopped track"},
                     {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"},
-                },*/
+                },
                 {
                     // Others
                     {"help", "Gives information about the commands"},
@@ -132,10 +129,8 @@ public class CategorylessHandler extends ListenerAdapter {
     // Events
 
     @Override
-    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent pEvent)
-    {
-        try
-        {
+    public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent pEvent) {
+        try {
             switch (pEvent.getName()) {
                 case "help" -> helpCommand(pEvent);
                 case "embed" -> embedCommand(pEvent);
@@ -162,8 +157,7 @@ public class CategorylessHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent)
-    {
+    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent) {
         if (!pEvent.getComponent().getId().equals("HelpMenu")) return;
 
         pEvent.deferEdit().queue();
@@ -171,7 +165,7 @@ public class CategorylessHandler extends ListenerAdapter {
         int lCategoryAsValue = Integer.parseInt(pEvent.getValues().get(0));
 
         List<String[]> lFields = new ArrayList<>();
-        for (String[] cmds : commands[lCategoryAsValue]) {
+        for (String[] cmds : COMMANDS[lCategoryAsValue]) {
             lFields.add(new String[] { cmds[0],cmds[1] });
         }
 
@@ -181,12 +175,12 @@ public class CategorylessHandler extends ListenerAdapter {
             case 1 -> lColor = AutoChannelHandler.getCategoryColor();
             case 2 -> lColor = ReactionRoleHandler.getCategoryColor();
             case 3 -> lColor = SettingsHandler.getCategoryColor();
-            //case 4 -> lColor = MusicHandler.getCategoryColor();
-            case 4 -> lColor = CATEGORYLESS_COLOR;
+            case 4 -> lColor = MusicHandler.getCategoryColor();
+            case 5 -> lColor = CATEGORYLESS_COLOR;
         }
 
         MessageEmbed embed = Utils.createEmbed(
-                lColor, categories[Integer.parseInt(pEvent.getValues().get(0))]+" Commands", "",
+                lColor, CATEGORIES[Integer.parseInt(pEvent.getValues().get(0))]+" Commands", "",
                 lFields.toArray(new String[][]{}), true, null, null, null);
         pEvent.getHook().editOriginalEmbeds(embed).queue();
     }
@@ -197,8 +191,7 @@ public class CategorylessHandler extends ListenerAdapter {
      *
      *
      * */
-    private void helpCommand(SlashCommandInteractionEvent pEvent)
-    {
+    private void helpCommand(SlashCommandInteractionEvent pEvent) {
         pEvent.replyEmbeds(
                 Utils.createEmbed(
                         CATEGORYLESS_COLOR,
@@ -206,7 +199,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         "Schroedinger's Cat is **open source**! Source code and example videos can be found on https://github.com/KaitoKunTatsu/SchroedingersCat .\n\n**Select a category to see commands:**",
                         null,
                         false,
-                        pEvent.getJDA().getUserById("872475386620026971"),
+                        pEvent.getJDA().getSelfUser(),
                         null,
                         null)
         ).addActionRow(
@@ -215,7 +208,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
                         addOption("ReactionRoles","2", Emoji.fromUnicode("U+1F3AD")).
                         addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
-                        //addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
+                        addOption("Music","0", Emoji.fromUnicode("U+1F3B5")).
                         addOption("Others","4", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
@@ -232,7 +225,7 @@ public class CategorylessHandler extends ListenerAdapter {
                                 "**TopGG**\nhttps://top.gg/bot/872475386620026971",
                         null,
                         false,
-                        pEvent.getJDA().getUserById("872475386620026971"),
+                        pEvent.getJDA().getSelfUser(),
                         null,
                         null)
         ).queue();
@@ -260,16 +253,14 @@ public class CategorylessHandler extends ListenerAdapter {
             String[] lTitles = pEvent.getOption("fieldtitles").getAsString().split(";");
             String[] lDescriptions = pEvent.getOption("fielddescriptions").getAsString().split(";");
 
-            if (lDescriptions.length != lTitles.length)
-            {
+            if (lDescriptions.length != lTitles.length) {
                 pEvent.getHook()
                     .editOriginalEmbeds(Utils.createEmbed(Color.red, "",":x: Each field must have a title and description", null, false, pEvent.getUser(), null, null))
                     .queue();
                 return;
             }
 
-            for (int i = 0; i < lTitles.length; i++)
-            {
+            for (int i = 0; i < lTitles.length; i++) {
                 lBuilder.addField(
                         lTitles[i],
                         lDescriptions[i],
@@ -295,7 +286,7 @@ public class CategorylessHandler extends ListenerAdapter {
         pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
     }
 
-    public String[] getCategories() {return categories;}
+    public String[] getCategories() {return CATEGORIES;}
 
-    public static String[][][] getCommands() {return commands; }
+    public static String[][][] getCommands() {return COMMANDS; }
 }

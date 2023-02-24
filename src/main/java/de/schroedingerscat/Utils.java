@@ -176,9 +176,7 @@ public class Utils {
         return lStatement;
     }
 
-    public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription,
-                                           String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter)
-    {
+    public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription, String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter) {
         EmbedBuilder builder = new EmbedBuilder();
 
         if (!pTitle.isEmpty()) builder.setTitle(pTitle);
@@ -197,8 +195,9 @@ public class Utils {
         return builder.build();
     }
 
-    public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor)
-    {
+    public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor) {
         return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
     }
+
+
 }
