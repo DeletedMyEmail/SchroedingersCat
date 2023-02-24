@@ -43,9 +43,11 @@ public class SettingsHandler extends ListenerAdapter {
     @Override
     public void onGuildJoin(GuildJoinEvent pEvent) {
         try {
-            utils.onExecute("INSERT INTO GuildSettings (guild_id) VALUES (?)", pEvent.getGuild().getIdLong());
+            utils.insertGuildIfAbsent(pEvent.getGuild().getIdLong());
         }
-        catch (SQLException ignored) {}
+        catch (SQLException sqlEx) {
+            System.out.println("Failed to insert guild ("+pEvent.getGuild().getId()+")into database");
+        }
         botApplication.updateBotListApi();
     }
 

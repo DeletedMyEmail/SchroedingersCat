@@ -27,41 +27,38 @@ public class AutoRoleHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
-    {
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
         if ("set_auto_role".equals(pEvent.getName())) {
             try {
                 setAutoRole(pEvent);
             }
             catch (NumberFormatException numEx) {
-                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
             }
             catch (SQLException sqlEx)
             {
                 sqlEx.printStackTrace();
-                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
             }
             catch (NullPointerException nullEx) {
                 nullEx.printStackTrace();
-                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
             }
             catch (Exception ex) {
                 ex.printStackTrace();
-                pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
+                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
             }
         }
     }
 
     @Override
-    public void onGuildMemberUpdatePending(@Nonnull GuildMemberUpdatePendingEvent pEvent)
-    {
+    public void onGuildMemberUpdatePending(@Nonnull GuildMemberUpdatePendingEvent pEvent) {
         if (!pEvent.getNewPending())
             addRoleToMember(pEvent.getGuild(), pEvent.getMember(), true);
 
     }
 
-    private void addRoleToMember(Guild pGuild, Member pMember, boolean pShouldScreeningBeEnabled)
-    {
+    private void addRoleToMember(Guild pGuild, Member pMember, boolean pShouldScreeningBeEnabled) {
         try {
             ResultSet lRs = utils.onQuery("SELECT screening,auto_role_id FROM GuildSettings WHERE guild_id = ?", pGuild.getIdLong());
             lRs.next();
@@ -78,26 +75,23 @@ public class AutoRoleHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onGuildMemberJoin(GuildMemberJoinEvent event)
-    {
+    public void onGuildMemberJoin(GuildMemberJoinEvent event) {
         addRoleToMember(event.getGuild(), event.getMember(), false);
     }
 
-    private void setAutoRole(SlashCommandInteractionEvent pEvent) throws SQLException
-    {
+    private void setAutoRole(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
         if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
         Role lRole = pEvent.getOption("role").getAsRole();
         boolean lScreeningEnabled = pEvent.getOption("screening").getAsBoolean();
 
-        try
-        {
+        try {
             utils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, pEvent.getGuild().getIdLong());
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(SettingsHandler.getCategoryColor(), ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SettingsHandler.getCategoryColor(), ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx) {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
         }
     }
 }

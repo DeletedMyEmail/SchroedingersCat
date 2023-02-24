@@ -2,12 +2,12 @@ package de.schroedingerscat;
 
 import com.google.common.hash.Hashing;
 import de.schroedingerscat.commandhandler.*;
-import klibrary.utils.EncryptionUtils;
 import klibrary.utils.SystemUtils;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
+import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.interactions.commands.Command;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.CommandData;
@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.Scanner;
 
 
@@ -37,6 +36,7 @@ import java.util.Scanner;
 public class BotApplication {
 
     private final DiscordBotListAPI topggApi;
+    private final Utils utils;
     private final JDA jda;
 
     public BotApplication(String pDiscordToken, String pTopggToken, String pTopggBotId, String pDatabasePath) throws SQLException, IOException {
@@ -53,20 +53,20 @@ public class BotApplication {
                     .build();
         }
 
-        Utils lUtils = new Utils(pDatabasePath);
-        lUtils.createTables();
+        utils = new Utils(pDatabasePath);
+        utils.createTables();
 
         JDABuilder lBuilder = JDABuilder.createDefault(pDiscordToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_BANS);
 
         lBuilder.setMemberCachePolicy(MemberCachePolicy.ALL);
         lBuilder.addEventListeners(
-                new AutoChannelHandler(lUtils),
-                new AutoRoleHandler(lUtils),
-                new EconomyHandler(lUtils, this),
-                new ReactionRoleHandler(lUtils),
-                new SettingsHandler(lUtils, this),
-                new CategorylessHandler(lUtils),
+                new AutoChannelHandler(utils),
+                new AutoRoleHandler(utils),
+                new EconomyHandler(utils, this),
+                new ReactionRoleHandler(utils),
+                new SettingsHandler(utils, this),
+                new CategorylessHandler(utils),
                 new ExceptionHandler(),
                 new MusicHandler()
         );
@@ -77,11 +77,18 @@ public class BotApplication {
         jda = lBuilder.build();
     }
 
+    private void insertGuildsInDBIfAbsent() throws SQLException {
+        List<Guild> lGuilds =  jda.getGuilds();
+        for (Guild guild : lGuilds) {
+            utils.insertGuildIfAbsent(guild.getIdLong());
+        }
+    }
+
     /**
      *
      *
      * */
-    public void addSlashCommands(JDA pJDA, String[][][] pCommands)
+    private void addSlashCommands(JDA pJDA, String[][][] pCommands)
     {
         List<CommandData> lCommands = new ArrayList<>();
         for(String[][] category : pCommands)
@@ -153,9 +160,10 @@ public class BotApplication {
 
             Scanner lReader = new Scanner(lTokenFile);
             for (int i = 0; lReader.hasNextLine(); ++i) {
+                String[] lTokens = lReader.nextLine().split(" ");
                 for (String lArg : args) {
                     if (Integer.parseInt(lArg) == i) {
-                        String[] lTokens = lReader.nextLine().split(" ");
+
 
                         String lDiscordToken = lTokens[0];
                         String lTopggToken = null;
@@ -168,12 +176,14 @@ public class BotApplication {
                         System.out.println("Starting bot at index "+i);
                         BotApplication lBotApp = new BotApplication(lDiscordToken, lTopggToken, lTopggBotId, getDatabasePath(lTokens[0], lAppPath));
                         lBotApp.getJDA().awaitReady();
+                        lBotApp.insertGuildsInDBIfAbsent();
                         System.out.println("Updating slash commands");
                         lBotApp.addSlashCommands(lBotApp.getJDA(), CategorylessHandler.getCommands());
                         break;
                     }
                 }
             }
+            lReader.close();
         }
         catch (SQLException sqlEx) {
             System.out.println("Could not connect to database");

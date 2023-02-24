@@ -74,6 +74,22 @@ public class Utils {
             conn.commit();
     }
 
+    public void insertGuildIfAbsent(long pGuildId) throws SQLException {
+        ResultSet lRs = onQuery("SELECT guild_id FROM ReactionRole WHERE guild_id = ?", pGuildId);
+        if (!lRs.next()) {
+            onExecute("INSERT INTO ReactionRole (guild_id) VALUES (?)", pGuildId);
+        }
+        lRs = onQuery("SELECT guild_id FROM GuildSettings WHERE guild_id = ?", pGuildId);
+        if (!lRs.next()) {
+            onExecute("INSERT INTO GuildSettings (guild_id) VALUES (?)", pGuildId);
+        }
+        lRs = onQuery("SELECT guild_id FROM Economy WHERE guild_id = ?", pGuildId);
+        if (!lRs.next()) {
+            onExecute("INSERT INTO Economy (guild_id) VALUES (?)", pGuildId);
+        }
+        conn.commit();
+    }
+
     public boolean authorizeMember(Member pMember, String pPermission) throws SQLException
     {
         if (pMember.hasPermission(Permission.ADMINISTRATOR)) return true;

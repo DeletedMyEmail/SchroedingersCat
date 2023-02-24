@@ -36,7 +36,7 @@ public class CategorylessHandler extends ListenerAdapter {
     private static final String[] CATEGORIES =
             {
                 "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                "**:wrench: Server Settings**", // "**:musical_note: Music**",
+                "**:wrench: Server Settings**",  "**:musical_note: Music**",
                 "**:grey_question: Others**"
             };
 
@@ -208,8 +208,8 @@ public class CategorylessHandler extends ListenerAdapter {
                         addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
                         addOption("ReactionRoles","2", Emoji.fromUnicode("U+1F3AD")).
                         addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
-                        addOption("Music","0", Emoji.fromUnicode("U+1F3B5")).
-                        addOption("Others","4", Emoji.fromUnicode("U+2754")).build()
+                        addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
+                        addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
 

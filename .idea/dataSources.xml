@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
-    <data-source source="LOCAL" name="catbot.db" uuid="7d03b462-a5c3-48f7-80fc-2f9ef2222fd6">
+    <data-source source="LOCAL" name="17ca274ec8922d8c25fa0d66f23d73b935a049ac2b7f1dc935be8c6cc45bd65b.db" uuid="99f4ca7d-f3b1-4f73-a658-2acc400a6463">
       <driver-ref>sqlite.xerial</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
-      <jdbc-url>jdbc:sqlite:$PROJECT_DIR$/src/main/resources/catbot.db</jdbc-url>
+      <jdbc-url>jdbc:sqlite:$USER_HOME$/AppData/Local/SchroedingersCat/17ca274ec8922d8c25fa0d66f23d73b935a049ac2b7f1dc935be8c6cc45bd65b.db</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
   </component>
