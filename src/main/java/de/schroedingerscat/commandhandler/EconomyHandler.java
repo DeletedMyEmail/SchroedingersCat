@@ -179,13 +179,10 @@ public class EconomyHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent)
-    {
+    public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
         pEvent.deferEdit().queue();
-        try
-        {
-            switch (pEvent.getButton().getId())
-            {
+        try {
+            switch (pEvent.getButton().getId()) {
                 case "EconomyBankButton" ->
                     pEvent.getHook().editOriginalEmbeds(topEmbed(pEvent.getGuild().getIdLong(), "Bank")).queue();
                 case "EconomyCashButton" ->
@@ -334,43 +331,41 @@ public class EconomyHandler extends ListenerAdapter {
                 editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "Choose which amount you want to see", pEvent.getUser())).
                 setActionRow(lButtons).queue();
     }
+
     /**
      * Creates an embed containing the richest members on server as a top list
      *
      * @param pGuildId - Server's id on which the members should be searched
-     * @param  pCashOrBank - Defines the type of value with should be displayed. <br/>
+     * @param pCashOrBank - Defines the type of value with should be displayed. <br/>
      *                    If it's not "cash" or "bank", the embed will display an empty list
      * @return Returns the mentioned embed
      * */
     private MessageEmbed topEmbed(long pGuildId, String pCashOrBank) throws SQLException {
         MessageEmbed lEmbed;
         ResultSet lRs;
-        String lDescription = "";
+        StringBuilder lDescription = new StringBuilder();
         int lCounter = 1;
 
-        lRs = utils.onQuery("SELECT DISTINCT user_id, "+pCashOrBank.toLowerCase()+" FROM Economy WHERE guild_id="+pGuildId+" ORDER BY cash "+pCashOrBank.toLowerCase()+" DESC LIMIT 10");
+        lRs = utils.onQuery("SELECT user_id, ? FROM Economy WHERE guild_id = ? ORDER BY ? DESC LIMIT 10", pCashOrBank.toLowerCase(), pGuildId, pCashOrBank.toLowerCase());
 
-        while(lRs.next() && lCounter < 11)
-        {
+        while(lRs.next() && lCounter < 11) {
             Member member = botApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong("user_id"));
-            if (member == null)
+            if (member == null) {
                 utils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong("user_id"), pGuildId);
-
-            else
-            {
-                lDescription += "**"+lCounter+"** "+member.getAsMention()+" **"+NumberFormat.getInstance()
-                        .format(lRs.getLong(2))+"** "+CURRENCY +"\n";
+            }
+            else {
+                lDescription.append("**").append(lCounter).append("** ").append(member.getAsMention()).append(" **").append(NumberFormat.getInstance()
+                        .format(lRs.getLong(2))).append("** ").append(CURRENCY).append("\n");
                 lCounter++;
             }
         }
 
-        if (lDescription.isEmpty())
-        {
-            lDescription = "There aren't any users with "+pCashOrBank.toLowerCase()+" value";
+        if (lDescription.length() == 0) {
+            lDescription = new StringBuilder("There aren't any users with " + pCashOrBank.toLowerCase() + " value");
         }
 
         lEmbed = Utils.createEmbed(ECONOMY_COLOR, "TOP "+pCashOrBank.toUpperCase()+" VALUES",
-                lDescription, null, false, null, null, null);
+                lDescription.toString(), null, false, null, null, null);
         return lEmbed;
     }
 
@@ -659,7 +654,7 @@ public class EconomyHandler extends ListenerAdapter {
         lChannelIds.forEach(channelId -> {
             TextChannel lTextChannel = pGuild.getTextChannelById(channelId);
             if (lTextChannel != null)
-                lTextChannel.sendMessageEmbeds(utils.createEmbed(ECONOMY_COLOR, "Gambling Results", lDescription.toString(), null, false, null, null, null)).queue();
+                lTextChannel.sendMessageEmbeds(Utils.createEmbed(ECONOMY_COLOR, "Gambling Results", lDescription.toString(), null, false, null, null, null)).queue();
         });
 
     }
@@ -690,11 +685,7 @@ public class EconomyHandler extends ListenerAdapter {
                     +NumberFormat.getInstance()
                     .format(lIncome)+"** "+CURRENCY +" income";
         }
-        pEvent.getHook().editOriginalEmbeds(
-                utils.createEmbed(
-                        ECONOMY_COLOR,
-                        lDescription,
-                        pEvent.getUser())
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, lDescription, pEvent.getUser())
         ).queue();
     }
 
@@ -854,8 +845,7 @@ public class EconomyHandler extends ListenerAdapter {
      *
      *
      * */
-    private boolean hasCooldown(GenericCommandInteractionEvent pEvent, int pCommandIndex)
-    {
+    private boolean hasCooldown(GenericCommandInteractionEvent pEvent, int pCommandIndex) {
         long lCooldown = getCooldownInMillis(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), pCommandIndex);
         if (lCooldown > 0) {
             pEvent.replyEmbeds(utils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", pEvent.getUser())).queue();

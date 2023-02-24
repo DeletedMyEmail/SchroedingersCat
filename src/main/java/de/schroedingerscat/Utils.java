@@ -174,10 +174,8 @@ public class Utils {
 
     private PreparedStatement insertVaraibles(String pStatement, Object[] pSet) throws SQLException {
         PreparedStatement lStatement = conn.prepareStatement(pStatement);
-        if (pSet != null)
-        {
-            for (int i=0; i < pSet.length; i++)
-            {
+        if (pSet != null) {
+            for (int i=0; i < pSet.length; i++) {
                 if (Blob.class.equals(pSet[i].getClass())) lStatement.setBlob(i + 1, (Blob) pSet[i]);
                 else if (byte[].class.equals(pSet[i].getClass())) lStatement.setBytes(i + 1, (byte[]) pSet[i]);
                 else if (byte.class.equals(pSet[i].getClass())) lStatement.setByte(i + 1, (byte) pSet[i]);
