@@ -66,7 +66,7 @@ public class EconomyHandler extends ListenerAdapter {
             public void run() {
                 distributeIncome();
             }
-        }, 1, 21600000);
+        }, 5000, 21600000);
     }
 
     // Events
@@ -103,10 +103,8 @@ public class EconomyHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onUserContextInteraction(UserContextInteractionEvent pEvent)
-    {
-        try
-        {
+    public void onUserContextInteraction(UserContextInteractionEvent pEvent) {
+        try {
             switch (pEvent.getName())
             {
                 case "bal" -> balCommand(pEvent, pEvent.getTargetMember());
@@ -139,12 +137,9 @@ public class EconomyHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
-    {
-        try
-        {
-            switch (pEvent.getName())
-            {
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
+        try {
+            switch (pEvent.getName()) {
                 case "bal" -> balCommand(pEvent);
                 case "top" -> topCommand(pEvent);
                 case "crime" -> crimeCommand(pEvent);
@@ -320,8 +315,7 @@ public class EconomyHandler extends ListenerAdapter {
      *
      * @param pEvent - SlashCommandInteractionEvent triggered by member
      * */
-    private void topCommand(@NotNull SlashCommandInteractionEvent pEvent)
-    {
+    private void topCommand(@NotNull SlashCommandInteractionEvent pEvent) {
         pEvent.deferReply().queue();
         Button[] lButtons = {
                 Button.primary("EconomyBankButton", Emoji.fromUnicode("U+1F3E6").getAsReactionCode()+" Bank values"),
@@ -346,22 +340,22 @@ public class EconomyHandler extends ListenerAdapter {
         StringBuilder lDescription = new StringBuilder();
         int lCounter = 1;
 
-        lRs = utils.onQuery("SELECT user_id, ? FROM Economy WHERE guild_id = ? ORDER BY ? DESC LIMIT 10", pCashOrBank.toLowerCase(), pGuildId, pCashOrBank.toLowerCase());
+        lRs = utils.onQuery("SELECT "+pCashOrBank.toLowerCase()+", user_id FROM Economy WHERE guild_id = ? ORDER BY "+pCashOrBank.toLowerCase()+" DESC LIMIT 10", pGuildId);
 
         while(lRs.next() && lCounter < 11) {
-            Member member = botApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong("user_id"));
-            if (member == null) {
-                utils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong("user_id"), pGuildId);
+            Member lMember = botApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong(2));
+            if (lMember == null) {
+                utils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong(2), pGuildId);
             }
             else {
-                lDescription.append("**").append(lCounter).append("** ").append(member.getAsMention()).append(" **").append(NumberFormat.getInstance()
-                        .format(lRs.getLong(2))).append("** ").append(CURRENCY).append("\n");
+                lDescription.append("**").append(lCounter).append("** ").append(lMember.getAsMention()).append(" **").append(NumberFormat.getInstance()
+                        .format(lRs.getLong(1))).append("** ").append(CURRENCY).append("\n");
                 lCounter++;
             }
         }
 
         if (lDescription.length() == 0) {
-            lDescription = new StringBuilder("There aren't any users with " + pCashOrBank.toLowerCase() + " value");
+            lDescription = new StringBuilder("There are no users with " + pCashOrBank.toLowerCase() + " money");
         }
 
         lEmbed = Utils.createEmbed(ECONOMY_COLOR, "TOP "+pCashOrBank.toUpperCase()+" VALUES",
@@ -442,8 +436,7 @@ public class EconomyHandler extends ListenerAdapter {
         }
     }
 
-    private void robCommand(@NotNull GenericCommandInteractionEvent pEvent, Member pMemberToRob) throws SQLException
-    {
+    private void robCommand(@NotNull GenericCommandInteractionEvent pEvent, Member pMemberToRob) throws SQLException {
         if (hasCooldown(pEvent, 2)) return;
 
         pEvent.deferReply().queue();
@@ -454,10 +447,8 @@ public class EconomyHandler extends ListenerAdapter {
      *
      *
      * */
-    private void robCommand(InteractionHook pHook, Member pRobber, Member pMemberToRob) throws SQLException
-    {
-        if (pRobber.equals(pMemberToRob))
-        {
+    private void robCommand(InteractionHook pHook, Member pRobber, Member pMemberToRob) throws SQLException {
+        if (pRobber.equals(pMemberToRob)) {
             pHook.editOriginalEmbeds(Utils.createEmbed(
                     Color.red, "", ":x: You can't rob yourself",
                     null, false, pRobber.getUser(), null, null)).queue();
@@ -467,8 +458,7 @@ public class EconomyHandler extends ListenerAdapter {
         long lMemberToRobCash = getWealth(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong())[1];
         long[] lRobberWealth = getWealth(pRobber.getUser().getIdLong(), pRobber.getGuild().getIdLong());
 
-        if (lMemberToRobCash <= 0)
-        {
+        if (lMemberToRobCash <= 0) {
             String lDescription = ":x: "+pMemberToRob.getAsMention()+" doesn't have enough cash to rob.";
             long lostValue = (long) ((lRobberWealth[1]+lRobberWealth[0])*0.1);
             if (lostValue > 0)
@@ -485,7 +475,7 @@ public class EconomyHandler extends ListenerAdapter {
         else
         {
             increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), +lMemberToRobCash, "cash");
-            increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lRobberWealth[1], "cash");
+            increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lMemberToRobCash, "cash");
             setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
             pHook.editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Successfully robbed "+

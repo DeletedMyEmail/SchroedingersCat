@@ -164,7 +164,6 @@ public class BotApplication {
                 for (String lArg : args) {
                     if (Integer.parseInt(lArg) == i) {
 
-
                         String lDiscordToken = lTokens[0];
                         String lTopggToken = null;
                         if (lTokens.length > 1)

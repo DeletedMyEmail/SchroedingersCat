@@ -36,14 +36,14 @@ public class CategorylessHandler extends ListenerAdapter {
     private static final String[] CATEGORIES =
             {
                 "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                "**:wrench: Server Settings**",  "**:musical_note: Music**",
+                "**:wrench: Server Settings**", "**:musical_note: Music**",
                 "**:grey_question: Others**"
             };
 
     // All commands and their options
     private static final String[][][] COMMANDS =
             {
-                    // Name | Description | options (type, name, description, required)
+                // Name | Description | options (type, name, description, required)
                 {
                     // Economy
                     {"bal", "Displays balance of specific user", "user,user,User whose wealth you want to see,false"},
@@ -99,7 +99,7 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                 },
                 {       // Music
-                    {"play_track", "Takes an url or song title, searches on youtube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
+                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
                     {"disconnect", "Disconnects the bot from your current voice channel"},
                     {"pause", "Pauses the current track playing in your voice channel"},
                     {"resume", "Resumes stopped track"},
