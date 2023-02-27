@@ -23,7 +23,7 @@ To choose bots you want to start, simply add (multiple) line indices (0,1,2,...)
 ## Features
 
    - Automated Voice Channel
-   - Automated / Reaction Roles
+   - Automated Roles on server join and Reaction Roles
    - Gambling / Economy
    - Welcome Messages
    - Music (implemented but deactivated)
