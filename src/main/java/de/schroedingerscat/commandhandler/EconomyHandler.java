@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
  * Handles slash commands considering the bot's economy
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 2.0.0 | last edit: 26.09.2022
+ * @version 2.0.0 | last edit: 16.03.2023
  * */
 public class EconomyHandler extends ListenerAdapter {
 
@@ -690,8 +690,12 @@ public class EconomyHandler extends ListenerAdapter {
         ResultSet rs = utils.onQuery("SELECT * FROM IncomeRole WHERE guild_id = ? ORDER BY income DESC", pEvent.getGuild().getIdLong());
         String lDescription = "";
 
-        while(rs.next())
-        {
+        while(rs.next()) {
+            Role lRole = pEvent.getJDA().getRoleById(rs.getLong(2));
+            if (lRole == null) {
+                utils.onExecute("DELETE FROM IncomeRole WHERE role_id = ?", rs.getLong(2));
+                continue;
+            };
             lDescription += pEvent.getJDA().getRoleById(rs.getLong(2)).getAsMention() +" • **"+NumberFormat.getInstance()
                     .format(rs.getLong(3))+ "** "+CURRENCY+"\n";
         }
@@ -802,22 +806,21 @@ public class EconomyHandler extends ListenerAdapter {
      *
      *
      * */
-    private void distributeIncome()
-    {
-        ResultSet lRs;
-        try
-        {
-            lRs = utils.onQuery("SELECT * FROM IncomeRole");
+    private void distributeIncome() {
+        try {
+            ResultSet lRs = utils.onQuery("SELECT * FROM IncomeRole");
 
             while(lRs.next()) {
-                try
-                {
+                try {
                     Guild lGuild = botApplication.getJDA().getGuildById(lRs.getLong("guild_id"));
                     Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
+                    if (lRole == null) {
+                        utils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ? AND role_id = ?", lRs.getLong("guild_id"), lRs.getLong("role_id"));
+                        continue;
+                    }
                     List<Member> lMemberWithRole = lGuild.findMembersWithRoles(lRole).get();
                     lMemberWithRole.forEach(member -> {
-                        try
-                        {
+                        try {
                             increaseBankOrCash(member.getIdLong(), lGuild.getIdLong(), lRs.getLong("income"), "cash");
                         }
                         catch (SQLException sqlEx) {sqlEx.printStackTrace();}

@@ -36,7 +36,7 @@ public class CategorylessHandler extends ListenerAdapter {
     private static final String[] CATEGORIES =
             {
                 "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                "**:wrench: Server Settings**", "**:musical_note: Music**",
+                "**:wrench: Server Settings**", //"**:musical_note: Music**",
                 "**:grey_question: Others**"
             };
 
@@ -98,13 +98,13 @@ public class CategorylessHandler extends ListenerAdapter {
                     {"set_editor_role", "Sets the role needed to edit any kind of settings with the bot", "role,role,Role needed to edit any kind of settings,true"},
                     {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                 },
-                {       // Music
-                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
-                    {"disconnect", "Disconnects the bot from your current voice channel"},
-                    {"pause", "Pauses the current track playing in your voice channel"},
-                    {"resume", "Resumes stopped track"},
-                    {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"},
-                },
+//                {       // Music
+//                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
+//                    {"disconnect", "Disconnects the bot from your current voice channel"},
+//                    {"pause", "Pauses the current track playing in your voice channel"},
+//                    {"resume", "Resumes stopped track"},
+//                    {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"},
+//                },
                 {
                     // Others
                     {"help", "Gives information about the commands"},
@@ -175,8 +175,8 @@ public class CategorylessHandler extends ListenerAdapter {
             case 1 -> lColor = AutoChannelHandler.getCategoryColor();
             case 2 -> lColor = ReactionRoleHandler.getCategoryColor();
             case 3 -> lColor = SettingsHandler.getCategoryColor();
-            case 4 -> lColor = MusicHandler.getCategoryColor();
-            case 5 -> lColor = CATEGORYLESS_COLOR;
+            //case 4 -> lColor = MusicHandler.getCategoryColor();
+            case 4 -> lColor = CATEGORYLESS_COLOR;
         }
 
         MessageEmbed embed = Utils.createEmbed(
@@ -208,8 +208,8 @@ public class CategorylessHandler extends ListenerAdapter {
                         addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
                         addOption("ReactionRoles","2", Emoji.fromUnicode("U+1F3AD")).
                         addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
-                        addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
-                        addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
+                        //addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
+                        addOption("Others","4", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
 

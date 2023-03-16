@@ -67,8 +67,8 @@ public class BotApplication {
                 new ReactionRoleHandler(utils),
                 new SettingsHandler(utils, this),
                 new CategorylessHandler(utils),
-                new ExceptionHandler(),
-                new MusicHandler()
+                new ExceptionHandler()
+                //new MusicHandler()
         );
 
         lBuilder.setStatus(OnlineStatus.ONLINE);
