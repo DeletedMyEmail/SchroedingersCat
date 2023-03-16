@@ -684,24 +684,24 @@ public class EconomyHandler extends ListenerAdapter {
      *
      * @param pEvent - SlashCommandInteractionEvent triggered by member
      * */
-    private void getIncomeRolesCommand(SlashCommandInteractionEvent pEvent) throws SQLException
-    {
+    private void getIncomeRolesCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
         ResultSet rs = utils.onQuery("SELECT * FROM IncomeRole WHERE guild_id = ? ORDER BY income DESC", pEvent.getGuild().getIdLong());
-        String lDescription = "";
+        StringBuilder lDescription = new StringBuilder();
 
         while(rs.next()) {
             Role lRole = pEvent.getJDA().getRoleById(rs.getLong(2));
             if (lRole == null) {
                 utils.onExecute("DELETE FROM IncomeRole WHERE role_id = ?", rs.getLong(2));
-                continue;
-            };
-            lDescription += pEvent.getJDA().getRoleById(rs.getLong(2)).getAsMention() +" • **"+NumberFormat.getInstance()
-                    .format(rs.getLong(3))+ "** "+CURRENCY+"\n";
+            }
+            else {
+                lDescription.append(lRole.getAsMention()).append(" • **").append(NumberFormat.getInstance()
+                        .format(rs.getLong(3))).append("** ").append(CURRENCY).append("\n");
+            }
         }
 
-        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "Income Roles",
-                lDescription,null, false, null, null, null)).queue();
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "Income Roles",
+                lDescription.toString(),null, false, null, null, null)).queue();
     }
 
     /**
