@@ -813,6 +813,10 @@ public class EconomyHandler extends ListenerAdapter {
             while(lRs.next()) {
                 try {
                     Guild lGuild = botApplication.getJDA().getGuildById(lRs.getLong("guild_id"));
+                    if (lGuild == null) {
+                        utils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ?", lRs.getLong("guild_id"));
+                        continue;
+                    }
                     Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
                     if (lRole == null) {
                         utils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ? AND role_id = ?", lRs.getLong("guild_id"), lRs.getLong("role_id"));
