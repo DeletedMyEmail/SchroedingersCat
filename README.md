@@ -15,10 +15,10 @@ Schrödinger's Cat is an easy-to-use discord bot providing slash commands to mak
 
 ## Getting Started
 
-Download one of the jars in the [jar folder](out/artifacts/SchroedingersCat_jar) (all features included, only music or everything except music) and run it with `java -jar <filename>`. 
+Download one of the jars in the [jar folder](out/artifacts/SchroedingersCat_jar) (all features included, only music or everything except music) and run it with `java -jar <filename>`. <br/>
 It will create a config file named `tokenfile.txt` under `SchroedingersCat/` inside the local application folder of your operating system. <br>
 You can paste a new bot token in every line as well as top.gg token and bot id seperated by a space in the same line to enable server counter updates to top.gg. <br>
-To choose bots you want to start, simply add (multiple) line indices (0,1,2,...) as arguments at the end of the command above. Those indices refer to lines in the tokenfile. 
+To choose bots you want to start, simply add (multiple) line indices (0,1,2,...) as arguments at the end of the command above. Those indices refer to lines in the tokenfile.
 
 ## Features
 
