@@ -17,7 +17,7 @@ import java.sql.*;
  *
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 1.0.0 | last edit: 22.09.2022
+ * @version 2.2.0 | last edit: 14.07.2022
  * */
 public class Utils {
 
@@ -30,48 +30,64 @@ public class Utils {
 
     public void createTables() throws SQLException
     {
-            conn.prepareStatement("""
-                CREATE TABLE IF NOT EXISTS 'Economy' (
-                	'guild_id' INTEGER,
-                	'user_id' INTEGER,
-                	'bank' INTEGER,
-                	'cash' INTEGER,
-                	PRIMARY KEY('guild_id','user_id')
-                );
-                    """).executeUpdate();
+        conn.prepareStatement("""
+            CREATE TABLE IF NOT EXISTS 'Economy' (
+                'guild_id' INTEGER,
+                'user_id' INTEGER,
+                'bank' INTEGER,
+                'cash' INTEGER,
+                PRIMARY KEY('guild_id','user_id')
+            );
+                """).executeUpdate();
 
-            conn.prepareStatement("""
-                 CREATE TABLE IF NOT EXISTS 'GuildSettings' (
-                    'guild_id' INTEGER,
-                    'welcome_channel_id' INTEGER,
-                    'auto_role_id' INTEGER,
-                    'create_channel_id' INTEGER,
-                    'welcome_message' TEXT,
-                    'screening'	INTEGER,
-                    'log_channel_id' INTEGER,
-                    'editor_role_id' INTEGER,
-                    'moderator_role_id' INTEGER,
-                    PRIMARY KEY('guild_id')
-                )
-                            """
-            ).executeUpdate();
+        conn.prepareStatement("""
+             CREATE TABLE IF NOT EXISTS 'GuildSettings' (
+                'guild_id' INTEGER,
+                'welcome_channel_id' INTEGER,
+                'auto_role_id' INTEGER,
+                'create_channel_id' INTEGER,
+                'welcome_message' TEXT,
+                'screening'	INTEGER,
+                'log_channel_id' INTEGER,
+                'catgame_channel_id' INTEGER,
+                'editor_role_id' INTEGER,
+                'moderator_role_id' INTEGER,
+                PRIMARY KEY('guild_id')
+            )
+                        """
+        ).executeUpdate();
 
-            conn.prepareStatement("""
-                    CREATE TABLE IF NOT EXISTS 'ReactionRole' (
-                    	'guild_id' INTEGER,
-                    	'message_id' INTEGER,
-                    	'emoji' TEXT,
-                    	'channel_id' INTEGER,
-                    	'role_id' INTEGER,
-                    	PRIMARY KEY('guild_id','emoji','message_id')
-                    );
-                    """).executeUpdate();
+        conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS 'ReactionRole' (
+                'guild_id' INTEGER,
+                'message_id' INTEGER,
+                'emoji' TEXT,
+                'channel_id' INTEGER,
+                'role_id' INTEGER,
+                PRIMARY KEY('guild_id','emoji','message_id')
+            );
+            """).executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)").executeUpdate();
+        conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS 'CatGame' (
+                'guild_id' INTEGER,
+                'user_id' INTEGER,
+                'cat_number' INTEGER)
+        """).executeUpdate();
 
-            conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'AutoChannel' ('guild_id' INTEGER, 'owner_id' INTEGER, 'channel_id' INTEGER)").executeUpdate();
+        conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'IncomeRole' (" +
+                "'guild_id' INTEGER, " +
+                "'role_id' INTEGER, " +
+                "'income' INTEGER)"
+        ).executeUpdate();
 
-            conn.commit();
+        conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'AutoChannel' (" +
+                "'guild_id' INTEGER, " +
+                "'owner_id' INTEGER, " +
+                "'channel_id' INTEGER)"
+        ).executeUpdate();
+
+        conn.commit();
     }
 
     public void insertGuildIfAbsent(long pGuildId) throws SQLException {
@@ -205,6 +221,4 @@ public class Utils {
     public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor) {
         return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
     }
-
-
 }

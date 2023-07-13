@@ -31,17 +31,17 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Handles slash commands considering the bot's economy
+ * Handles slash commands related to the bot's economy
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 2.0.0 | last edit: 16.03.2023
+ * @version 2.2.0 | last edit: 13.07.2023
  * */
 public class EconomyHandler extends ListenerAdapter {
 
     // Emoji which represents the currency
     private static final String CURRENCY = "<:wiggle:935151967137832990>";
     /** Default color of this category to be used for embeds */
-    private static final Color ECONOMY_COLOR = new Color(234,217,25);
+    public static final Color ECONOMY_COLOR = new Color(234,217,25);
 
     // HashMap<GuildId, List<Object>{color,number,List<Object>{user,boolean,amount}, List<Channel>},
     private final HashMap<Long, Object[]> currentSpins;
@@ -934,8 +934,7 @@ public class EconomyHandler extends ListenerAdapter {
      * @param pNewBankValue
      * @param pNewCashValue
      * */
-    private void setBankAndCash(long pUserId, long pGuildId, long pNewBankValue, long pNewCashValue) throws SQLException
-    {
+    private void setBankAndCash(long pUserId, long pGuildId, long pNewBankValue, long pNewCashValue) throws SQLException {
         ResultSet lRs = utils.onQuery("SELECT user_id FROM Economy WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
 
         if (lRs.isClosed() || !lRs.next())
@@ -946,6 +945,4 @@ public class EconomyHandler extends ListenerAdapter {
                     pNewBankValue, pNewCashValue, pGuildId, pUserId);
 
     }
-
-    public static Color getCategoryColor() {return ECONOMY_COLOR; }
 }

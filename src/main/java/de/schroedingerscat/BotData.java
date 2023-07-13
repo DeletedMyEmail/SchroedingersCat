@@ -65,12 +65,19 @@ public class BotData {
                             {"reset_settings", "Resets all settings"},
                             {"set_log", "Sets the channel where all important commands will be logged",
                                     "channel,channel,Text Channel which will be the log,true"},
+                            {"set_catgame_channel", "Sets the channel where users can claim cats",
+                                    "channel,channel,Text Channel where cats can be claimed,true"},
                             {"set_editor_role", "Sets the role needed to edit any kind of settings with the bot", "role,role,Role needed to edit any kind of settings,true"},
                             {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                     },
                     {
                             // Cat Game
-                            {"cat", "Returns a cute cat pic"},
+                            {"cat", "Spawns a cute cat"},
+                            {"cat_claim", "Claims the last cat spawned in the current channel"},
+                            {"cat_bal", "Displays all cats you claimed"},
+                            {"cat_leaderboard", "Displays the top 10 cat collectors on this server"},
+                            {"cat_gift", "Sends a cat card to another user", "user,user,User who will receive the cat card,true"},
+                            {"cat_gifts", "Displays all cat cards you received"}
                     },
 //                {       // Music
 //                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},

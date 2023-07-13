@@ -30,7 +30,7 @@ import java.util.EnumSet;
 public class AutoChannelHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    private static final Color AUTOCHANNEL_COLOR = new Color(37, 206, 97);
+    public static final Color AUTOCHANNEL_COLOR = new Color(37, 206, 97);
 
     private final Utils utils;
 
@@ -455,8 +455,4 @@ public class AutoChannelHandler extends ListenerAdapter {
             );
         }
     }
-
-    // Getter
-
-    public static Color getCategoryColor() {return AUTOCHANNEL_COLOR; }
 }

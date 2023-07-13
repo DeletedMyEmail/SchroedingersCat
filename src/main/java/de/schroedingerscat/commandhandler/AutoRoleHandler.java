@@ -88,7 +88,7 @@ public class AutoRoleHandler extends ListenerAdapter {
 
         try {
             utils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, pEvent.getGuild().getIdLong());
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SettingsHandler.getCategoryColor(), ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", pEvent.getUser())).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SettingsHandler.SERVERSETTINGS_COLOR, ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx) {
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();

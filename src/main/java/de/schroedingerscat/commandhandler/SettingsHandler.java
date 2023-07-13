@@ -28,7 +28,7 @@ import java.time.format.DateTimeFormatter;
 public class SettingsHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    private static final Color SERVERSETTINGS_COLOR = new Color(243, 214, 93);
+    public static final Color SERVERSETTINGS_COLOR = new Color(243, 214, 93);
 
     private final BotApplication botApplication;
     private final Utils utils;
@@ -137,6 +137,11 @@ public class SettingsHandler extends ListenerAdapter {
         if (lLogChannel != null)
             lLogStr = lLogChannel.getAsMention();
 
+        TextChannel lCatGameChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("catgame_channel_id"));
+        String lCatGameChannelStr = "None";
+        if (lCatGameChannel != null)
+            lCatGameChannelStr = lCatGameChannel.getAsMention();
+
         VoiceChannel lAutoChannel = pEvent.getGuild().getVoiceChannelById(lRs.getLong("create_channel_id"));
         String lAutoChannelStr = "None";
         if (lAutoChannel != null)
@@ -168,11 +173,11 @@ public class SettingsHandler extends ListenerAdapter {
                 {"Welcome Channel", lWelcomeChannelStr},
                 {"Create Custom Channel", lAutoChannelStr},
                 {"Log Channel", lLogStr},
+                {"Cat Game Channel", lCatGameChannelStr},
                 {"Auto Role", lAutoRoleStr},
                 {"Editor Role", lEditorRoleStr},
                 {"Moderator Role", lModRoleStr},
-                {"Rules Screening", lScreeningStr},
-                {"Place Holder", "Holding Place"}
+                {"Rules Screening", lScreeningStr}
         };
 
         pEvent.getHook().editOriginalEmbeds(
@@ -225,6 +230,4 @@ public class SettingsHandler extends ListenerAdapter {
                 pEvent.getGuild().getIdLong());
         pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Server settings reset", pEvent.getUser())).queue();
     }
-
-    public static Color getCategoryColor() {return SERVERSETTINGS_COLOR; }
 }

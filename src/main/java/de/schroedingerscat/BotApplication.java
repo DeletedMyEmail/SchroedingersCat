@@ -29,26 +29,26 @@ import java.util.List;
 public class BotApplication {
 
     private DiscordBotListAPI mTopGGApi;
-    private Utils mUTils;
+    private Utils mUtils;
     private JDA mJDA;
 
     public BotApplication(@NotNull String pDiscordToken, @NotNull String pDatabasePath) throws SQLException, InterruptedException {
-        mUTils = new Utils(pDatabasePath);
-        mUTils.createTables();
+        mUtils = new Utils(pDatabasePath);
+        mUtils.createTables();
 
         JDABuilder lBuilder = JDABuilder.createDefault(pDiscordToken, GatewayIntent.DIRECT_MESSAGES, GatewayIntent.GUILD_MEMBERS,
                 GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_VOICE_STATES, GatewayIntent.GUILD_PRESENCES, GatewayIntent.GUILD_MESSAGE_REACTIONS, GatewayIntent.GUILD_BANS);
 
         lBuilder.setMemberCachePolicy(MemberCachePolicy.ALL);
         lBuilder.addEventListeners(
-                new AutoChannelHandler(mUTils),
-                new AutoRoleHandler(mUTils),
-                new EconomyHandler(mUTils, this),
-                new ReactionRoleHandler(mUTils),
-                new SettingsHandler(mUTils, this),
-                new CategorylessHandler(mUTils),
+                new AutoChannelHandler(mUtils),
+                new AutoRoleHandler(mUtils),
+                new EconomyHandler(mUtils, this),
+                new ReactionRoleHandler(mUtils),
+                new SettingsHandler(mUtils, this),
+                new CategorylessHandler(mUtils),
                 new ExceptionHandler(),
-                new CatGameHandler()
+                new CatGameHandler(mUtils)
                 //new MusicHandler()
         );
 
@@ -73,7 +73,7 @@ public class BotApplication {
     private void insertGuildsInDBIfAbsent() throws SQLException {
         List<Guild> lGuilds =  mJDA.getGuilds();
         for (Guild guild : lGuilds) {
-            mUTils.insertGuildIfAbsent(guild.getIdLong());
+            mUtils.insertGuildIfAbsent(guild.getIdLong());
         }
     }
 

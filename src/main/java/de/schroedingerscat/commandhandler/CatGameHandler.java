@@ -2,31 +2,51 @@ package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.channel.Channel;
+import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
-
-import java.awt.*;
+import java.awt.Color;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Handles all commands related to the cat game
+ *
+ * @author Joshua H. | KaitoKunTatsu
+ * @version 2.2.0 | last edit: 13.07.2023
+ * */
 public class CatGameHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    private static final Color CATGAME_COLOR = new Color(165, 172, 167);
-    private final Random mRandom;
+    public static final Color CATGAME_COLOR = new Color(165, 112, 17);
+    private static final long SPAWN_COOLDOWN = 180000;
 
-    public CatGameHandler() {
+    private final HashMap<Long, HashMap<Long, Long>> mCatSpawnCooldown;
+    private final HashMap<Long, Integer> mLastCatSpawned;
+    private final Random mRandom;
+    private final Utils mUtils;
+
+    public CatGameHandler(Utils pUtils) {
         mRandom = new Random();
+        mUtils = pUtils;
+        mCatSpawnCooldown = new HashMap<>();
+        mLastCatSpawned = new HashMap<>();
     }
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent pEvent) {
         try {
             switch (pEvent.getName()) {
-                case "cat" -> catCommand(pEvent);
+                case "cat" -> spawnCatCommand(pEvent);
+                case "set_catgame_channel" -> setCatGameChannelCommand(pEvent);
+                case "cat_claim" -> claimCatCommand(pEvent);
             }
         }
         catch (NumberFormatException numEx) {
@@ -38,13 +58,69 @@ public class CatGameHandler extends ListenerAdapter {
         }
     }
 
-    private void catCommand(SlashCommandInteractionEvent pEvent) throws FileNotFoundException {
+    private long getCooldown(long pGuildId, long pUserId) {
+        mCatSpawnCooldown.putIfAbsent(pGuildId, new HashMap<>());
+        long lCurrentTime = System.currentTimeMillis();
+        return mCatSpawnCooldown.get(pGuildId).getOrDefault(pUserId, lCurrentTime) - lCurrentTime;
+    }
+
+    private boolean isSpawningChannel(long pGuildId, long pChannelId) throws SQLException {
+        return mUtils.onQuery("SELECT catgame_channel_id FROM GuildSettings WHERE guild_id = ?", pGuildId).getLong("catgame_channel_id") == pChannelId;
+    }
+
+    private void spawnCatCommand(SlashCommandInteractionEvent pEvent) throws FileNotFoundException, SQLException {
+        pEvent.deferReply().queue();
+        long lCooldown = getCooldown(pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong());
+
+        if (!isSpawningChannel(pEvent.getGuild().getIdLong(), pEvent.getChannel().getIdLong())) {
+            pEvent.getHook().
+                    editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: This is not the cat game channel", pEvent.getUser())).
+                    queue();
+        }
+        else if (lCooldown > 0) {
+            pEvent.getHook().
+                    editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You can spawn a new cat in **" + TimeUnit.MILLISECONDS.toSeconds(lCooldown) + " seconds**", pEvent.getUser())).
+                    queue();
+        }
+        else {
+            int lNum = mRandom.nextInt(400) == 0 ? -1 : new Random().nextInt(97);
+            FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".png");
+            MessageEmbed lEmbed = Utils.createEmbed(CATGAME_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.png",null);
+
+            mCatSpawnCooldown.get(pEvent.getGuild().getIdLong()).put(pEvent.getUser().getIdLong(), System.currentTimeMillis() + SPAWN_COOLDOWN);
+            mLastCatSpawned.put(pEvent.getGuild().getIdLong(), lNum);
+            pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
+        }
+    }
+
+    private void setCatGameChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
-        int lNum = mRandom.nextInt(400) == 0 ? -1 : new Random().nextInt(97);
-        FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".png");
+        if (mUtils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
-        MessageEmbed lEmbed = Utils.createEmbed(CATGAME_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.png",null);
-        pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
+        Channel lChannel = pEvent.getOption("channel").getAsChannel();
+        if (lChannel.getType() != ChannelType.TEXT) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Please select a proper text channel", pEvent.getUser())).queue();
+            return;
+        }
+
+        mUtils.onExecute("UPDATE GuildSettings SET catgame_channel_id = ? WHERE guild_id = ?", lChannel.getIdLong(), pEvent.getGuild().getIdLong());
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATGAME_COLOR, ":white_check_mark: Set the cat game channel to "+lChannel.getAsMention(), pEvent.getUser())).queue();
+    }
+
+    private void claimCatCommand(SlashCommandInteractionEvent pEvent) {
+        pEvent.deferReply().queue();
+        int lLastCat = mLastCatSpawned.getOrDefault(pEvent.getGuild().getIdLong(), -2);
+        if (lLastCat != -2) {
+            mLastCatSpawned.remove(pEvent.getGuild().getIdLong());
+            pEvent.getHook().
+                    editOriginalEmbeds(Utils.createEmbed(CATGAME_COLOR, ":white_check_mark: Congratulations, **cat number " + lLastCat + "** is yours now!", pEvent.getUser())).
+                    queue();
+        }
+        else {
+            pEvent.getHook().
+                    editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Looks like someone was faster and claimed your cat or no cat spawned on this server", pEvent.getUser())).
+                    queue();
+        }
     }
 }

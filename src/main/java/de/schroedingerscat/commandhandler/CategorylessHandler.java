@@ -83,12 +83,13 @@ public class CategorylessHandler extends ListenerAdapter {
 
         Color lColor = null;
         switch (lCategoryAsValue) {
-            case 0 -> lColor = EconomyHandler.getCategoryColor();
-            case 1 -> lColor = AutoChannelHandler.getCategoryColor();
-            case 2 -> lColor = ReactionRoleHandler.getCategoryColor();
-            case 3 -> lColor = SettingsHandler.getCategoryColor();
+            case 0 -> lColor = EconomyHandler.ECONOMY_COLOR;
+            case 1 -> lColor = AutoChannelHandler.AUTOCHANNEL_COLOR;
+            case 2 -> lColor = ReactionRoleHandler.REACTION_ROLE_COLOR;
+            case 3 -> lColor = SettingsHandler.SERVERSETTINGS_COLOR;
             //case 4 -> lColor = MusicHandler.getCategoryColor();
-            case 4 -> lColor = CATEGORYLESS_COLOR;
+            case 4 -> lColor = CatGameHandler.CATGAME_COLOR;
+            case 5 -> lColor = CATEGORYLESS_COLOR;
         }
 
         MessageEmbed embed = Utils.createEmbed(
@@ -117,11 +118,12 @@ public class CategorylessHandler extends ListenerAdapter {
         ).addActionRow(
                 SelectMenu.create("HelpMenu").
                         addOption("Economy","0", Emoji.fromUnicode("U+1FA99")).
-                        addOption("AutoChannel","1", Emoji.fromUnicode("U+2795")).
-                        addOption("ReactionRoles","2", Emoji.fromUnicode("U+1F3AD")).
-                        addOption("ServerSettings","3", Emoji.fromUnicode("U+1F527")).
+                        addOption("Auto Channel","1", Emoji.fromUnicode("U+2795")).
+                        addOption("Reaction Roles","2", Emoji.fromUnicode("U+1F3AD")).
+                        addOption("Server Settings","3", Emoji.fromUnicode("U+1F527")).
                         //addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
-                        addOption("Others","4", Emoji.fromUnicode("U+2754")).build()
+                        addOption("Cat Game","4", Emoji.fromUnicode("U+1F3B4")).
+                        addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }
 
