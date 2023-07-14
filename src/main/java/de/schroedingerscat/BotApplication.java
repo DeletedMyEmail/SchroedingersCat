@@ -48,7 +48,7 @@ public class BotApplication {
                 new SettingsHandler(mUtils, this),
                 new CategorylessHandler(mUtils),
                 new ExceptionHandler(),
-                new CatGameHandler(mUtils)
+                new CatsAndPetsHandler(mUtils)
                 //new MusicHandler()
         );
 

@@ -1,17 +1,20 @@
 package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
+import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
+import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 import java.awt.Color;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
@@ -19,15 +22,15 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Handles all commands related to the cat game
+ * Handles all commands related to pets and cat cards
  *
  * @author Joshua H. | KaitoKunTatsu
  * @version 2.2.0 | last edit: 13.07.2023
  * */
-public class CatGameHandler extends ListenerAdapter {
+public class CatsAndPetsHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    public static final Color CATGAME_COLOR = new Color(165, 112, 17);
+    public static final Color CATS_AND_PETS_COLOR = new Color(165, 112, 17);
     private static final long SPAWN_COOLDOWN = 180000;
 
     private final HashMap<Long, HashMap<Long, Long>> mCatSpawnCooldown;
@@ -35,7 +38,7 @@ public class CatGameHandler extends ListenerAdapter {
     private final Random mRandom;
     private final Utils mUtils;
 
-    public CatGameHandler(Utils pUtils) {
+    public CatsAndPetsHandler(Utils pUtils) {
         mRandom = new Random();
         mUtils = pUtils;
         mCatSpawnCooldown = new HashMap<>();
@@ -47,10 +50,11 @@ public class CatGameHandler extends ListenerAdapter {
         try {
             switch (pEvent.getName()) {
                 case "cat" -> spawnCatCommand(pEvent);
-                case "set_catgame_channel" -> setCatGameChannelCommand(pEvent);
+                case "set_catsandpets_channel" -> setCatsAndPetsChannelCommand(pEvent);
                 case "cat_claim" -> claimCatCommand(pEvent);
                 case "cat_inv" -> catInventoryCommand(pEvent);
                 case "cat_view" -> viewCatCommand(pEvent);
+                case "shop" -> shopCommand(pEvent);
             }
         }
         catch (NumberFormatException numEx) {
@@ -69,7 +73,7 @@ public class CatGameHandler extends ListenerAdapter {
     }
 
     private boolean isSpawningChannel(long pGuildId, long pChannelId) throws SQLException {
-        return mUtils.onQuery("SELECT catgame_channel_id FROM GuildSettings WHERE guild_id = ?", pGuildId).getLong("catgame_channel_id") == pChannelId;
+        return mUtils.onQuery("SELECT catsandpets_channel_id FROM GuildSettings WHERE guild_id = ?", pGuildId).getLong("catsandpets_channel_id") == pChannelId;
     }
 
     private void spawnCatCommand(SlashCommandInteractionEvent pEvent) throws FileNotFoundException, SQLException {
@@ -89,7 +93,7 @@ public class CatGameHandler extends ListenerAdapter {
         else {
             int lNum = mRandom.nextInt(400) == 0 ? -1 : new Random().nextInt(97);
             FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".png");
-            MessageEmbed lEmbed = Utils.createEmbed(CATGAME_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.png",null);
+            MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.png",null);
 
             mCatSpawnCooldown.get(pEvent.getGuild().getIdLong()).put(pEvent.getUser().getIdLong(), System.currentTimeMillis() + SPAWN_COOLDOWN);
             mLastCatSpawned.put(pEvent.getGuild().getIdLong(), lNum);
@@ -97,7 +101,7 @@ public class CatGameHandler extends ListenerAdapter {
         }
     }
 
-    private void setCatGameChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
+    private void setCatsAndPetsChannelCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
         if (mUtils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
@@ -108,8 +112,8 @@ public class CatGameHandler extends ListenerAdapter {
             return;
         }
 
-        mUtils.onExecute("UPDATE GuildSettings SET catgame_channel_id = ? WHERE guild_id = ?", lChannel.getIdLong(), pEvent.getGuild().getIdLong());
-        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATGAME_COLOR, ":white_check_mark: Set the cat game channel to "+lChannel.getAsMention(), pEvent.getUser())).queue();
+        mUtils.onExecute("UPDATE GuildSettings SET catsandpets_channel_id = ? WHERE guild_id = ?", lChannel.getIdLong(), pEvent.getGuild().getIdLong());
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, ":white_check_mark: Set the cat game channel to "+lChannel.getAsMention(), pEvent.getUser())).queue();
     }
 
     private void claimCatCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
@@ -117,14 +121,14 @@ public class CatGameHandler extends ListenerAdapter {
 
         int lLastCat = mLastCatSpawned.getOrDefault(pEvent.getGuild().getIdLong(), -2);
         if (lLastCat != -2) {
-            if (mUtils.onQuery("SELECT cat_number FROM CatGame WHERE guild_id = ? AND user_id = ? AND cat_number = ?", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lLastCat).next()) {
+            if (mUtils.onQuery("SELECT cat_number FROM CatCards WHERE guild_id = ? AND user_id = ? AND cat_number = ?", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lLastCat).next()) {
                 pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You already claimed this cat", pEvent.getUser())).queue();
             }
             else {
                 mLastCatSpawned.remove(pEvent.getGuild().getIdLong());
-                mUtils.onExecute("INSERT INTO CatGame (guild_id, user_id, cat_number) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lLastCat);
+                mUtils.onExecute("INSERT INTO CatCards (guild_id, user_id, cat_number) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lLastCat);
                 pEvent.getHook().
-                        editOriginalEmbeds(Utils.createEmbed(CATGAME_COLOR, ":white_check_mark: Congratulations, **cat number " + lLastCat + "** is yours now!", pEvent.getUser())).
+                        editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, ":white_check_mark: Congratulations, **cat number " + lLastCat + "** is yours now!", pEvent.getUser())).
                         queue();
             }
         }
@@ -138,7 +142,7 @@ public class CatGameHandler extends ListenerAdapter {
     private void catInventoryCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
-        ResultSet lCatInventory = mUtils.onQuery("SELECT cat_number FROM CatGame WHERE guild_id = ? AND user_id = ? ORDER BY cat_number ASC", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong());
+        ResultSet lCatInventory = mUtils.onQuery("SELECT cat_number FROM CatCards WHERE guild_id = ? AND user_id = ? ORDER BY cat_number ASC", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong());
         StringBuilder lCatInventoryString = new StringBuilder();
         lCatInventoryString.append("You own the following cats:\n");
 
@@ -154,7 +158,7 @@ public class CatGameHandler extends ListenerAdapter {
             lCatInventoryString.append("**").append(lCatInventory.getInt("cat_number")).append("**,   ");
         }
         lCatInventoryString.deleteCharAt(lCatInventoryString.lastIndexOf(","));
-        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATGAME_COLOR, "Inventory", lCatInventoryString.toString(), null, false, pEvent.getUser(), null, null)).queue();
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "Inventory", lCatInventoryString.toString(), null, false, pEvent.getUser(), null, null)).queue();
     }
 
     private void replyWithCat(InteractionHook pHook, int pCatNumber, MessageEmbed pEmbed) throws FileNotFoundException {
@@ -170,16 +174,38 @@ public class CatGameHandler extends ListenerAdapter {
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid cat number", pEvent.getUser())).queue();
         }
         else {
-            if (mUtils.onQuery("SELECT cat_number FROM CatGame WHERE guild_id = ? AND user_id = ? AND cat_number = ?", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lCatNumber).next()) {
+            if (mUtils.onQuery("SELECT cat_number FROM CatCards WHERE guild_id = ? AND user_id = ? AND cat_number = ?", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lCatNumber).next()) {
                 replyWithCat(
                     pEvent.getHook(),
                     lCatNumber,
-                    Utils.createEmbed(CATGAME_COLOR, "Cat Card #"+lCatNumber, "", null, false, null, "attachment://cat.png",null)
+                    Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lCatNumber, "", null, false, null, "attachment://cat.png",null)
                 );
             }
             else {
                 pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't own this cat", pEvent.getUser())).queue();
             }
         }
+    }
+
+    private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
+        pEvent.deferReply().queue();
+
+        Utils.mergeImages("src/main/resources/pets/pet0.png", "src/main/resources/pets/pet1.png", "src/main/resources/pets/pet2.png", "src/main/resources/shop.jpg");
+        FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.jpg");
+        pEvent.getHook().
+                editOriginalEmbeds(new EmbedBuilder().
+                        setTitle("Pet Shop").
+                        setDescription("Buy yourself a pet! The following pets are in stock today:").
+                        setColor(CATS_AND_PETS_COLOR).
+                        setImage("attachment://shop.jpg").
+                        build()
+                ).
+                setActionRow(
+                        Button.primary("buy_pet_0", "Buy Pet 1"),
+                        Button.success("buy_pet_1", "Buy Pet 2"),
+                        Button.danger("buy_pet_2", "Buy Pet 3")
+                ).
+                setAttachments(FileUpload.fromData(lCatInStream, "shop.jpg")).
+                queue();
     }
 }

@@ -9,24 +9,20 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
-import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 
 /**
  * Handles slash commands which can't be categorized
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 2.0.0 | last edit: 30.09.2022
+ * @version 2.2.0 | last edit: 14.07.2023
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
@@ -88,7 +84,7 @@ public class CategorylessHandler extends ListenerAdapter {
             case 2 -> lColor = ReactionRoleHandler.REACTION_ROLE_COLOR;
             case 3 -> lColor = SettingsHandler.SERVERSETTINGS_COLOR;
             //case 4 -> lColor = MusicHandler.getCategoryColor();
-            case 4 -> lColor = CatGameHandler.CATGAME_COLOR;
+            case 4 -> lColor = CatsAndPetsHandler.CATS_AND_PETS_COLOR;
             case 5 -> lColor = CATEGORYLESS_COLOR;
         }
 
@@ -122,7 +118,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         addOption("Reaction Roles","2", Emoji.fromUnicode("U+1F3AD")).
                         addOption("Server Settings","3", Emoji.fromUnicode("U+1F527")).
                         //addOption("Music","4", Emoji.fromUnicode("U+1F3B5")).
-                        addOption("Cat Game","4", Emoji.fromUnicode("U+1F3B4")).
+                        addOption("Cats And Pets","4", Emoji.fromUnicode("U+1F3B4")).
                         addOption("Others","5", Emoji.fromUnicode("U+2754")).build()
         ).queue();
     }

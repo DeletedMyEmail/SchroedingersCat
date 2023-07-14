@@ -6,7 +6,7 @@ public class BotData {
     public static final String[] CATEGORIES =
             {
                     "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
-                    "**:wrench: Server Settings**", "**:flower_playing_cards: Cat Game**", //"**:musical_note: Music**",
+                    "**:wrench: Server Settings**", "**:flower_playing_cards: Cats and Pets**", //"**:musical_note: Music**",
                     "**:grey_question: Others**"
             };
 
@@ -71,16 +71,16 @@ public class BotData {
                             {"set_moderator_role", "Sets the role needed to use moderation commands", "role,role,Moderator role,true"}
                     },
                     {
-                            // Cat Game
+                            // Cats and Pets
                             {"cat", "Spawns a cute cat"},
                             {"cat_claim", "Claims the last cat spawned in the current channel"},
                             {"cat_inv", "Displays all cats you claimed"},
                             {"cat_view", "Displays one of the cats you own", "int,cat,Number of the cat card you want to display,true"},
                             {"cat_leaderboard", "Displays the top 10 cat collectors on this server"},
                             {"cat_gift", "Sends a cat card to another user", "user,user,User who will receive the cat card,true", "int,cat,Number of the cat card you want to send,true"},
-                            {"cat_shop", "Displays all cat cards you can buy"},
-                            {"cat_buy", "Buys a cat card", "int,cat,Number of the cat card you want to buy,true"},
-                            {"cat_sell", "Sells a cat card", "int,cat,Number of the cat card you want to sell,true"},
+                            {"shop", "Buy Cat Cards or Pets"},
+                            {"buy", "Buys a cat card", "int,cat,Number of the cat card you want to buy,true"},
+                            {"sell", "Sells a cat card", "int,cat,Number of the cat card you want to sell,true"},
                     },
 //                {       // Music
 //                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},

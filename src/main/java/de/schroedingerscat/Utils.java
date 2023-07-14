@@ -10,7 +10,11 @@ import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEve
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import org.jetbrains.annotations.NotNull;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 
 /**
@@ -49,7 +53,7 @@ public class Utils {
                 'welcome_message' TEXT,
                 'screening'	INTEGER,
                 'log_channel_id' INTEGER,
-                'catgame_channel_id' INTEGER,
+                'catsandpets_channel_id' INTEGER,
                 'editor_role_id' INTEGER,
                 'moderator_role_id' INTEGER,
                 PRIMARY KEY('guild_id')
@@ -69,7 +73,7 @@ public class Utils {
             """).executeUpdate();
 
         conn.prepareStatement("""
-                CREATE TABLE IF NOT EXISTS 'CatGame' (
+                CREATE TABLE IF NOT EXISTS 'CatCards' (
                 'guild_id' INTEGER,
                 'user_id' INTEGER,
                 'cat_number' INTEGER)
@@ -197,6 +201,21 @@ public class Utils {
             }
         }
         return lStatement;
+    }
+
+    public static void mergeImages(String pImg1, String pImg2, String pImg3, String pOutput) throws IOException {
+        BufferedImage lImg1 = ImageIO.read(new File(pImg1));
+        BufferedImage lImg2 = ImageIO.read(new File(pImg2));
+        BufferedImage lImg3 = ImageIO.read(new File(pImg3));
+        BufferedImage lMergedImg = new BufferedImage(lImg1.getWidth() + lImg2.getWidth() + lImg3.getWidth() + 160, Math.max(lImg1.getHeight(), Math.max(lImg2.getHeight(), lImg3.getHeight()))+80, BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D lMergedImgGraphic = lMergedImg.createGraphics();
+        lMergedImgGraphic.drawImage(lImg1, 40, 40, null);
+        lMergedImgGraphic.drawImage(lImg2, lImg1.getWidth() + 80, 40, null);
+        lMergedImgGraphic.drawImage(lImg3, lImg1.getWidth() + 120 + lImg2.getWidth(), 40, null);
+
+        ImageIO.write(lMergedImg, "jpg", new File(pOutput));
+        lMergedImgGraphic.dispose();
     }
 
     public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription, String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter) {

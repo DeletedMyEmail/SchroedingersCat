@@ -36,6 +36,9 @@ To choose bots you want to start, simply add (multiple) line indices (0,1,2,...)
   
   #### Support Server <br>
   https://discord.gg/XUqU4MpFFF
+  
+  #### Website <br>
+  https://schroedingerscat.sevenpages.de/
 
 ## Examples
 
