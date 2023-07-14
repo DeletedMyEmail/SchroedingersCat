@@ -74,10 +74,13 @@ public class BotData {
                             // Cat Game
                             {"cat", "Spawns a cute cat"},
                             {"cat_claim", "Claims the last cat spawned in the current channel"},
-                            {"cat_bal", "Displays all cats you claimed"},
+                            {"cat_inv", "Displays all cats you claimed"},
+                            {"cat_view", "Displays one of the cats you own", "int,cat,Number of the cat card you want to display,true"},
                             {"cat_leaderboard", "Displays the top 10 cat collectors on this server"},
-                            {"cat_gift", "Sends a cat card to another user", "user,user,User who will receive the cat card,true"},
-                            {"cat_gifts", "Displays all cat cards you received"}
+                            {"cat_gift", "Sends a cat card to another user", "user,user,User who will receive the cat card,true", "int,cat,Number of the cat card you want to send,true"},
+                            {"cat_shop", "Displays all cat cards you can buy"},
+                            {"cat_buy", "Buys a cat card", "int,cat,Number of the cat card you want to buy,true"},
+                            {"cat_sell", "Sells a cat card", "int,cat,Number of the cat card you want to sell,true"},
                     },
 //                {       // Music
 //                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
