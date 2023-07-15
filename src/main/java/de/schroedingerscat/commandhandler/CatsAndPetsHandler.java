@@ -1,16 +1,20 @@
 package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
+import de.schroedingerscat.entities.Pet;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
+
+import javax.annotation.Nonnull;
 import java.awt.Color;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -19,13 +23,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Random;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Handles all commands related to pets and cat cards
  *
  * @author Joshua H. | KaitoKunTatsu
- * @version 2.2.0 | last edit: 13.07.2023
+ * @version 2.2.0 | last edit: 15.07.2023
  * */
 public class CatsAndPetsHandler extends ListenerAdapter {
 
@@ -35,6 +41,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     private final HashMap<Long, HashMap<Long, Long>> mCatSpawnCooldown;
     private final HashMap<Long, Integer> mLastCatSpawned;
+    private final Pet[] mPetsInStock;
     private final Random mRandom;
     private final Utils mUtils;
 
@@ -43,6 +50,36 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         mUtils = pUtils;
         mCatSpawnCooldown = new HashMap<>();
         mLastCatSpawned = new HashMap<>();
+        mPetsInStock = new Pet[3];
+
+        Timer timer = new Timer();
+        timer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                try {
+                    refreshPetStock();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }, 0, 86400000);
+    }
+
+    @Override
+    public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
+        if (pEvent.getId().startsWith("buy_pet")) {
+            buyPet(pEvent.getId().charAt(8) - '0', pEvent.getHook());
+        }
+    }
+
+    private void refreshPetStock() throws SQLException {
+        for (int i = 0; i < mPetsInStock.length; i++) {
+            mPetsInStock[i] = mUtils.getPet();
+        }
+    }
+
+    private void buyPet(int pPetIndex, InteractionHook pHook) {
+
     }
 
     @Override

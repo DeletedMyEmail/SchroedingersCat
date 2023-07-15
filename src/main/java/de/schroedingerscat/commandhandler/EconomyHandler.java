@@ -14,13 +14,11 @@ import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.commands.OptionMapping;
 import net.dv8tion.jda.api.interactions.commands.SlashCommandInteraction;
-import net.dv8tion.jda.api.interactions.components.Modal;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.interactions.components.text.TextInput;
 import net.dv8tion.jda.api.interactions.components.text.TextInputStyle;
-import org.discordbots.api.client.entity.Bot;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import org.jetbrains.annotations.NotNull;
-
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.sql.ResultSet;
@@ -39,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class EconomyHandler extends ListenerAdapter {
 
     // Emoji which represents the currency
-    private static final String CURRENCY = "<:wiggle:935151967137832990>";
+    private static final String CURRENCY = "<:CatCoin:1129421009246765106>";
     /** Default color of this category to be used for embeds */
     public static final Color ECONOMY_COLOR = new Color(234,217,25);
 

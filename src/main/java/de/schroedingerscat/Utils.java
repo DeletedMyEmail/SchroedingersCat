@@ -1,5 +1,6 @@
 package de.schroedingerscat;
 
+import de.schroedingerscat.entities.Pet;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
@@ -79,6 +80,30 @@ public class Utils {
                 'cat_number' INTEGER)
         """).executeUpdate();
 
+        conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS 'Pet' (
+                'id' INTEGER,
+                'name' TEXT,
+                'price' INTEGER,
+                'description' TEXT)
+        """).executeUpdate();
+
+        conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS 'PetInventory' (
+                'guild_id' INTEGER,
+                'user_id' INTEGER,
+                'pet_id' INTEGER,
+                'amount' INTEGER)
+        """).executeUpdate();
+
+        conn.prepareStatement("""
+                CREATE TABLE IF NOT EXISTS 'CommandCooldown' (
+                'guild_id' INTEGER,
+                'user_id' INTEGER,
+                'command' TEXT,
+                'cooldown_until' INTEGER)
+        """).executeUpdate();
+
         conn.prepareStatement("CREATE TABLE IF NOT EXISTS 'IncomeRole' (" +
                 "'guild_id' INTEGER, " +
                 "'role_id' INTEGER, " +
@@ -101,6 +126,22 @@ public class Utils {
             onExecute("INSERT INTO GuildSettings (guild_id) VALUES (?)", pGuildId);
         }
         conn.commit();
+    }
+
+    public Pet getPet(int pPetId) throws SQLException {
+        ResultSet lRs = onQuery("SELECT * FROM Pet WHERE id = ?", pPetId);
+        if (lRs.next()) {
+            return new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description"));
+        }
+        return null;
+    }
+
+    public Pet getPet() throws SQLException {
+        ResultSet lRs = onQuery("SELECT * FROM Pet WHERE id = (SELECT MAX(id) FROM Pet)");
+        if (lRs.next()) {
+            return new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description"));
+        }
+        return null;
     }
 
     public boolean authorizeMember(Member pMember, String pPermission) throws SQLException
