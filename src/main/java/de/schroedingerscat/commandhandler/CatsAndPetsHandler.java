@@ -4,6 +4,7 @@ import de.schroedingerscat.Utils;
 import de.schroedingerscat.entities.Pet;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
+import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
@@ -67,19 +68,14 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
+        try {
+            buyPet(pEvent.getId().charAt(8) - '0', pEvent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         if (pEvent.getId().startsWith("buy_pet")) {
-            buyPet(pEvent.getId().charAt(8) - '0', pEvent.getHook());
+
         }
-    }
-
-    private void refreshPetStock() throws SQLException {
-        for (int i = 0; i < mPetsInStock.length; i++) {
-            mPetsInStock[i] = mUtils.getPet();
-        }
-    }
-
-    private void buyPet(int pPetIndex, InteractionHook pHook) {
-
     }
 
     @Override
@@ -244,5 +240,32 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 ).
                 setAttachments(FileUpload.fromData(lCatInStream, "shop.jpg")).
                 queue();
+    }
+
+    private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException {
+        pEvent.deferReply().queue();
+
+        Pet lPet = mPetsInStock[pPetIndex];
+        User lUser = pEvent.getUser();
+
+        if (lPet.price() > mUtils.getWealth(lUser.getIdLong(), pEvent.getGuild().getIdLong())[1]) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\nTipp: /with", lUser)).queue();
+        }
+        else {
+            mUtils.onExecute("INSERT INTO Pets (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
+            mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
+            pEvent.getHook().editOriginalEmbeds(
+                    Utils.createEmbed(
+                            Color.green,
+                            ":white_check_mark: You bought **" + lPet.name() + "** for " + lPet.price() + " " + EconomyHandler.CURRENCY,
+                            lUser)
+            ).queue();
+        }
+    }
+
+    private void refreshPetStock() throws SQLException {
+        for (int i = 0; i < mPetsInStock.length; i++) {
+            mPetsInStock[i] = mUtils.getPet();
+        }
     }
 }

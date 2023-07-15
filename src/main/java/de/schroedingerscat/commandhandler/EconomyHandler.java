@@ -37,7 +37,7 @@ import java.util.concurrent.TimeUnit;
 public class EconomyHandler extends ListenerAdapter {
 
     // Emoji which represents the currency
-    private static final String CURRENCY = "<:CatCoin:1129421009246765106>";
+    public static final String CURRENCY = "<:CatCoin:1129421009246765106>";
     /** Default color of this category to be used for embeds */
     public static final Color ECONOMY_COLOR = new Color(234,217,25);
 
@@ -48,10 +48,10 @@ public class EconomyHandler extends ListenerAdapter {
     // giver's id, receiver's id
     private final HashMap<Long, Long> receiverFromGiveCommand;
     private final BotApplication botApplication;
-    private final Utils utils;
+    private final Utils mUtils;
 
     public EconomyHandler(Utils pUtils, BotApplication pBotApplication) {
-        this.utils = pUtils;
+        this.mUtils = pUtils;
         this.botApplication = pBotApplication;
 
         currentSpins = new HashMap<>();
@@ -202,16 +202,11 @@ public class EconomyHandler extends ListenerAdapter {
 
     // Commands
 
-    /**
-     *
-     *
-     * @param pHook
-     * */
     private void balCommand(@NotNull InteractionHook pHook, @NotNull Member pMember, Member pUserWhoseBalance) throws SQLException
     {
         if (pUserWhoseBalance == null) pUserWhoseBalance = pMember;
 
-        long[] lWealth = getWealth(pUserWhoseBalance.getIdLong(), pMember.getGuild().getIdLong());
+        long[] lWealth = mUtils.getWealth(pUserWhoseBalance.getIdLong(), pMember.getGuild().getIdLong());
         String[][] lFields = {
                 {"Bank",NumberFormat.getInstance()
                         .format(lWealth[0])+" "+CURRENCY },
@@ -251,7 +246,7 @@ public class EconomyHandler extends ListenerAdapter {
 
         int lGainedMoney = new Random().nextInt(2000)+1000;
 
-        increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
+        mUtils.increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
         setCooldownInMillis(lMemberId, lGuildId, 0, 180000);
         pEvent.getHook().editOriginalEmbeds(
                 Utils.createEmbed(
@@ -284,14 +279,14 @@ public class EconomyHandler extends ListenerAdapter {
         int lGainedMoney = lRandom.nextInt(2000) + 2500;
         if (lRandom.nextInt(3) == 0)
         {
-            increaseBankOrCash(lMemberId, lGuildId, -lGainedMoney, "cash");
+            mUtils.increaseBankOrCash(lMemberId, lGuildId, -lGainedMoney, "cash");
             String description = ":x: You got caught while commiting a crime and paid **"+NumberFormat.getInstance()
                     .format(lGainedMoney)+"** "+CURRENCY;
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "", description, null, false, pEvent.getUser(), null, null)).queue();
         }
         else
         {
-            increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
+            mUtils.increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
             setCooldownInMillis(lMemberId, lGuildId, 1, 360000);
             pEvent.getHook().editOriginalEmbeds(
                     Utils.createEmbed(
@@ -338,12 +333,12 @@ public class EconomyHandler extends ListenerAdapter {
         StringBuilder lDescription = new StringBuilder();
         int lCounter = 1;
 
-        lRs = utils.onQuery("SELECT "+pCashOrBank.toLowerCase()+", user_id FROM Economy WHERE guild_id = ? ORDER BY "+pCashOrBank.toLowerCase()+" DESC LIMIT 10", pGuildId);
+        lRs = mUtils.onQuery("SELECT "+pCashOrBank.toLowerCase()+", user_id FROM Economy WHERE guild_id = ? ORDER BY "+pCashOrBank.toLowerCase()+" DESC LIMIT 10", pGuildId);
 
         while(lRs.next() && lCounter < 11) {
             Member lMember = botApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong(2));
             if (lMember == null) {
-                utils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong(2), pGuildId);
+                mUtils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong(2), pGuildId);
             }
             else {
                 lDescription.append("**").append(lCounter).append("** ").append(lMember.getAsMention()).append(" **").append(NumberFormat.getInstance()
@@ -369,7 +364,7 @@ public class EconomyHandler extends ListenerAdapter {
     private void withCommand(SlashCommandInteraction event) throws SQLException
     {
         event.deferReply().queue();
-        long[] lUsersWealth = getWealth(event.getUser().getIdLong(), event.getGuild().getIdLong());
+        long[] lUsersWealth = mUtils.getWealth(event.getUser().getIdLong(), event.getGuild().getIdLong());
         long lAmount = lUsersWealth[0];
         if (event.getOption("amount") != null)
         {
@@ -391,8 +386,8 @@ public class EconomyHandler extends ListenerAdapter {
         }
         else
         {
-            increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), +lAmount, "cash");
-            increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), -lAmount, "bank");
+            mUtils.increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), +lAmount, "cash");
+            mUtils.increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), -lAmount, "bank");
             event.getHook().editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Withdrawed **"+NumberFormat.getInstance()
                             .format(lAmount)+"** "+ CURRENCY +" from your bank",
@@ -408,7 +403,7 @@ public class EconomyHandler extends ListenerAdapter {
     private void depCommand(SlashCommandInteraction event) throws SQLException
     {
         event.deferReply().queue();
-        long[] lWealth = getWealth(event.getUser().getIdLong(), event.getGuild().getIdLong());
+        long[] lWealth = mUtils.getWealth(event.getUser().getIdLong(), event.getGuild().getIdLong());
         long lAmountToDep = lWealth[1];
 
         if (event.getOption("amount") != null)
@@ -453,15 +448,15 @@ public class EconomyHandler extends ListenerAdapter {
             return;
         }
 
-        long lMemberToRobCash = getWealth(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong())[1];
-        long[] lRobberWealth = getWealth(pRobber.getUser().getIdLong(), pRobber.getGuild().getIdLong());
+        long lMemberToRobCash = mUtils.getWealth(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong())[1];
+        long[] lRobberWealth = mUtils.getWealth(pRobber.getUser().getIdLong(), pRobber.getGuild().getIdLong());
 
         if (lMemberToRobCash <= 0) {
             String lDescription = ":x: "+pMemberToRob.getAsMention()+" doesn't have enough cash to rob.";
             long lostValue = (long) ((lRobberWealth[1]+lRobberWealth[0])*0.1);
             if (lostValue > 0)
             {
-                increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), -lostValue, "cash");
+                mUtils.increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), -lostValue, "cash");
                 setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
                 lDescription = ":x: You got caught robbing "+pMemberToRob.getAsMention()+" and paid **"+NumberFormat.getInstance()
                         .format(lostValue)+"** "+ CURRENCY;
@@ -472,8 +467,8 @@ public class EconomyHandler extends ListenerAdapter {
         }
         else
         {
-            increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), +lMemberToRobCash, "cash");
-            increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lMemberToRobCash, "cash");
+            mUtils.increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), +lMemberToRobCash, "cash");
+            mUtils.increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lMemberToRobCash, "cash");
             setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
             pHook.editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Successfully robbed "+
@@ -494,7 +489,7 @@ public class EconomyHandler extends ListenerAdapter {
 
         Guild lGuild = pEvent.getGuild();
         User lUser = pEvent.getUser();
-        final long lUsersCash = getWealth(lUser.getIdLong(),lGuild.getIdLong())[1];
+        final long lUsersCash = mUtils.getWealth(lUser.getIdLong(),lGuild.getIdLong())[1];
         final long lAmountToBet;
         final String lBetOnTheWheel;
 
@@ -502,7 +497,7 @@ public class EconomyHandler extends ListenerAdapter {
         if (lGuessOption != null && (
                 lGuessOption.getAsString().equals("red")
                 || lGuessOption.getAsString().equals("black")
-                || (utils.isInteger(lGuessOption.getAsString()) && 0 < lGuessOption.getAsInt() && lGuessOption.getAsInt() < 37))
+                || (mUtils.isInteger(lGuessOption.getAsString()) && 0 < lGuessOption.getAsInt() && lGuessOption.getAsInt() < 37))
         )
             lBetOnTheWheel = lGuessOption.getAsString();
         else {
@@ -526,7 +521,7 @@ public class EconomyHandler extends ListenerAdapter {
         else
         {
             Object[] lGuildSpinData = currentSpins.get(lGuild.getIdLong());
-            increaseBankOrCash(lUser.getIdLong(), lGuild.getIdLong(), -lAmountToBet, "cash");
+            mUtils.increaseBankOrCash(lUser.getIdLong(), lGuild.getIdLong(), -lAmountToBet, "cash");
 
             if (lGuildSpinData == null)
             {
@@ -614,7 +609,7 @@ public class EconomyHandler extends ListenerAdapter {
             {
                 long lAmountWonOrLost = Long.parseLong(memberAndBet[2])*2;
                 try {
-                    increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
+                    mUtils.increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
                     lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
                 }
                 catch (SQLException sqlEx)
@@ -626,7 +621,7 @@ public class EconomyHandler extends ListenerAdapter {
             {
                 long lAmountWonOrLost = Long.parseLong(memberAndBet[2])*20;
                 try {
-                    increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
+                    mUtils.increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
                     lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
                 }
                 catch (SQLException sqlEx)
@@ -655,20 +650,20 @@ public class EconomyHandler extends ListenerAdapter {
     private void addIncomeRoleCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
-        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+        if (mUtils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
         long lRoleId = pEvent.getOption("role").getAsRole().getIdLong();
         long lIncome = pEvent.getOption("income").getAsLong();
         String lDescription;
-        if (utils.onQuery("SELECT income FROM IncomeRole WHERE role_id = ?",lRoleId).next())
+        if (mUtils.onQuery("SELECT income FROM IncomeRole WHERE role_id = ?",lRoleId).next())
         {
-            utils.onExecute("UPDATE IncomeRole SET income = ? WHERE role_id = ?", lIncome, lRoleId);
+            mUtils.onExecute("UPDATE IncomeRole SET income = ? WHERE role_id = ?", lIncome, lRoleId);
             lDescription = ":white_check_mark: Updated income from "+pEvent.getOption("role").getAsRole().getAsMention()+" to **"
                     +lIncome+"**";
         }
         else
         {
-            utils.onExecute("INSERT INTO IncomeRole VALUES(?,?,?)", pEvent.getGuild().getIdLong(),lRoleId,lIncome);
+            mUtils.onExecute("INSERT INTO IncomeRole VALUES(?,?,?)", pEvent.getGuild().getIdLong(),lRoleId,lIncome);
             lDescription = ":white_check_mark: Added Income Role "+pEvent.getOption("role").getAsRole().getAsMention()+" with **"
                     +NumberFormat.getInstance()
                     .format(lIncome)+"** "+CURRENCY +" income";
@@ -684,13 +679,13 @@ public class EconomyHandler extends ListenerAdapter {
      * */
     private void getIncomeRolesCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
-        ResultSet rs = utils.onQuery("SELECT * FROM IncomeRole WHERE guild_id = ? ORDER BY income DESC", pEvent.getGuild().getIdLong());
+        ResultSet rs = mUtils.onQuery("SELECT * FROM IncomeRole WHERE guild_id = ? ORDER BY income DESC", pEvent.getGuild().getIdLong());
         StringBuilder lDescription = new StringBuilder();
 
         while(rs.next()) {
             Role lRole = pEvent.getJDA().getRoleById(rs.getLong(2));
             if (lRole == null) {
-                utils.onExecute("DELETE FROM IncomeRole WHERE role_id = ?", rs.getLong(2));
+                mUtils.onExecute("DELETE FROM IncomeRole WHERE role_id = ?", rs.getLong(2));
             }
             else {
                 lDescription.append(lRole.getAsMention()).append(" • **").append(NumberFormat.getInstance()
@@ -710,21 +705,21 @@ public class EconomyHandler extends ListenerAdapter {
     private void removeIncomeRoleCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
-        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+        if (mUtils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
         Role role = pEvent.getOption("role").getAsRole();
 
-        if (utils.onQuery("SELECT * FROM IncomeRole where guild_id="+pEvent.getGuild().getIdLong()+
+        if (mUtils.onQuery("SELECT * FROM IncomeRole where guild_id="+pEvent.getGuild().getIdLong()+
                 " AND role_id="+role.getIdLong()).isClosed())
         {
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pEvent.getHook().editOriginalEmbeds(mUtils.createEmbed(Color.red, "",
                     ":x: There is no income connected with "+role.getAsMention(),null, false, pEvent.getUser(), null, null)).queue();
         }
         else
         {
-            utils.onExecute("DELETE FROM IncomeRole WHERE guild_id="+pEvent.getGuild().getIdLong()+
+            mUtils.onExecute("DELETE FROM IncomeRole WHERE guild_id="+pEvent.getGuild().getIdLong()+
                                         " AND role_id="+role.getIdLong());
-            pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+            pEvent.getHook().editOriginalEmbeds(mUtils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: Income Role "+role.getAsMention()+" removed",null, false, pEvent.getUser(), null, null)).queue();
         }
     }
@@ -745,33 +740,33 @@ public class EconomyHandler extends ListenerAdapter {
      * */
     private void giveCommmand(InteractionHook pHook, Member pGiver, Member pReciever, long pAmount) throws SQLException
     {
-        long lGiversCash = getWealth(pGiver.getIdLong(), pGiver.getGuild().getIdLong())[1];
+        long lGiversCash = mUtils.getWealth(pGiver.getIdLong(), pGiver.getGuild().getIdLong())[1];
         if (pAmount == -1) pAmount = lGiversCash;
 
         if (pGiver.equals(pReciever))
         {
-            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(mUtils.createEmbed(Color.red, "",
                     ":x: You can't give yourself money",null,
                     false, pGiver.getUser(), null, null)).queue();
         }
         else if (pAmount <= 0)
         {
-            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(mUtils.createEmbed(Color.red, "",
                     ":x: Can't give less than 1 "+ CURRENCY,null,
                     false, pGiver.getUser(), null, null)).queue();
         }
         else if (lGiversCash < pAmount)
         {
-            pHook.editOriginalEmbeds(utils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(mUtils.createEmbed(Color.red, "",
                     ":x: You don't have enough "+ CURRENCY,null,
                     false, pGiver.getUser(), null, null)).queue();
         }
         else
         {
-            increaseBankOrCash(pGiver.getIdLong(), pGiver.getGuild().getIdLong(), -pAmount, "cash");
-            increaseBankOrCash(pReciever.getIdLong(), pGiver.getGuild().getIdLong(), pAmount, "cash");
+            mUtils.increaseBankOrCash(pGiver.getIdLong(), pGiver.getGuild().getIdLong(), -pAmount, "cash");
+            mUtils.increaseBankOrCash(pReciever.getIdLong(), pGiver.getGuild().getIdLong(), pAmount, "cash");
 
-            pHook.editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+            pHook.editOriginalEmbeds(mUtils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You gave **"+NumberFormat.getInstance()
                             .format(pAmount)+ "** "+CURRENCY +" to "+pReciever.getAsMention(),null,
                     false, pGiver.getUser(), null, null)).queue();
@@ -785,14 +780,14 @@ public class EconomyHandler extends ListenerAdapter {
     private void giveAdminCommand(SlashCommandInteractionEvent pEvent) throws SQLException
     {
         pEvent.deferReply().queue();
-        if (utils.memberNotAuthorized(pEvent.getMember(), "admin", pEvent.getHook())) return;
+        if (mUtils.memberNotAuthorized(pEvent.getMember(), "admin", pEvent.getHook())) return;
 
         pEvent.deferReply().queue();
         long lAmount = pEvent.getOption("amount").getAsLong();
         User lUserToGiveTo = pEvent.getOption("user").getAsUser();
-        increaseBankOrCash(lUserToGiveTo.getIdLong(), pEvent.getGuild().getIdLong(), lAmount, "cash");
+        mUtils.increaseBankOrCash(lUserToGiveTo.getIdLong(), pEvent.getGuild().getIdLong(), lAmount, "cash");
 
-        pEvent.getHook().editOriginalEmbeds(utils.createEmbed(ECONOMY_COLOR, "",
+        pEvent.getHook().editOriginalEmbeds(mUtils.createEmbed(ECONOMY_COLOR, "",
                 ":white_check_mark: You gave **"+NumberFormat.getInstance()
                         .format(lAmount)+"** "+ CURRENCY +" to "+lUserToGiveTo.getAsMention(),null,
                 false, pEvent.getUser(), null, null)).queue();
@@ -806,24 +801,24 @@ public class EconomyHandler extends ListenerAdapter {
      * */
     private void distributeIncome() {
         try {
-            ResultSet lRs = utils.onQuery("SELECT * FROM IncomeRole");
+            ResultSet lRs = mUtils.onQuery("SELECT * FROM IncomeRole");
 
             while(lRs.next()) {
                 try {
                     Guild lGuild = botApplication.getJDA().getGuildById(lRs.getLong("guild_id"));
                     if (lGuild == null) {
-                        utils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ?", lRs.getLong("guild_id"));
+                        mUtils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ?", lRs.getLong("guild_id"));
                         continue;
                     }
                     Role lRole = lGuild.getRoleById(lRs.getLong("role_id"));
                     if (lRole == null) {
-                        utils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ? AND role_id = ?", lRs.getLong("guild_id"), lRs.getLong("role_id"));
+                        mUtils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ? AND role_id = ?", lRs.getLong("guild_id"), lRs.getLong("role_id"));
                         continue;
                     }
                     List<Member> lMemberWithRole = lGuild.findMembersWithRoles(lRole).get();
                     lMemberWithRole.forEach(member -> {
                         try {
-                            increaseBankOrCash(member.getIdLong(), lGuild.getIdLong(), lRs.getLong("income"), "cash");
+                            mUtils.increaseBankOrCash(member.getIdLong(), lGuild.getIdLong(), lRs.getLong("income"), "cash");
                         }
                         catch (SQLException sqlEx) {sqlEx.printStackTrace();}
                     });
@@ -843,7 +838,7 @@ public class EconomyHandler extends ListenerAdapter {
     private boolean hasCooldown(GenericCommandInteractionEvent pEvent, int pCommandIndex) {
         long lCooldown = getCooldownInMillis(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), pCommandIndex);
         if (lCooldown > 0) {
-            pEvent.replyEmbeds(utils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", pEvent.getUser())).queue();
+            pEvent.replyEmbeds(mUtils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", pEvent.getUser())).queue();
             return true;
         }
         return false;
@@ -886,45 +881,6 @@ public class EconomyHandler extends ListenerAdapter {
     }
 
     /**
-     * Gets the bank and cash values of money from a specific user on a server
-     *
-     * @param pGuildId - ID of the server on which the user is whose wealth should be returned
-     * @param pMemberId - ID of the user whose wealth should be returned
-     * @return Returns an int array in which the first index is the bank value and the second the cash
-     * */
-    private long[] getWealth(long pMemberId, long pGuildId) throws SQLException
-    {
-            ResultSet rs = utils.onQuery("SELECT bank,cash FROM Economy WHERE guild_id="+pGuildId+" AND user_id="+pMemberId);
-            rs.next();
-
-            return new long[] { rs.getLong("bank"), rs.getLong("cash") };
-    }
-
-    /**
-     * Updates the bank/cash amount for a specific user on a server
-     *
-     * @param pGuildId - ID of the server on which the new user should be added to database
-     * @param pUserId - ID of the user who should be added to database
-     * @param pAmountOfMoney - Amount of money on which the bank value should be set
-     * */
-    private void increaseBankOrCash(long pUserId, long pGuildId, long pAmountOfMoney, String pColumn) throws SQLException
-    {
-        ResultSet lRs = utils.onQuery("SELECT user_id FROM Economy WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
-
-        if (lRs.isClosed() || !lRs.next())
-        {
-            if (pColumn.equals("bank"))
-                utils.onExecute("INSERT INTO Economy VALUES (?,?,?,?)", pGuildId, pUserId, pAmountOfMoney, 0);
-            else if (pColumn.equals("cash"))
-                utils.onExecute("INSERT INTO Economy VALUES (?,?,?,?)", pGuildId, pUserId, 0, pAmountOfMoney);
-        }
-        else
-            utils.onExecute("UPDATE Economy SET "+pColumn.toLowerCase()+" = "+pColumn.toLowerCase()+" + ? " +
-                "WHERE guild_id = ? AND user_id = ?", pAmountOfMoney, pGuildId, pUserId);
-
-    }
-
-    /**
      *
      *
      * @param pGuildId - ID of the server on which the new user should be added to database
@@ -933,12 +889,12 @@ public class EconomyHandler extends ListenerAdapter {
      * @param pNewCashValue
      * */
     private void setBankAndCash(long pUserId, long pGuildId, long pNewBankValue, long pNewCashValue) throws SQLException {
-        ResultSet lRs = utils.onQuery("SELECT user_id FROM Economy WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
+        ResultSet lRs = mUtils.onQuery("SELECT user_id FROM Economy WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
 
         if (lRs.isClosed() || !lRs.next())
-            utils.onExecute("INSERT INTO Economy VALUES (?,?,?,?)", pGuildId, pUserId, pNewBankValue, pNewCashValue);
+            mUtils.onExecute("INSERT INTO Economy VALUES (?,?,?,?)", pGuildId, pUserId, pNewBankValue, pNewCashValue);
         else
-            utils.onExecute(
+            mUtils.onExecute(
                     "UPDATE Economy SET bank = ?, cash = ? WHERE guild_id = ? AND user_id = ?",
                     pNewBankValue, pNewCashValue, pGuildId, pUserId);
 

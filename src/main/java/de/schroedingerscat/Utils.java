@@ -144,6 +144,42 @@ public class Utils {
         return null;
     }
 
+    /**
+     * Gets the bank and cash values of money from a specific user on a server
+     *
+     * @param pGuildId - ID of the server on which the user is whose wealth should be returned
+     * @param pMemberId - ID of the user whose wealth should be returned
+     * @return Returns an int array in which the first index is the bank value and the second the cash
+     * */
+    public long[] getWealth(long pMemberId, long pGuildId) throws SQLException {
+        ResultSet rs = onQuery("SELECT bank,cash FROM Economy WHERE guild_id="+pGuildId+" AND user_id="+pMemberId);
+        rs.next();
+
+        return new long[] { rs.getLong("bank"), rs.getLong("cash") };
+    }
+
+    /**
+     * Updates the bank/cash amount for a specific user on a server
+     *
+     * @param pGuildId - ID of the server on which the new user should be added to database
+     * @param pUserId - ID of the user who should be added to database
+     * @param pAmountOfMoney - Amount of money on which the bank value should be set
+     * */
+    public void increaseBankOrCash(long pUserId, long pGuildId, long pAmountOfMoney, String pColumn) throws SQLException {
+        ResultSet lRs = onQuery("SELECT user_id FROM Economy WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
+
+        if (lRs.isClosed() || !lRs.next()) {
+            if (pColumn.equals("bank"))
+                onExecute("INSERT INTO Economy VALUES (?,?,?,?)", pGuildId, pUserId, pAmountOfMoney, 0);
+            else if (pColumn.equals("cash"))
+                onExecute("INSERT INTO Economy VALUES (?,?,?,?)", pGuildId, pUserId, 0, pAmountOfMoney);
+        }
+        else {
+            onExecute("UPDATE Economy SET " + pColumn.toLowerCase() + " = " + pColumn.toLowerCase() + " + ? " +
+                    "WHERE guild_id = ? AND user_id = ?", pAmountOfMoney, pGuildId, pUserId);
+        }
+    }
+
     public boolean authorizeMember(Member pMember, String pPermission) throws SQLException
     {
         if (pMember.hasPermission(Permission.ADMINISTRATOR)) return true;
