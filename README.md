@@ -20,6 +20,10 @@ It will create a config file named `tokenfile.txt` under `SchroedingersCat/` ins
 You can paste a new bot token in every line as well as top.gg token and bot id seperated by a space in the same line to enable server counter updates to top.gg. <br>
 To choose bots you want to start, simply add (multiple) line indices (0,1,2,...) as arguments at the end of the command above. Those indices refer to lines in the tokenfile.
 
+<a href="https://paypal.me/kaitokuntatsu" style="padding: 5px; background-color: #1072EB; border-radius: 5px; color: white;">
+  Donate via PayPal
+</a>
+
 ## Features
 
    - Automated Voice Channel
