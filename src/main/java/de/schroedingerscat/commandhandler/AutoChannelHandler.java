@@ -6,15 +6,12 @@ import net.dv8tion.jda.api.entities.*;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceJoinEvent;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceLeaveEvent;
-import net.dv8tion.jda.api.events.guild.voice.GuildVoiceMoveEvent;
+import net.dv8tion.jda.api.events.guild.voice.GuildVoiceUpdateEvent;
 import net.dv8tion.jda.api.events.interaction.command.GenericCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.UserContextInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
-
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.sql.ResultSet;
@@ -109,39 +106,18 @@ public class AutoChannelHandler extends ListenerAdapter {
 
     @Override
     /**
-     *  If the voice channel the user connected to is the create-channel for automated custom channel
-     *  a new voice will be created, added to the database table of custom channel and the user moved in it
+     *  If a member connected to the create-channel for automated custom channels,
+     *  a new voice will be created, added to the database and the user moved
      *
-     *  @param pEvent   Event triggered by a user joining a voice channel
+     *  @param pEvent   Event triggered by a user joining/leaving a voice channel
      * */
-    public void onGuildVoiceJoin(@Nonnull GuildVoiceJoinEvent pEvent)
-    {
-        createCustomChannel((VoiceChannel) pEvent.getChannelJoined(), pEvent.getMember());
-    }
-
-    @Override
-    /**
-     *  If the voice channel the user left is a custom channel and empty it gets deleted
-     *
-     *  @param pEvent   Event triggered by a user leaving a voice channel
-     * */
-    public void onGuildVoiceLeave(@Nonnull GuildVoiceLeaveEvent pEvent)
-    {
-        deleteCustomChannel((VoiceChannel) pEvent.getChannelLeft());
-    }
-
-    @Override
-    /**
-     *  If the voice channel the user left is a custom channel and empty it gets deleted. <br>
-     *  If the voice channel the user connected to is a create-channel for automated custom channel
-     *  a new voice will be created, added to the database table of custom channel and the user moved in it.
-     *
-     *  @param pEvent   Event triggered by a user moving to another voice channel
-     * */
-    public void onGuildVoiceMove(@Nonnull GuildVoiceMoveEvent pEvent)
-    {
-        deleteCustomChannel((VoiceChannel) pEvent.getChannelLeft());
-        createCustomChannel((VoiceChannel) pEvent.getChannelJoined(), pEvent.getMember());
+    public void onGuildVoiceUpdate(@Nonnull GuildVoiceUpdateEvent pEvent) {
+        if (pEvent.getChannelJoined() == null) {
+            deleteCustomChannel((VoiceChannel) pEvent.getChannelLeft());
+        }
+        else {
+            createCustomChannel((VoiceChannel) pEvent.getChannelJoined(), pEvent.getMember());
+        }
     }
 
     // Slash Commands

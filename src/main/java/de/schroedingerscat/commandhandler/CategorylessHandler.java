@@ -6,11 +6,12 @@ import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.SelectMenuInteraction;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectInteraction;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.jetbrains.annotations.NotNull;
-
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.sql.SQLException;
@@ -65,7 +66,7 @@ public class CategorylessHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent) {
+    public void onStringSelectInteraction(@Nonnull StringSelectInteractionEvent pEvent) {
         if (!pEvent.getComponent().getId().equals("HelpMenu")) return;
 
         pEvent.deferEdit().queue();
@@ -112,7 +113,7 @@ public class CategorylessHandler extends ListenerAdapter {
                         null,
                         null)
         ).addActionRow(
-                SelectMenu.create("HelpMenu").
+                StringSelectMenu.create("HelpMenu").
                         addOption("Economy","0", Emoji.fromUnicode("U+1FA99")).
                         addOption("Auto Channel","1", Emoji.fromUnicode("U+2795")).
                         addOption("Reaction Roles","2", Emoji.fromUnicode("U+1F3AD")).

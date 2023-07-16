@@ -14,7 +14,6 @@ import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
-
 import javax.annotation.Nonnull;
 import java.awt.Color;
 import java.io.FileInputStream;
@@ -22,6 +21,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.NumberFormat;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Timer;
@@ -68,8 +68,9 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
+        System.out.println(pEvent.getButton().getId());
         try {
-            buyPet(pEvent.getId().charAt(8) - '0', pEvent);
+            buyPet(pEvent.getButton().getId().charAt(8) - '0', pEvent);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -243,21 +244,20 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     }
 
     private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException {
-        pEvent.deferReply().queue();
-
         Pet lPet = mPetsInStock[pPetIndex];
         User lUser = pEvent.getUser();
 
         if (lPet.price() > mUtils.getWealth(lUser.getIdLong(), pEvent.getGuild().getIdLong())[1]) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\nTipp: /with", lUser)).queue();
+            pEvent.getHook().sendMessageEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\nTipp: /with", lUser)).setEphemeral(true).queue();
         }
         else {
-            mUtils.onExecute("INSERT INTO Pets (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
+            mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
             mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
-            pEvent.getHook().editOriginalEmbeds(
+            pEvent.getHook().sendMessageEmbeds(
                     Utils.createEmbed(
                             Color.green,
-                            ":white_check_mark: You bought **" + lPet.name() + "** for " + lPet.price() + " " + EconomyHandler.CURRENCY,
+                            ":white_check_mark: You bought **" + lPet.name() + "** for " + NumberFormat.getInstance()
+                                    .format(lPet.price()) + " " + EconomyHandler.CURRENCY,
                             lUser)
             ).queue();
         }

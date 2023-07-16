@@ -137,7 +137,7 @@ public class Utils {
     }
 
     public Pet getPet() throws SQLException {
-        ResultSet lRs = onQuery("SELECT * FROM Pet WHERE id = (SELECT MAX(id) FROM Pet)");
+        ResultSet lRs = onQuery("SELECT * FROM Pet ORDER BY RANDOM() LIMIT 1");
         if (lRs.next()) {
             return new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description"));
         }

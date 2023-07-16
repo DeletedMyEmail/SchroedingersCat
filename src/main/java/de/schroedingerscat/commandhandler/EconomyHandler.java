@@ -112,7 +112,8 @@ public class EconomyHandler extends ListenerAdapter {
                     pEvent.replyModal(
                             Modal.create("givemodal", "Give Command")
                                     .addActionRow(TextInput.create("amount", "Amount of money to give", TextInputStyle.SHORT).build())
-                                    .build()).queue();
+                                    .build()
+                    ).queue();
                 }
             }
         }
@@ -777,12 +778,10 @@ public class EconomyHandler extends ListenerAdapter {
      *
      *
      * */
-    private void giveAdminCommand(SlashCommandInteractionEvent pEvent) throws SQLException
-    {
+    private void giveAdminCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
         if (mUtils.memberNotAuthorized(pEvent.getMember(), "admin", pEvent.getHook())) return;
 
-        pEvent.deferReply().queue();
         long lAmount = pEvent.getOption("amount").getAsLong();
         User lUserToGiveTo = pEvent.getOption("user").getAsUser();
         mUtils.increaseBankOrCash(lUserToGiveTo.getIdLong(), pEvent.getGuild().getIdLong(), lAmount, "cash");

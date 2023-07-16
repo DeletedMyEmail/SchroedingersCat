@@ -7,7 +7,7 @@ import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
-import net.dv8tion.jda.api.events.interaction.component.SelectMenuInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.managers.AudioManager;
@@ -47,8 +47,10 @@ public class MusicHandler extends ListenerAdapter {
         }
     }
 
+
+
     @Override
-    public void onSelectMenuInteraction(@Nonnull SelectMenuInteractionEvent pEvent)
+    public void onStringSelectInteraction(@Nonnull StringSelectInteractionEvent pEvent)
     {
         if (!pEvent.getComponent().getId().equals("TrackSelection")) return;
         pEvent.deferReply().queue();

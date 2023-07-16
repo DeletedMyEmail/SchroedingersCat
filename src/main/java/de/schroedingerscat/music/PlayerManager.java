@@ -14,6 +14,7 @@ import net.dv8tion.jda.api.entities.channel.concrete.TextChannel;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.LayoutComponent;
 import net.dv8tion.jda.api.interactions.components.selections.SelectMenu;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -77,7 +78,7 @@ public class PlayerManager {
             {
                 if (!pIsSearch) return;
 
-                SelectMenu.Builder lMenu = SelectMenu.create("TrackSelection");
+                StringSelectMenu.Builder lMenu = StringSelectMenu.create("TrackSelection");
                 List<AudioTrack> lTracks = pAudioPlaylist.getTracks();
                 StringBuilder lDescription = new StringBuilder("**Choose one of the following search results:**\n\n");
                 for (int i = 0; i < lTracks.size() && i < 10; i++)
