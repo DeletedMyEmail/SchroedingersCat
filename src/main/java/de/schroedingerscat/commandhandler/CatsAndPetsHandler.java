@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Handles all commands related to pets and cat cards
  *
- * @author Joshua H. | KaitoKunTatsu
- * @version 2.2.0 | last edit: 15.07.2023
+ * @author KaitoKunTatsu
+ * @version 3.0.0 | last edit: 15.07.2023
  * */
 public class CatsAndPetsHandler extends ListenerAdapter {
 
@@ -243,7 +243,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 queue();
     }
 
-    private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException {
+    private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException, FileNotFoundException {
         Pet lPet = mPetsInStock[pPetIndex];
         User lUser = pEvent.getUser();
 
@@ -253,13 +253,15 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         else {
             mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
             mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
-            pEvent.getHook().sendMessageEmbeds(
-                    Utils.createEmbed(
-                            Color.green,
-                            ":white_check_mark: You bought **" + lPet.name() + "** for " + NumberFormat.getInstance()
-                                    .format(lPet.price()) + " " + EconomyHandler.CURRENCY,
-                            lUser)
-            ).queue();
+            FileInputStream lPetImgStream = new FileInputStream("src/main/resources/pets/pet" + lPet.id() + ".png");
+            pEvent.getChannel().sendMessageEmbeds(
+                        new EmbedBuilder().
+                                setDescription(":white_check_mark: You bought **" + lPet.name() + "** for " + NumberFormat.getInstance().format(lPet.price()) + " " + EconomyHandler.CURRENCY + "!").
+                                setColor(Color.green).
+                                setThumbnail("attachment://pet.png").
+                                setAuthor(lUser.getName(), null, lUser.getAvatarUrl()).
+                                build())
+                    .addFiles(FileUpload.fromData(lPetImgStream, "pet.png")).queue();
         }
     }
 

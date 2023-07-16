@@ -1,6 +1,6 @@
 package de.schroedingerscat.commandhandler;
 
-import de.schroedingerscat.BotData;
+import de.schroedingerscat.data.SchroedingersCatData;
 import de.schroedingerscat.Utils;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -8,8 +8,6 @@ import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
-import net.dv8tion.jda.api.interactions.components.selections.SelectMenuInteraction;
-import net.dv8tion.jda.api.interactions.components.selections.StringSelectInteraction;
 import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
@@ -22,8 +20,8 @@ import java.util.List;
 /**
  * Handles slash commands which can't be categorized
  *
- * @author Joshua H. | KaitoKunTatsu
- * @version 2.2.0 | last edit: 14.07.2023
+ * @author KaitoKunTatsu
+ * @version 3.0.0 | last edit: 15.07.2023
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
@@ -74,7 +72,7 @@ public class CategorylessHandler extends ListenerAdapter {
         int lCategoryAsValue = Integer.parseInt(pEvent.getValues().get(0));
 
         List<String[]> lFields = new ArrayList<>();
-        for (String[] cmds : BotData.COMMANDS[lCategoryAsValue]) {
+        for (String[] cmds : SchroedingersCatData.COMMANDS[lCategoryAsValue]) {
             lFields.add(new String[] { cmds[0],cmds[1] });
         }
 
@@ -90,7 +88,7 @@ public class CategorylessHandler extends ListenerAdapter {
         }
 
         MessageEmbed embed = Utils.createEmbed(
-                lColor, BotData.CATEGORIES[Integer.parseInt(pEvent.getValues().get(0))]+" Commands", "",
+                lColor, SchroedingersCatData.CATEGORIES[Integer.parseInt(pEvent.getValues().get(0))]+" Commands", "",
                 lFields.toArray(new String[][]{}), true, null, null, null);
         pEvent.getHook().editOriginalEmbeds(embed).queue();
     }

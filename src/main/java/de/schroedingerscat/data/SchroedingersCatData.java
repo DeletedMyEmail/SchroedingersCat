@@ -1,8 +1,15 @@
-package de.schroedingerscat;
+package de.schroedingerscat.data;
 
-public class BotData {
+import de.schroedingerscat.BotApplication;
+import de.schroedingerscat.Utils;
+import de.schroedingerscat.commandhandler.*;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
-    // Command categories
+public class SchroedingersCatData implements BotData {
+
     public static final String[] CATEGORIES =
             {
                     "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
@@ -103,4 +110,48 @@ public class BotData {
                     }
             };
 
+    private final CommandData[] mContextCommands;
+
+    public SchroedingersCatData() {
+        mContextCommands = new CommandData[]{
+                Commands.context(Command.Type.USER, "kick custom channel"),
+                Commands.context(Command.Type.USER, "ban custom channel"),
+                Commands.context(Command.Type.USER, "bal"),
+                Commands.context(Command.Type.USER, "give"),
+                Commands.context(Command.Type.USER, "rob")
+        };
+    }
+
+    @Override
+    public String[][][] getSlashCommands() {
+        return COMMANDS;
+    }
+
+    @Override
+    public CommandData[] getContextCommands() {
+        return mContextCommands;
+    }
+
+    @Override
+    public String[] getCommandCategories() {
+        return CATEGORIES;
+    }
+
+    @Override
+    public int getIndexInConfigFile() {
+        return 0;
+    }
+
+    @Override
+    public ListenerAdapter[] getListeners(BotApplication pBot, Utils pUtils) {
+        return new ListenerAdapter[]{
+                new AutoChannelHandler(pUtils),
+                new ReactionRoleHandler(pUtils),
+                new AutoRoleHandler(pUtils),
+                new CategorylessHandler(pUtils),
+                new CatsAndPetsHandler(pUtils),
+                new EconomyHandler(pUtils, pBot),
+                new SettingsHandler(pUtils, pBot)
+        };
+    }
 }

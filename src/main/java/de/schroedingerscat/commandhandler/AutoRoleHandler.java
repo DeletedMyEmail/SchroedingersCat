@@ -15,8 +15,8 @@ import java.sql.SQLException;
 /**
  *
  *
- * @author Joshua H. | KaitoKunTatsu
- * @version 2.0.0 | last edit: 26.09.2022
+ * @author KaitoKunTatsu
+ * @version 3.0.0 | last edit: 15.07.2023
  * */
 public class AutoRoleHandler extends ListenerAdapter {
 

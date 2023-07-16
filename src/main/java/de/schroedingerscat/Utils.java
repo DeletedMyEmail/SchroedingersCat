@@ -21,8 +21,8 @@ import java.sql.*;
 /**
  *
  *
- * @author Joshua H. | KaitoKunTatsu
- * @version 2.2.0 | last edit: 14.07.2022
+ * @author KaitoKunTatsu
+ * @version 3.0.0 | last edit: 15.07.2023
  * */
 public class Utils {
 

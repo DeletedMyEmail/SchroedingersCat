@@ -1,66 +1,108 @@
 package de.schroedingerscat;
 
 import com.google.common.hash.Hashing;
+import de.schroedingerscat.data.BotData;
+import de.schroedingerscat.data.MusicCatData;
+import de.schroedingerscat.data.SchroedingersCatData;
 import klibrary.utils.SystemUtils;
-import org.jetbrains.annotations.NotNull;
-import java.io.File;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.entities.Guild;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.interactions.commands.Command;
+import net.dv8tion.jda.api.interactions.commands.OptionType;
+import net.dv8tion.jda.api.interactions.commands.build.CommandData;
+import net.dv8tion.jda.api.interactions.commands.build.Commands;
+import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * A factory class for creating bot instances
  *
- * @author Joshua H. | KaitoKunTatsu
- * @version 2.1.1 | last edit: 13.07.2023
+ * @author KaitoKunTatsu
+ * @version 3.0.0 | last edit: 15.07.2023
  **/
 public class BotFactory {
 
     public static final String APP_CONFIG_FOLDER_PATH = SystemUtils.getLocalApplicationPath()+"/SchroedingersCat/";
     public static final String TOKEN_CONFIG_FILE = APP_CONFIG_FOLDER_PATH +"tokenfile.txt";
 
-    public static BotApplication create(int pBotIndex) {
-        createConfigFiles();
-        return create(pBotIndex, new File(TOKEN_CONFIG_FILE));
+    public static BotApplication create(BotData pBotData) throws InterruptedException, IOException, SQLException {
+        String[] lTokens = getTokens(pBotData.getIndexInConfigFile());
+        BotApplication lBotApplication;
+        if (lTokens.length == 0) {
+            throw new IllegalArgumentException("No tokens found in tokenfile.txt");
+        }
+        else if (lTokens.length != 3) {
+            lBotApplication = new BotApplication(lTokens[0]);
+        }
+        else {
+            lBotApplication = new BotApplication(lTokens[0], lTokens[1], lTokens[2]);
+        }
+        Utils lUtils = new Utils(getDatabasePath(lTokens[0]));
+
+        updateSlashCommands(lBotApplication.getJDA(), pBotData.getSlashCommands(), pBotData.getContextCommands());
+        addListeners(lBotApplication, pBotData.getListeners(lBotApplication, lUtils));
+        insertGuildsIntoDatabaseIfAbsent(lBotApplication.getJDA(), lUtils);
+
+        System.out.println(lBotApplication.getJDA().getSelfUser().getName() + " online!");
+        return lBotApplication;
     }
 
-    private static BotApplication create(int pBotIndex, @NotNull File pTokenFile) {
-        BotApplication lBotApp = null;
-        try {
-            String[] lTokens = Files.readAllLines(pTokenFile.toPath()).get(pBotIndex).split(" ");
-            System.out.println("Initializing bot at index "+pBotIndex);
+    private static void updateSlashCommands(JDA pJDA, String[][][] pSlashCommands, CommandData[] pContextCommands) {
+        List<CommandData> lCommands = new ArrayList<>();
+        for(String[][] lCommandsForCategory : pSlashCommands) {
+            for (String[] lCommandStructure : lCommandsForCategory) {
+                SlashCommandData lSlashCommand = Commands.slash(lCommandStructure[0], lCommandStructure[1]);
+                for (int i = 2; i < lCommandStructure.length; i++) {
+                    String[] lOptionSettings = lCommandStructure[i].split(",");
+                    OptionType lType = switch (lOptionSettings[0]) {
+                        case "int" -> OptionType.INTEGER;
+                        case "number" -> OptionType.NUMBER;
+                        case "string" -> OptionType.STRING;
+                        case "user" -> OptionType.USER;
+                        case "channel" -> OptionType.CHANNEL;
+                        case "role" -> OptionType.ROLE;
+                        case "bool" -> OptionType.BOOLEAN;
+                        default -> OptionType.UNKNOWN;
+                    };
 
-            if (lTokens.length >= 3) {
-                lBotApp = new BotApplication(lTokens[0], getDatabasePath(lTokens[0]), lTokens[1], lTokens[2]);
+                    lSlashCommand.addOption(lType, lOptionSettings[1], lOptionSettings[2], lOptionSettings[3].equals("true"));
+                }
+                lCommands.add(lSlashCommand);
             }
-            else {
-                lBotApp = new BotApplication(lTokens[0], getDatabasePath(lTokens[0]));
-            }
-
-            System.out.println(lBotApp.getJDA().getSelfUser().getName() + " online");
         }
-        catch (SQLException sqlEx) {
-            System.out.println("Could not connect to database");
-        }
-        catch (IOException ioEx) {
-            System.out.println("Could not open or read file: "+ pTokenFile.getAbsolutePath());
-        } catch (InterruptedException e) {
-            System.out.println("Thread starting a bot got interupted");
-        }
-
-        return lBotApp;
+        lCommands.addAll(Arrays.asList(pContextCommands));
+        pJDA.updateCommands().addCommands(lCommands).queue();
     }
 
-    public static BotApplication[] create(int[] pBotIndices) {
-        createConfigFiles();
-        File lTokenFile = new File(TOKEN_CONFIG_FILE);
-        BotApplication[] lBots = new BotApplication[pBotIndices.length];
-        for (int i = 0; i < pBotIndices.length; ++i) {
-            lBots[i] = create(pBotIndices[i], lTokenFile);
+    private static String[] getTokens(int pIndex) throws IOException {
+        BufferedReader lReader = new BufferedReader(new FileReader(TOKEN_CONFIG_FILE));
+        int i = 0;
+        while (i < pIndex) {
+            lReader.readLine();
+            ++i;
         }
+        return lReader.readLine().split(" ");
+    }
 
-        return lBots;
+    private static void addListeners(BotApplication pBotApplication, ListenerAdapter[] pListeners) {
+        for (ListenerAdapter lListener : pListeners) {
+            pBotApplication.getJDA().addEventListener(lListener);
+        }
+    }
+
+    private static void insertGuildsIntoDatabaseIfAbsent(JDA pJDA, Utils pUtils) throws SQLException {
+        List<Guild> lGuilds =  pJDA.getGuilds();
+        for (Guild lGuild : lGuilds) {
+            pUtils.insertGuildIfAbsent(lGuild.getIdLong());
+        }
     }
 
     private static void createConfigFiles() {
@@ -77,24 +119,13 @@ public class BotFactory {
         return pFileName;
     }
 
-    private static int[] toIntArray(String[] pStringArr) throws IllegalArgumentException {
-        int[] lIntArr = new int[pStringArr.length];
-        for (int i = 0; i < pStringArr.length; ++i) {
-            lIntArr[i] = Integer.parseInt(pStringArr[i]);
-        }
-
-        return lIntArr;
-    }
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException, InterruptedException, IOException {
         createConfigFiles();
 
         if (args.length == 0) {
-            System.out.println("Give indices for tokens defined in tokenfile.txt as arguments. See https://github.com/KaitoKunTatsu/SchroedingersCat for more information");
-        }
-        else {
-            int[] lIndices = toIntArray(args);
-            create(lIndices);
+            BotFactory.create(new SchroedingersCatData());
+        } else {
+            BotFactory.create(new MusicCatData());
         }
     }
 }

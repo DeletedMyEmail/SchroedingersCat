@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 /**
  * Handles slash commands related to the bot's economy
  *
- * @author Joshua H. | KaitoKunTatsu
- * @version 2.2.0 | last edit: 13.07.2023
+ * @author KaitoKunTatsu
+ * @version 3.0.0 | last edit: 15.07.2023
  * */
 public class EconomyHandler extends ListenerAdapter {
 
@@ -42,21 +42,21 @@ public class EconomyHandler extends ListenerAdapter {
     public static final Color ECONOMY_COLOR = new Color(234,217,25);
 
     // HashMap<GuildId, List<Object>{color,number,List<Object>{user,boolean,amount}, List<Channel>},
-    private final HashMap<Long, Object[]> currentSpins;
+    private final HashMap<Long, Object[]> mCurrentSpins;
     // Command cooldown: HashMap<userId, guildId, HashMap<guildId, List<[when work cooldown end, when crime cooldown ends, when rob cooldown ends]>
-    private final HashMap<Long, HashMap<Long, Long[]>> commandsCooldown;
+    private final HashMap<Long, HashMap<Long, Long[]>> mCommandsCooldown;
     // giver's id, receiver's id
-    private final HashMap<Long, Long> receiverFromGiveCommand;
-    private final BotApplication botApplication;
+    private final HashMap<Long, Long> mReceiverFromGiveCommand;
+    private final BotApplication mBotApplication;
     private final Utils mUtils;
 
     public EconomyHandler(Utils pUtils, BotApplication pBotApplication) {
         this.mUtils = pUtils;
-        this.botApplication = pBotApplication;
+        this.mBotApplication = pBotApplication;
 
-        currentSpins = new HashMap<>();
-        receiverFromGiveCommand = new HashMap<>();
-        commandsCooldown = new HashMap<>();
+        mCurrentSpins = new HashMap<>();
+        mReceiverFromGiveCommand = new HashMap<>();
+        mCommandsCooldown = new HashMap<>();
 
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -77,7 +77,7 @@ public class EconomyHandler extends ListenerAdapter {
                 giveCommmand(
                         pEvent.getHook(),
                         pEvent.getMember(),
-                        pEvent.getGuild().getMemberById(receiverFromGiveCommand.get(pEvent.getMember().getIdLong())),
+                        pEvent.getGuild().getMemberById(mReceiverFromGiveCommand.get(pEvent.getMember().getIdLong())),
                         Long.parseLong(pEvent.getValue("amount").getAsString())
                 );
             }
@@ -108,7 +108,7 @@ public class EconomyHandler extends ListenerAdapter {
                 case "bal" -> balCommand(pEvent, pEvent.getTargetMember());
                 case "rob" -> robCommand(pEvent, pEvent.getTargetMember());
                 case "give" -> {
-                    receiverFromGiveCommand.put(pEvent.getUser().getIdLong(), pEvent.getTargetMember().getIdLong());
+                    mReceiverFromGiveCommand.put(pEvent.getUser().getIdLong(), pEvent.getTargetMember().getIdLong());
                     pEvent.replyModal(
                             Modal.create("givemodal", "Give Command")
                                     .addActionRow(TextInput.create("amount", "Amount of money to give", TextInputStyle.SHORT).build())
@@ -337,7 +337,7 @@ public class EconomyHandler extends ListenerAdapter {
         lRs = mUtils.onQuery("SELECT "+pCashOrBank.toLowerCase()+", user_id FROM Economy WHERE guild_id = ? ORDER BY "+pCashOrBank.toLowerCase()+" DESC LIMIT 10", pGuildId);
 
         while(lRs.next() && lCounter < 11) {
-            Member lMember = botApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong(2));
+            Member lMember = mBotApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong(2));
             if (lMember == null) {
                 mUtils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong(2), pGuildId);
             }
@@ -521,7 +521,7 @@ public class EconomyHandler extends ListenerAdapter {
 
         else
         {
-            Object[] lGuildSpinData = currentSpins.get(lGuild.getIdLong());
+            Object[] lGuildSpinData = mCurrentSpins.get(lGuild.getIdLong());
             mUtils.increaseBankOrCash(lUser.getIdLong(), lGuild.getIdLong(), -lAmountToBet, "cash");
 
             if (lGuildSpinData == null)
@@ -532,7 +532,7 @@ public class EconomyHandler extends ListenerAdapter {
                 String lWheelColor = "red";
                 if (lRnd.nextBoolean()) lWheelColor = "black";
 
-                currentSpins.put(lGuild.getIdLong(),new Object[]{
+                mCurrentSpins.put(lGuild.getIdLong(),new Object[]{
                         System.currentTimeMillis(),
                         new String[] {
                                 lWheelColor,
@@ -561,7 +561,7 @@ public class EconomyHandler extends ListenerAdapter {
             }
             else
             {
-                List<String[]> lUsersSpinning = (ArrayList<String[]>) currentSpins.get(lGuild.getIdLong())[2];
+                List<String[]> lUsersSpinning = (ArrayList<String[]>) mCurrentSpins.get(lGuild.getIdLong())[2];
                 lUsersSpinning.add(
                     new String[]{
                         lUser.getId(),
@@ -569,11 +569,11 @@ public class EconomyHandler extends ListenerAdapter {
                         Long.toString(lAmountToBet)
                     }
                 );
-                List<Long> lGamblingChannels = (ArrayList<Long>) currentSpins.get(lGuild.getIdLong())[3];
+                List<Long> lGamblingChannels = (ArrayList<Long>) mCurrentSpins.get(lGuild.getIdLong())[3];
                 if (!lGamblingChannels.contains(pEvent.getChannel().getIdLong()))
                     lGamblingChannels.add(pEvent.getChannel().getIdLong());
             }
-            int lTimeLeft = 10- (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - (Long) currentSpins.get(lGuild.getIdLong())[0]);
+            int lTimeLeft = 10- (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - (Long) mCurrentSpins.get(lGuild.getIdLong())[0]);
 
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "",
                     ":white_check_mark: You bet **"+NumberFormat.getInstance()
@@ -589,7 +589,7 @@ public class EconomyHandler extends ListenerAdapter {
      * */
     private void spinResult(Guild pGuild)
     {
-        Object[] lSpinsOnGuild = currentSpins.get(pGuild.getIdLong());
+        Object[] lSpinsOnGuild = mCurrentSpins.get(pGuild.getIdLong());
         if (lSpinsOnGuild == null) return;
 
         // [0]: when the current round started ; [1]: String[] lSpinResult ; [2]: List<String[]> lMembersAndTheirBets ; [3]: List<Long> lChannelIds
@@ -599,7 +599,7 @@ public class EconomyHandler extends ListenerAdapter {
         List<Long> lChannelIds = (ArrayList<Long>) lSpinsOnGuild[3];
         StringBuilder lDescription = new StringBuilder();
 
-        currentSpins.remove(pGuild.getIdLong());
+        mCurrentSpins.remove(pGuild.getIdLong());
 
         lDescription.append("The wheel landed on: **"+lSpinResult[0]+" "+lSpinResult[1]+"**\n\n");
         lMembersAndTheirBets.forEach(memberAndBet -> {
@@ -804,7 +804,7 @@ public class EconomyHandler extends ListenerAdapter {
 
             while(lRs.next()) {
                 try {
-                    Guild lGuild = botApplication.getJDA().getGuildById(lRs.getLong("guild_id"));
+                    Guild lGuild = mBotApplication.getJDA().getGuildById(lRs.getLong("guild_id"));
                     if (lGuild == null) {
                         mUtils.onExecute("DELETE FROM IncomeRole WHERE guild_id = ?", lRs.getLong("guild_id"));
                         continue;
@@ -848,8 +848,8 @@ public class EconomyHandler extends ListenerAdapter {
      *
      * */
     private long getCooldownInMillis(long pUserId, long pGuildId, int pCommandIndex) {
-        if (commandsCooldown.get(pUserId) == null) return 0;
-        Long[] lWhenCooldownsEnd = commandsCooldown.get(pUserId).get(pGuildId);
+        if (mCommandsCooldown.get(pUserId) == null) return 0;
+        Long[] lWhenCooldownsEnd = mCommandsCooldown.get(pUserId).get(pGuildId);
         if (lWhenCooldownsEnd == null) return 0;
 
         /*if (lWhenCooldownsEnd[pCommandIndex] - System.currentTimeMillis() <= 0) {
@@ -868,8 +868,8 @@ public class EconomyHandler extends ListenerAdapter {
      * */
     private void setCooldownInMillis(long pUserId, long pGuildId, int pCommandIndex, long pCooldownInMillis)
     {
-        commandsCooldown.putIfAbsent(pUserId, new HashMap<>());
-        HashMap<Long, Long[]> lUsersGuildWithCooldowns = commandsCooldown.get(pUserId);
+        mCommandsCooldown.putIfAbsent(pUserId, new HashMap<>());
+        HashMap<Long, Long[]> lUsersGuildWithCooldowns = mCommandsCooldown.get(pUserId);
         if (lUsersGuildWithCooldowns.get(pGuildId) != null)
             lUsersGuildWithCooldowns.get(pGuildId)[pCommandIndex] = System.currentTimeMillis() + pCooldownInMillis;
         else {
