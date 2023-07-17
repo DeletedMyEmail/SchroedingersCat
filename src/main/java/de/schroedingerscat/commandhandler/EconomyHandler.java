@@ -23,7 +23,6 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.NumberFormat;
 import java.util.*;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -115,8 +114,8 @@ public class EconomyHandler extends ListenerAdapter {
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
         Utils.catchAndLogError(pEvent.getHook(), () -> {
             switch (pEvent.getButton().getId()) {
-                case "EconomyBankButton" -> pEvent.getHook().editOriginalEmbeds(topEmbed(pEvent.getGuild().getIdLong(), "Bank")).queue();
-                case "EconomyCashButton" -> pEvent.getHook().editOriginalEmbeds(topEmbed(pEvent.getGuild().getIdLong(), "Cash")).queue();
+                case "EconomyBankButton" -> topEmbed(pEvent, "Bank");
+                case "EconomyCashButton" -> topEmbed(pEvent, "Cash");
             }
         });
     }
@@ -128,10 +127,8 @@ public class EconomyHandler extends ListenerAdapter {
 
         long[] lWealth = mUtils.getWealth(pUserWhoseBalance.getIdLong(), pMember.getGuild().getIdLong());
         String[][] lFields = {
-                {"Bank",NumberFormat.getInstance()
-                        .format(lWealth[0])+" "+CURRENCY },
-                {"Cash",NumberFormat.getInstance()
-                        .format(lWealth[1])+" "+CURRENCY},
+                {"Bank", Utils.formatPrice(lWealth[0]) },
+                {"Cash", Utils.formatPrice(lWealth[1])},
         };
 
         pHook.editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "", "", lFields, false, pUserWhoseBalance.getUser(), null, null)).queue();
@@ -165,18 +162,7 @@ public class EconomyHandler extends ListenerAdapter {
 
         mUtils.increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
         setCooldownInMillis(lMemberId, lGuildId, 0, 180000);
-        pEvent.getHook().editOriginalEmbeds(
-                Utils.createEmbed(
-                        ECONOMY_COLOR,
-                        "",
-                        ":white_check_mark: You earned **"+ NumberFormat.getInstance()
-                                .format(lGainedMoney)+"** "+ CURRENCY
-                        , null,
-                        false,
-                        pEvent.getUser(),
-                        null,
-                        null)
-        ).queue();
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR,"",":white_check_mark: You earned **"+ Utils.formatPrice(lGainedMoney)+"**", null, false,pEvent.getUser(),null,null)).queue();
     }
 
     /**
@@ -195,8 +181,7 @@ public class EconomyHandler extends ListenerAdapter {
         int lGainedMoney = lRandom.nextInt(2000) + 2500;
         if (lRandom.nextInt(3) == 0) {
             mUtils.increaseBankOrCash(lMemberId, lGuildId, -lGainedMoney, "cash");
-            String description = ":x: You got caught while commiting a crime and paid **"+NumberFormat.getInstance()
-                    .format(lGainedMoney)+"** "+CURRENCY;
+            String description = ":x: You got caught while commiting a crime and paid **"+Utils.formatPrice(lGainedMoney)+"**";
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "", description, null, false, pEvent.getUser(), null, null)).queue();
         }
         else {
@@ -206,8 +191,7 @@ public class EconomyHandler extends ListenerAdapter {
                     Utils.createEmbed(
                             ECONOMY_COLOR,
                             "",
-                            ":white_check_mark: You earned **"+NumberFormat.getInstance()
-                                    .format(lGainedMoney)+"** "+CURRENCY,
+                            ":white_check_mark: You earned **"+Utils.formatPrice(lGainedMoney)+"**",
                             null,
                             false,
                             pEvent.getUser(),
@@ -228,30 +212,21 @@ public class EconomyHandler extends ListenerAdapter {
                 setActionRow(lButtons).queue();
     }
 
-    /**
-     * Creates an embed containing the richest members on server as a top list
-     *
-     * @param pGuildId - Server's id on which the members should be searched
-     * @param pCashOrBank - Defines the type of value with should be displayed. <br/>
-     *                    If it's not "cash" or "bank", the embed will display an empty list
-     * @return Returns the mentioned embed
-     * */
-    private MessageEmbed topEmbed(long pGuildId, String pCashOrBank) throws SQLException {
-        MessageEmbed lEmbed;
-        ResultSet lRs;
+    private void topEmbed(ButtonInteractionEvent pEvent, String pCashOrBank) throws SQLException {
+        pEvent.deferEdit().queue();
+
         StringBuilder lDescription = new StringBuilder();
+        long lGuildId = pEvent.getGuild().getIdLong();
+        ResultSet lRs = mUtils.onQuery("SELECT "+pCashOrBank.toLowerCase()+", user_id FROM Economy WHERE guild_id = ? ORDER BY "+pCashOrBank.toLowerCase()+" DESC LIMIT 10", lGuildId);
         int lCounter = 1;
 
-        lRs = mUtils.onQuery("SELECT "+pCashOrBank.toLowerCase()+", user_id FROM Economy WHERE guild_id = ? ORDER BY "+pCashOrBank.toLowerCase()+" DESC LIMIT 10", pGuildId);
-
         while(lRs.next() && lCounter < 11) {
-            Member lMember = mBotApplication.getJDA().getGuildById(pGuildId).getMemberById(lRs.getLong(2));
+            Member lMember = mBotApplication.getJDA().getGuildById(lGuildId).getMemberById(lRs.getLong(2));
             if (lMember == null) {
-                mUtils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong(2), pGuildId);
+                mUtils.onExecute("DELETE FROM Economy WHERE user_id = ? AND guild_id = ?", lRs.getLong(2), lGuildId);
             }
             else {
-                lDescription.append("**").append(lCounter).append("** ").append(lMember.getAsMention()).append(" **").append(NumberFormat.getInstance()
-                        .format(lRs.getLong(1))).append("** ").append(CURRENCY).append("\n");
+                lDescription.append("**").append(lCounter).append("** ").append(lMember.getAsMention()).append(" **").append(Utils.formatPrice(lRs.getLong(1))).append("** ").append("\n");
                 lCounter++;
             }
         }
@@ -260,9 +235,7 @@ public class EconomyHandler extends ListenerAdapter {
             lDescription = new StringBuilder("There are no users with " + pCashOrBank.toLowerCase() + " money");
         }
 
-        lEmbed = Utils.createEmbed(ECONOMY_COLOR, "TOP "+pCashOrBank.toUpperCase()+" VALUES",
-                lDescription.toString(), null, false, null, null, null);
-        return lEmbed;
+        pEvent.getMessage().editMessageEmbeds(Utils.createEmbed(ECONOMY_COLOR, "TOP "+pCashOrBank.toUpperCase()+" VALUES", lDescription.toString(), null, false, null, null, null)).queue();
     }
 
     private void withCommand(SlashCommandInteraction event) throws SQLException {
@@ -288,8 +261,7 @@ public class EconomyHandler extends ListenerAdapter {
             mUtils.increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), +lAmount, "cash");
             mUtils.increaseBankOrCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), -lAmount, "bank");
             event.getHook().editOriginalEmbeds(Utils.createEmbed(
-                    ECONOMY_COLOR, "", ":white_check_mark: Withdrawed **"+NumberFormat.getInstance()
-                            .format(lAmount)+"** "+ CURRENCY +" from your bank",
+                    ECONOMY_COLOR, "", ":white_check_mark: Withdrawed **"+Utils.formatPrice(lAmount)+"*+ from your bank",
                     null, false, event.getUser(), null, null)).queue();
         }
     }
@@ -315,8 +287,7 @@ public class EconomyHandler extends ListenerAdapter {
         else {
             setBankAndCash(event.getUser().getIdLong(), event.getGuild().getIdLong(), lWealth[0]+lAmountToDep, lWealth[1]-lAmountToDep);
             event.getHook().editOriginalEmbeds(Utils.createEmbed(
-                    ECONOMY_COLOR, "", ":white_check_mark: Deposited **"+NumberFormat.getInstance()
-                            .format(lAmountToDep)+ "** "+CURRENCY +" to your bank",
+                    ECONOMY_COLOR, "", ":white_check_mark: Deposited **"+Utils.formatPrice(lAmountToDep)+"** to your bank",
                     null, false, event.getUser(), null, null)).queue();
         }
     }
@@ -346,12 +317,10 @@ public class EconomyHandler extends ListenerAdapter {
         if (lMemberToRobCash <= 0) {
             String lDescription = ":x: "+pMemberToRob.getAsMention()+" doesn't have enough cash to rob.";
             long lostValue = (long) ((lRobberWealth[1]+lRobberWealth[0])*0.1);
-            if (lostValue > 0)
-            {
+            if (lostValue > 0) {
                 mUtils.increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), -lostValue, "cash");
                 setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
-                lDescription = ":x: You got caught robbing "+pMemberToRob.getAsMention()+" and paid **"+NumberFormat.getInstance()
-                        .format(lostValue)+"** "+ CURRENCY;
+                lDescription = ":x: You got caught robbing "+pMemberToRob.getAsMention()+" and paid **"+Utils.formatPrice(lostValue)+"**";
             }
             pHook.editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", lDescription,
@@ -363,8 +332,7 @@ public class EconomyHandler extends ListenerAdapter {
             setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
             pHook.editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Successfully robbed "+
-                            pMemberToRob.getAsMention()+" and got **"+NumberFormat.getInstance()
-                            .format(lMemberToRobCash)+"** "+CURRENCY,
+                            pMemberToRob.getAsMention()+" and got **"+Utils.formatPrice(lMemberToRobCash)+"**",
                     null, false, pRobber.getUser(), null, null)).queue();
         }
     }
@@ -471,7 +439,7 @@ public class EconomyHandler extends ListenerAdapter {
             int lTimeLeft = 10- (int) TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - (Long) mCurrentSpins.get(lGuild.getIdLong())[0]);
 
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "",
-                    ":white_check_mark: You bet **"+NumberFormat.getInstance().format(lAmountToBet)+"** "+CURRENCY+ " on **"+lBetOnTheWheel+"**",
+                    ":white_check_mark: You bet **"+Utils.formatPrice(lAmountToBet)+"** on **"+lBetOnTheWheel+"**",
                     null, false, lUser, null, lTimeLeft+" seconds remaining")).queue();
         }
 
@@ -500,7 +468,7 @@ public class EconomyHandler extends ListenerAdapter {
                 long lAmountWonOrLost = Long.parseLong(memberAndBet[2])*2;
                 try {
                     mUtils.increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
-                    lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+                    lDescription.append(lMember.getAsMention()+" **won "+Utils.formatPrice(lAmountWonOrLost)+"**\n");
                 }
                 catch (SQLException sqlEx)
                 {
@@ -512,7 +480,7 @@ public class EconomyHandler extends ListenerAdapter {
                 long lAmountWonOrLost = Long.parseLong(memberAndBet[2])*20;
                 try {
                     mUtils.increaseBankOrCash(Long.parseLong(memberAndBet[0]), pGuild.getIdLong(), lAmountWonOrLost, "cash");
-                    lDescription.append(lMember.getAsMention()+" **won "+NumberFormat.getInstance().format(lAmountWonOrLost)+"**\n");
+                    lDescription.append(lMember.getAsMention()+" **won "+Utils.formatPrice(lAmountWonOrLost)+"**\n");
                 }
                 catch (SQLException sqlEx)
                 {
@@ -520,7 +488,7 @@ public class EconomyHandler extends ListenerAdapter {
                 }
             }
             else {
-                lDescription.append(lMember.getAsMention()+" **lost "+NumberFormat.getInstance().format(-Long.parseLong(memberAndBet[2]))+"**\n");
+                lDescription.append(lMember.getAsMention()+" **lost "+Utils.formatPrice(-Long.parseLong(memberAndBet[2]))+"**\n");
             }
         });
 
@@ -550,8 +518,7 @@ public class EconomyHandler extends ListenerAdapter {
         {
             mUtils.onExecute("INSERT INTO IncomeRole VALUES(?,?,?)", pEvent.getGuild().getIdLong(),lRoleId,lIncome);
             lDescription = ":white_check_mark: Added Income Role "+pEvent.getOption("role").getAsRole().getAsMention()+" with **"
-                    +NumberFormat.getInstance()
-                    .format(lIncome)+"** "+CURRENCY +" income";
+                    +Utils.formatPrice(lIncome)+"** income";
         }
         pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, lDescription, pEvent.getUser())
         ).queue();
@@ -568,8 +535,7 @@ public class EconomyHandler extends ListenerAdapter {
                 mUtils.onExecute("DELETE FROM IncomeRole WHERE role_id = ?", rs.getLong(2));
             }
             else {
-                lDescription.append(lRole.getAsMention()).append(" • **").append(NumberFormat.getInstance()
-                        .format(rs.getLong(3))).append("** ").append(CURRENCY).append("\n");
+                lDescription.append(lRole.getAsMention()).append(" • **").append(Utils.formatPrice(rs.getLong(3))).append("** ").append("\n");
             }
         }
 
@@ -627,7 +593,7 @@ public class EconomyHandler extends ListenerAdapter {
         }
         else if (lGiversCash < pAmount)
         {
-            pHook.editOriginalEmbeds(mUtils.createEmbed(Color.red, "",
+            pHook.editOriginalEmbeds(Utils.createEmbed(Color.red, "",
                     ":x: You don't have enough "+ CURRENCY,null,
                     false, pGiver.getUser(), null, null)).queue();
         }
@@ -636,9 +602,8 @@ public class EconomyHandler extends ListenerAdapter {
             mUtils.increaseBankOrCash(pGiver.getIdLong(), pGiver.getGuild().getIdLong(), -pAmount, "cash");
             mUtils.increaseBankOrCash(pReciever.getIdLong(), pGiver.getGuild().getIdLong(), pAmount, "cash");
 
-            pHook.editOriginalEmbeds(mUtils.createEmbed(ECONOMY_COLOR, "",
-                    ":white_check_mark: You gave **"+NumberFormat.getInstance()
-                            .format(pAmount)+ "** "+CURRENCY +" to "+pReciever.getAsMention(),null,
+            pHook.editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "",
+                    ":white_check_mark: You gave **"+Utils.formatPrice(pAmount)+ "** to "+pReciever.getAsMention(),null,
                     false, pGiver.getUser(), null, null)).queue();
         }
     }
@@ -651,9 +616,8 @@ public class EconomyHandler extends ListenerAdapter {
         User lUserToGiveTo = pEvent.getOption("user").getAsUser();
         mUtils.increaseBankOrCash(lUserToGiveTo.getIdLong(), pEvent.getGuild().getIdLong(), lAmount, "cash");
 
-        pEvent.getHook().editOriginalEmbeds(mUtils.createEmbed(ECONOMY_COLOR, "",
-                ":white_check_mark: You gave **"+NumberFormat.getInstance()
-                        .format(lAmount)+"** "+ CURRENCY +" to "+lUserToGiveTo.getAsMention(),null,
+        pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR, "",
+                ":white_check_mark: You gave **"+Utils.formatPrice(lAmount)+"** to "+lUserToGiveTo.getAsMention(),null,
                 false, pEvent.getUser(), null, null)).queue();
     }
 

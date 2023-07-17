@@ -59,7 +59,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             public void run() {
                 try {
                     refreshPetStock();
-                } catch (SQLException e) {
+                } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
@@ -69,7 +69,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
         Utils.catchAndLogError(pEvent.getJDA(), () -> {
-            if (pEvent.getId().startsWith("buy_pet")) {
+            if (pEvent.getButton().getId().startsWith("buy_pet")) {
                 buyPet(pEvent.getButton().getId().charAt(8) - '0', pEvent);
             }
         });
@@ -213,13 +213,15 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
         pEvent.deferReply().queue();
 
-        Utils.mergeImages("src/main/resources/pets/pet0.png", "src/main/resources/pets/pet1.png", "src/main/resources/pets/pet2.png", "src/main/resources/shop.jpg");
         FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.jpg");
         pEvent.getHook().
                 editOriginalEmbeds(new EmbedBuilder().
                         setTitle("Pet Shop").
                         setDescription("Buy yourself a pet! The following pets are in stock today:").
                         setColor(CATS_AND_PETS_COLOR).
+                        addField(mPetsInStock[0].name(), Utils.formatPrice(mPetsInStock[0].price()), true).
+                        addField(mPetsInStock[1].name(), Utils.formatPrice(mPetsInStock[1].price()), true).
+                        addField(mPetsInStock[2].name(), Utils.formatPrice(mPetsInStock[2].price()), true).
                         setImage("attachment://shop.jpg").
                         build()
                 ).
@@ -233,30 +235,33 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     }
 
     private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException, FileNotFoundException {
+        pEvent.deferReply().queue();
         Pet lPet = mPetsInStock[pPetIndex];
         User lUser = pEvent.getUser();
 
         if (lPet.price() > mUtils.getWealth(lUser.getIdLong(), pEvent.getGuild().getIdLong())[1]) {
-            pEvent.getHook().sendMessageEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\nTipp: /with", lUser)).setEphemeral(true).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\nTipp: /with", lUser)).queue();
         }
         else {
             mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
             mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
             FileInputStream lPetImgStream = new FileInputStream("src/main/resources/pets/pet" + lPet.id() + ".png");
-            pEvent.getChannel().sendMessageEmbeds(
+            pEvent.getHook().editOriginalEmbeds(
                         new EmbedBuilder().
-                                setDescription(":white_check_mark: You bought **" + lPet.name() + "** for " + NumberFormat.getInstance().format(lPet.price()) + " " + EconomyHandler.CURRENCY + "!").
+                                setDescription(":white_check_mark: You bought **" + lPet.name() + "** for " + Utils.formatPrice(lPet.price()) + "!").
                                 setColor(Color.green).
                                 setThumbnail("attachment://pet.png").
                                 setAuthor(lUser.getName(), null, lUser.getAvatarUrl()).
-                                build())
-                    .addFiles(FileUpload.fromData(lPetImgStream, "pet.png")).queue();
+                                build()).
+                    setAttachments(FileUpload.fromData(lPetImgStream, "pet.png")).
+                    queue();
         }
     }
 
-    private void refreshPetStock() throws SQLException {
+    private void refreshPetStock() throws SQLException, IOException {
         for (int i = 0; i < mPetsInStock.length; i++) {
             mPetsInStock[i] = mUtils.getPet();
         }
+        Utils.mergeImages("src/main/resources/pets/pet" + mPetsInStock[0].id() + ".png", "src/main/resources/pets/pet" + mPetsInStock[1].id() + ".png", "src/main/resources/pets/pet" + mPetsInStock[2].id() + ".png", "src/main/resources/shop.jpg");
     }
 }

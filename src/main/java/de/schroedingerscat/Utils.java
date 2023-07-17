@@ -1,5 +1,6 @@
 package de.schroedingerscat;
 
+import de.schroedingerscat.commandhandler.EconomyHandler;
 import de.schroedingerscat.entities.Pet;
 import kotlin.jvm.internal.Lambda;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -19,6 +20,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
+import java.text.NumberFormat;
 
 /**
  *
@@ -213,6 +215,10 @@ public class Utils {
         lMergedImgGraphic.dispose();
     }
 
+    public static String formatPrice(long pPrice) {
+        return NumberFormat.getInstance().format(pPrice) + " " + EconomyHandler.CURRENCY;
+    }
+
     public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pTitle, @NotNull String pDescription, String[][] pFields, boolean inline, User pAuthor, String pImageUrl, String pFooter) {
         EmbedBuilder builder = new EmbedBuilder();
 
@@ -272,6 +278,8 @@ public class Utils {
     }
 
     public static void sendToOwner(JDA pJDA, String pMessage) {
+        System.out.println("log");
         pJDA.getUserById(OWNER_ID).openPrivateChannel().complete().sendMessage(pMessage).queue();
+        System.out.println("logged");
     }
 }

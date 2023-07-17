@@ -16,7 +16,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-
 /**
  * Handles slash commands which can't be categorized
  *
@@ -66,7 +65,6 @@ public class CategorylessHandler extends ListenerAdapter {
             case 1 -> lColor = AutoChannelHandler.AUTOCHANNEL_COLOR;
             case 2 -> lColor = ReactionRoleHandler.REACTION_ROLE_COLOR;
             case 3 -> lColor = SettingsHandler.SERVERSETTINGS_COLOR;
-            //case 4 -> lColor = MusicHandler.getCategoryColor();
             case 4 -> lColor = CatsAndPetsHandler.CATS_AND_PETS_COLOR;
             case 5 -> lColor = CATEGORYLESS_COLOR;
         }

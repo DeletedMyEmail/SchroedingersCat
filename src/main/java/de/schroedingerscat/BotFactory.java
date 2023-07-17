@@ -46,15 +46,15 @@ public class BotFactory {
         }
         Utils lUtils = new Utils(getDatabasePath(lTokens[0]));
 
-        updateSlashCommands(lBotApplication.getJDA(), pBotData.getSlashCommands(), pBotData.getContextCommands());
-        addListeners(lBotApplication, pBotData.getListeners(lBotApplication, lUtils));
-        insertGuildsIntoDatabaseIfAbsent(lBotApplication.getJDA(), lUtils);
-
         // add tables to database
         String[] lTableNames = pBotData.getDatabaseTables();
         for (String lTableName : lTableNames) {
             lUtils.onExecute(lTableName);
         }
+
+        updateSlashCommands(lBotApplication.getJDA(), pBotData.getSlashCommands(), pBotData.getContextCommands());
+        addListeners(lBotApplication, pBotData.getListeners(lBotApplication, lUtils));
+        insertGuildsIntoDatabaseIfAbsent(lBotApplication.getJDA(), lUtils);
 
         System.out.println(lBotApplication.getJDA().getSelfUser().getName() + " online!");
         return lBotApplication;

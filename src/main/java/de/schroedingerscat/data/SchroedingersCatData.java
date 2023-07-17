@@ -10,14 +10,14 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 public class SchroedingersCatData implements BotData {
 
-    private final String[] categories =
+    public static final String[] CATEGORIES =
             {
                     "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
                     "**:wrench: Server Settings**", "**:flower_playing_cards: Cats and Pets**", //"**:musical_note: Music**",
                     "**:grey_question: Others**"
             };
 
-    private final String[][][] commands =
+    public static final String[][][] COMMANDS =
             {
                     // Name | Description | options (type, name, description, required)
                     {
@@ -104,8 +104,8 @@ public class SchroedingersCatData implements BotData {
 
     private final String[] mTables = {
             "CREATE TABLE IF NOT EXISTS 'Economy' ('guild_id' INTEGER, 'user_id' INTEGER, 'bank' INTEGER, 'cash' INTEGER, PRIMARY KEY('guild_id','user_id'))",
-            "CREATE TABLE IF NOT EXISTS 'GuildSettings' ('guild_id' INTEGER, 'welcome_channel_id' INTEGER, 'auto_role_id' INTEGER, 'create_channel_id' INTEGER, 'welcome_message' TEXT, 'screening'\tINTEGER, 'log_channel_id' INTEGER, 'catsandpets_channel_id' INTEGER, 'editor_role_id' INTEGER, 'moderator_role_id' INTEGER, PRIMARY KEY('guild_id'))",
-            "CREATE TABLE IF NOT EXISTS 'ReactionRole' ('guild_id' INTEGER, 'message_id' INTEGER, 'emoji' TEXT, 'channel_id' INTEGER, 'role_id' INTEGER, PRIMARY KEY('guild_id','emoji','message_id')",
+            "CREATE TABLE IF NOT EXISTS 'GuildSettings' ('guild_id' INTEGER, 'welcome_channel_id' INTEGER, 'auto_role_id' INTEGER, 'create_channel_id' INTEGER, 'welcome_message' TEXT, 'screening' INTEGER, 'log_channel_id' INTEGER, 'catsandpets_channel_id' INTEGER, 'editor_role_id' INTEGER, 'moderator_role_id' INTEGER, PRIMARY KEY('guild_id'))",
+            "CREATE TABLE IF NOT EXISTS 'ReactionRole' ('guild_id' INTEGER, 'message_id' INTEGER, 'emoji' TEXT, 'channel_id' INTEGER, 'role_id' INTEGER, PRIMARY KEY('guild_id','emoji','message_id'))",
             "CREATE TABLE IF NOT EXISTS 'CatCards' ('guild_id' INTEGER, 'user_id' INTEGER, 'cat_number' INTEGER)",
             "CREATE TABLE IF NOT EXISTS 'Pet' ('id' INTEGER, 'name' TEXT, 'price' INTEGER, 'description' TEXT)",
             "CREATE TABLE IF NOT EXISTS 'PetInventory' ('guild_id' INTEGER, 'user_id' INTEGER, 'pet_id' INTEGER, 'amount' INTEGER)",
@@ -129,7 +129,7 @@ public class SchroedingersCatData implements BotData {
 
     @Override
     public String[][][] getSlashCommands() {
-        return commands;
+        return COMMANDS;
     }
 
     @Override
@@ -139,17 +139,17 @@ public class SchroedingersCatData implements BotData {
 
     @Override
     public String[] getCommandCategories() {
-        return categories;
+        return CATEGORIES;
     }
 
     @Override
     public ListenerAdapter[] getListeners(BotApplication pBot, Utils pUtils) {
         return new ListenerAdapter[]{
                 new AutoChannelHandler(pUtils),
+                new CatsAndPetsHandler(pUtils),
                 new ReactionRoleHandler(pUtils),
                 new AutoRoleHandler(pUtils),
                 new CategorylessHandler(pUtils),
-                new CatsAndPetsHandler(pUtils),
                 new EconomyHandler(pUtils, pBot),
                 new SettingsHandler(pUtils, pBot)
         };
@@ -157,6 +157,6 @@ public class SchroedingersCatData implements BotData {
 
     @Override
     public String[] getDatabaseTables() {
-        return new String[0];
+        return mTables;
     }
 }
