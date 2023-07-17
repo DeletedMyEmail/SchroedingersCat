@@ -11,7 +11,7 @@
    </a>
 </div>
 
-Schrödinger's Cat is an easy-to-use discord bot providing slash commands to make your and your user's discord experience a lot better. <br><br>
+Schrödinger's Cat is an easy-to-use discord bot providing slash commands to make your and your user's discord experience easier and funnier. <br><br>
 
 ## Getting Started
 
