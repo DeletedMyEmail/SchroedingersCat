@@ -220,12 +220,12 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         String[][] lPetNames = new String[lPets.length][2];
         for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
             lPetNames[i][0] = lPets[i].name();
-            lPetNames[i][1] = Utils.formatPrice(lPets[i].price());
+            lPetNames[i][1] = "Level " + lPets[i].level()+"\nStrength: "+lPets[i].strength()+"\nHealth: "+lPets[i].health()+"\nSpeed: "+lPets[i].speed()+"\nPrice: "+Utils.formatPrice(lPets[i].price());
         }
 
-        MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Your pets:", lPetNames, true, null, "attachment://pets.jpg", "1/"+Utils.roundUp(getNumberOfPetsFor(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong()),3));
+        MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Your pets:", lPetNames, true, null, "attachment://pets.png", "1/"+Utils.roundUp(getNumberOfPetsFor(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong()),3));
         pEvent.getHook().editOriginalEmbeds(lEmbed).
-                setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.jpg")).
+                setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.png")).
                 setActionRow(
                         Button.primary("left_", Emoji.fromUnicode("U+21E6").getAsReactionCode()),
                         Button.primary("right_", Emoji.fromUnicode("U+21E8").getAsReactionCode())
@@ -237,40 +237,39 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         BufferedImage lImg1 = ImageIO.read(new File(pPetPath1));
         BufferedImage lImg2 = ImageIO.read(new File(pPetPath2));
         BufferedImage lImg3 = ImageIO.read(new File(pPetPath3));
-        BufferedImage lMergedImg = new BufferedImage(lImg1.getWidth() + lImg2.getWidth() + lImg3.getWidth() + 160, Math.max(lImg1.getHeight(), Math.max(lImg2.getHeight(), lImg3.getHeight()))+80, BufferedImage.TYPE_INT_RGB);
+        BufferedImage lMergedImg = new BufferedImage(lImg1.getWidth() + lImg2.getWidth() + lImg3.getWidth() + 160, Math.max(lImg1.getHeight(), Math.max(lImg2.getHeight(), lImg3.getHeight()))+80, BufferedImage.TYPE_INT_ARGB);
 
         Graphics2D lMergedImgGraphic = lMergedImg.createGraphics();
-        lMergedImgGraphic.drawImage(lImg1, 40, 40, null);
-        lMergedImgGraphic.drawImage(lImg2, lImg1.getWidth() + 80, 40, null);
-        lMergedImgGraphic.drawImage(lImg3, lImg1.getWidth() + 120 + lImg2.getWidth(), 40, null);
+        lMergedImgGraphic.drawImage(lImg1, 0, 0, null);
+        lMergedImgGraphic.drawImage(lImg2, lImg1.getWidth(), 0, null);
+        lMergedImgGraphic.drawImage(lImg3, lImg1.getWidth() + lImg2.getWidth(), 0, null);
 
-        ImageIO.write(lMergedImg, "jpg", new File(pOutput));
+        ImageIO.write(lMergedImg, "png", new File(pOutput));
         lMergedImgGraphic.dispose();
     }
 
     public byte[] mergePetImages(Pet... pPets) throws IOException {
         BufferedImage[] lImageFiles = new BufferedImage[pPets.length];
-        int lWidth = 40;
+        int lWidth = 0;
         int lHeight = 0;
 
         for (int i = 0; i < pPets.length; ++i) {
             lImageFiles[i] = ImageIO.read(new File(getPetPath(pPets[i].id())));
-            lWidth += lImageFiles[i].getWidth() + 40;
+            lWidth += lImageFiles[i].getWidth();
             lHeight = Math.max(lHeight, lImageFiles[i].getHeight());
         }
-        lHeight += 80;
 
-        BufferedImage lMergedImg = new BufferedImage(lWidth, lHeight, BufferedImage.TYPE_INT_RGB);
+        BufferedImage lMergedImg = new BufferedImage(lWidth, lHeight, BufferedImage.TYPE_INT_ARGB);
         Graphics2D lMergedImgGraphic = lMergedImg.createGraphics();
 
-        int lX = 40;
+        int lX = 0;
         for (int i = 0; i < lImageFiles.length; ++i) {
             lMergedImgGraphic.drawImage(lImageFiles[i], lX, 40, null);
-            lX += lImageFiles[i].getWidth() + 40;
+            lX += lImageFiles[i].getWidth();
         }
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ImageIO.write(lMergedImg, "jpg", baos);
+        ImageIO.write(lMergedImg, "png", baos);
         return baos.toByteArray();
     }
 
@@ -286,9 +285,9 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     private Pet[] getOneSiteOfPetsFor(long pUserId, long pGuildId, int pSite) throws SQLException {
         ArrayList<Pet> lPets = new ArrayList<>();
-        ResultSet lRs = mUtils.onQuery("SELECT * FROM Pet WHERE id IN (SELECT pet_id FROM PetInventory WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3)", pGuildId, pUserId, pSite*3);
+        ResultSet lRs = mUtils.onQuery("SELECT id, name, description, price, strength, health, speed, level FROM Pet JOIN PetInventory ON pet_id = id WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3", pGuildId, pUserId, pSite*3);
         for (int i = 0; i < 3 && lRs.next(); ++i) {
-            lPets.add(new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description")));
+            lPets.add(new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getString("description"), lRs.getInt("price"), lRs.getInt("level"), lRs.getInt("strength"), lRs.getInt("health"), lRs.getInt("speed")));
         }
 
         return lPets.toArray(new Pet[lPets.size()]);
@@ -297,7 +296,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
         pEvent.deferReply().queue();
 
-        FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.jpg");
+        FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.png");
         pEvent.getHook().
                 editOriginalEmbeds(new EmbedBuilder().
                         setTitle("Pet Shop").
@@ -306,7 +305,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                         addField(mPetsInStock[0].name(), Utils.formatPrice(mPetsInStock[0].price()), true).
                         addField(mPetsInStock[1].name(), Utils.formatPrice(mPetsInStock[1].price()), true).
                         addField(mPetsInStock[2].name(), Utils.formatPrice(mPetsInStock[2].price()), true).
-                        setImage("attachment://shop.jpg").
+                        setImage("attachment://shop.png").
                         build()
                 ).
                 setActionRow(
@@ -314,7 +313,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                         Button.success("buy_pet_1", "Buy Pet 2"),
                         Button.danger("buy_pet_2", "Buy Pet 3")
                 ).
-                setAttachments(FileUpload.fromData(lCatInStream, "shop.jpg")).
+                setAttachments(FileUpload.fromData(lCatInStream, "shop.png")).
                 queue();
     }
 
@@ -330,7 +329,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You already own this pet", lUser)).queue();
         }
         else {
-            mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
+            mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id, level) VALUES (?, ?, ?, 1)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
             mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
             FileInputStream lPetImgStream = new FileInputStream(getPetPath(lPet.id()));
             pEvent.getHook().editOriginalEmbeds(
@@ -351,9 +350,11 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     }
 
     private void refreshPetStock() throws SQLException, IOException {
-        for (int i = 0; i < mPetsInStock.length; i++) {
-            mPetsInStock[i] = mUtils.getPet();
+        ResultSet lRs = mUtils.onQuery("SELECT * FROM Pet ORDER BY RANDOM() LIMIT 3");
+        for (int i = 0; i < 3; ++i) {
+            lRs.next();
+            mPetsInStock[i] = new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getString("description"), lRs.getInt("price"), 1, lRs.getInt("strength"), lRs.getInt("health"), lRs.getInt("speed"));
         }
-        createShopImage(getPetPath(mPetsInStock[0].id()), getPetPath(mPetsInStock[1].id()), getPetPath(mPetsInStock[2].id()), "src/main/resources/shop.jpg");
+        createShopImage(getPetPath(mPetsInStock[0].id()), getPetPath(mPetsInStock[1].id()), getPetPath(mPetsInStock[2].id()), "src/main/resources/shop.png");
     }
 }

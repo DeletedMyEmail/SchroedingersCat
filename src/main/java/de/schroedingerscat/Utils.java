@@ -48,22 +48,6 @@ public class Utils {
         conn.commit();
     }
 
-    public Pet getPet(int pPetId) throws SQLException {
-        ResultSet lRs = onQuery("SELECT * FROM Pet WHERE id = ?", pPetId);
-        if (lRs.next()) {
-            return new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description"));
-        }
-        return null;
-    }
-
-    public Pet getPet() throws SQLException {
-        ResultSet lRs = onQuery("SELECT * FROM Pet ORDER BY RANDOM() LIMIT 1");
-        if (lRs.next()) {
-            return new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description"));
-        }
-        return null;
-    }
-
     /**
      * Gets the bank and cash values of money from a specific user on a server
      *

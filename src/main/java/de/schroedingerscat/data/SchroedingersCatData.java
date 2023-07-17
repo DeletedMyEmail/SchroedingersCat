@@ -106,8 +106,8 @@ public class SchroedingersCatData implements BotData {
             "CREATE TABLE IF NOT EXISTS 'GuildSettings' ('guild_id' INTEGER, 'welcome_channel_id' INTEGER, 'auto_role_id' INTEGER, 'create_channel_id' INTEGER, 'welcome_message' TEXT, 'screening' INTEGER, 'log_channel_id' INTEGER, 'catsandpets_channel_id' INTEGER, 'editor_role_id' INTEGER, 'moderator_role_id' INTEGER, PRIMARY KEY('guild_id'))",
             "CREATE TABLE IF NOT EXISTS 'ReactionRole' ('guild_id' INTEGER, 'message_id' INTEGER, 'emoji' TEXT, 'channel_id' INTEGER, 'role_id' INTEGER, PRIMARY KEY('guild_id','emoji','message_id'))",
             "CREATE TABLE IF NOT EXISTS 'CatCards' ('guild_id' INTEGER, 'user_id' INTEGER, 'cat_number' INTEGER)",
-            "CREATE TABLE IF NOT EXISTS 'Pet' ('id' INTEGER, 'name' TEXT, 'price' INTEGER, 'description' TEXT, PRIMARY KEY('id'))",
-            "CREATE TABLE IF NOT EXISTS 'PetInventory' ('guild_id' INTEGER, 'user_id' INTEGER, 'pet_id' INTEGER, PRIMARY KEY('guild_id','user_id','pet_id'))",
+            "CREATE TABLE IF NOT EXISTS 'Pet' ('id' INTEGER, 'name' TEXT, 'price' INTEGER, 'description' TEXT, 'strength' INTEGER, 'health' INTEGER, 'speed' INTEGER, PRIMARY KEY('id'))",
+            "CREATE TABLE IF NOT EXISTS 'PetInventory' ('guild_id' INTEGER, 'user_id' INTEGER, 'pet_id' INTEGER, 'level' INTEGER, PRIMARY KEY('guild_id','user_id','pet_id'))",
             "CREATE TABLE IF NOT EXISTS 'CommandCooldown' ('guild_id' INTEGER, 'user_id' INTEGER, 'command' TEXT, 'cooldown_until' INTEGER)",
             "CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)",
             "CREATE TABLE IF NOT EXISTS 'AutoChannel' ('guild_id' INTEGER, 'owner_id' INTEGER, 'channel_id' INTEGER)"
