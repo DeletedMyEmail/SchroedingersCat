@@ -10,15 +10,14 @@ import net.dv8tion.jda.api.interactions.commands.build.Commands;
 
 public class SchroedingersCatData implements BotData {
 
-    public static final String[] CATEGORIES =
+    private final String[] categories =
             {
                     "**:coin: Economy**", "**:heavy_plus_sign: Auto Channel**", "**:performing_arts: Reaction Role**",
                     "**:wrench: Server Settings**", "**:flower_playing_cards: Cats and Pets**", //"**:musical_note: Music**",
                     "**:grey_question: Others**"
             };
 
-    // All commands and their options
-    public static final String[][][] COMMANDS =
+    private final String[][][] commands =
             {
                     // Name | Description | options (type, name, description, required)
                     {
@@ -89,13 +88,6 @@ public class SchroedingersCatData implements BotData {
                             {"buy", "Buys a cat card", "int,cat,Number of the cat card you want to buy,true"},
                             {"sell", "Sells a cat card", "int,cat,Number of the cat card you want to sell,true"},
                     },
-//                {       // Music
-//                    {"play_track", "Takes an url or song title, searches on YouTube and plays that song in your current voice channel", "string,track,Song name or youtube url,true"},
-//                    {"disconnect", "Disconnects the bot from your current voice channel"},
-//                    {"pause", "Pauses the current track playing in your voice channel"},
-//                    {"resume", "Resumes stopped track"},
-//                    {"skip", "Skips the next track(s)", "int,amount,Amount of tracks to skip,false"},
-//                },
                     {
                             // Others
                             {"help", "Gives information about the commands"},
@@ -110,21 +102,34 @@ public class SchroedingersCatData implements BotData {
                     }
             };
 
-    private final CommandData[] mContextCommands;
+    private final String[] mTables = {
+            "CREATE TABLE IF NOT EXISTS 'Economy' ('guild_id' INTEGER, 'user_id' INTEGER, 'bank' INTEGER, 'cash' INTEGER, PRIMARY KEY('guild_id','user_id'))",
+            "CREATE TABLE IF NOT EXISTS 'GuildSettings' ('guild_id' INTEGER, 'welcome_channel_id' INTEGER, 'auto_role_id' INTEGER, 'create_channel_id' INTEGER, 'welcome_message' TEXT, 'screening'\tINTEGER, 'log_channel_id' INTEGER, 'catsandpets_channel_id' INTEGER, 'editor_role_id' INTEGER, 'moderator_role_id' INTEGER, PRIMARY KEY('guild_id'))",
+            "CREATE TABLE IF NOT EXISTS 'ReactionRole' ('guild_id' INTEGER, 'message_id' INTEGER, 'emoji' TEXT, 'channel_id' INTEGER, 'role_id' INTEGER, PRIMARY KEY('guild_id','emoji','message_id')",
+            "CREATE TABLE IF NOT EXISTS 'CatCards' ('guild_id' INTEGER, 'user_id' INTEGER, 'cat_number' INTEGER)",
+            "CREATE TABLE IF NOT EXISTS 'Pet' ('id' INTEGER, 'name' TEXT, 'price' INTEGER, 'description' TEXT)",
+            "CREATE TABLE IF NOT EXISTS 'PetInventory' ('guild_id' INTEGER, 'user_id' INTEGER, 'pet_id' INTEGER, 'amount' INTEGER)",
+            "CREATE TABLE IF NOT EXISTS 'CommandCooldown' ('guild_id' INTEGER, 'user_id' INTEGER, 'command' TEXT, 'cooldown_until' INTEGER)",
+            "CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)",
+            "CREATE TABLE IF NOT EXISTS 'AutoChannel' ('guild_id' INTEGER, 'owner_id' INTEGER, 'channel_id' INTEGER)"
+    };
 
-    public SchroedingersCatData() {
-        mContextCommands = new CommandData[]{
-                Commands.context(Command.Type.USER, "kick custom channel"),
-                Commands.context(Command.Type.USER, "ban custom channel"),
-                Commands.context(Command.Type.USER, "bal"),
-                Commands.context(Command.Type.USER, "give"),
-                Commands.context(Command.Type.USER, "rob")
-        };
+    private final CommandData[] mContextCommands = {
+            Commands.context(Command.Type.USER, "kick custom channel"),
+            Commands.context(Command.Type.USER, "ban custom channel"),
+            Commands.context(Command.Type.USER, "bal"),
+            Commands.context(Command.Type.USER, "give"),
+            Commands.context(Command.Type.USER, "rob")
+    };
+
+    @Override
+    public int getIndexInConfigFile() {
+        return 0;
     }
 
     @Override
     public String[][][] getSlashCommands() {
-        return COMMANDS;
+        return commands;
     }
 
     @Override
@@ -134,12 +139,7 @@ public class SchroedingersCatData implements BotData {
 
     @Override
     public String[] getCommandCategories() {
-        return CATEGORIES;
-    }
-
-    @Override
-    public int getIndexInConfigFile() {
-        return 0;
+        return categories;
     }
 
     @Override
@@ -153,5 +153,10 @@ public class SchroedingersCatData implements BotData {
                 new EconomyHandler(pUtils, pBot),
                 new SettingsHandler(pUtils, pBot)
         };
+    }
+
+    @Override
+    public String[] getDatabaseTables() {
+        return new String[0];
     }
 }

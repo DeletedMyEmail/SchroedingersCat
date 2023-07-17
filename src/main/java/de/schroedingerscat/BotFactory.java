@@ -50,6 +50,12 @@ public class BotFactory {
         addListeners(lBotApplication, pBotData.getListeners(lBotApplication, lUtils));
         insertGuildsIntoDatabaseIfAbsent(lBotApplication.getJDA(), lUtils);
 
+        // add tables to database
+        String[] lTableNames = pBotData.getDatabaseTables();
+        for (String lTableName : lTableNames) {
+            lUtils.onExecute(lTableName);
+        }
+
         System.out.println(lBotApplication.getJDA().getSelfUser().getName() + " online!");
         return lBotApplication;
     }

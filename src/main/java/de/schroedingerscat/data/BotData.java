@@ -18,4 +18,5 @@ public interface BotData {
     public String[] getCommandCategories();
     public int getIndexInConfigFile();
     public ListenerAdapter[] getListeners(BotApplication pBot, Utils pUtils);
+    public String[] getDatabaseTables();
 }
