@@ -25,7 +25,7 @@ import java.util.List;
  * Establishes database connection, connects to discord and topgg and registers all event listeners
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 16.07.2023
  **/
 public class BotApplication {
 

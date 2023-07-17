@@ -16,38 +16,22 @@ import java.sql.SQLException;
  *
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 17.07.2023
  * */
 public class AutoRoleHandler extends ListenerAdapter {
 
-    private final Utils utils;
+    private final Utils mUtils;
 
     public AutoRoleHandler(Utils pUtils) {
-        this.utils = pUtils;
+        this.mUtils = pUtils;
     }
 
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
         if ("set_auto_role".equals(pEvent.getName())) {
-            try {
+            Utils.catchAndLogError(pEvent.getHook(), () -> {
                 setAutoRole(pEvent);
-            }
-            catch (NumberFormatException numEx) {
-                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-            }
-            catch (SQLException sqlEx)
-            {
-                sqlEx.printStackTrace();
-                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
-            }
-            catch (NullPointerException nullEx) {
-                nullEx.printStackTrace();
-                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
-            }
-            catch (Exception ex) {
-                ex.printStackTrace();
-                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
-            }
+            });
         }
     }
 
@@ -60,7 +44,7 @@ public class AutoRoleHandler extends ListenerAdapter {
 
     private void addRoleToMember(Guild pGuild, Member pMember, boolean pShouldScreeningBeEnabled) {
         try {
-            ResultSet lRs = utils.onQuery("SELECT screening,auto_role_id FROM GuildSettings WHERE guild_id = ?", pGuild.getIdLong());
+            ResultSet lRs = mUtils.onQuery("SELECT screening,auto_role_id FROM GuildSettings WHERE guild_id = ?", pGuild.getIdLong());
             lRs.next();
 
             if (lRs.getBoolean("screening") != pShouldScreeningBeEnabled) return;
@@ -70,7 +54,7 @@ public class AutoRoleHandler extends ListenerAdapter {
                 pGuild.addRoleToMember(pMember, lAutoRole).queue();
         }
         catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
+            Utils.sendToOwner(pGuild.getJDA(), sqlEx.getMessage());
         }
     }
 
@@ -81,13 +65,13 @@ public class AutoRoleHandler extends ListenerAdapter {
 
     private void setAutoRole(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
-        if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
+        if (mUtils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
 
         Role lRole = pEvent.getOption("role").getAsRole();
         boolean lScreeningEnabled = pEvent.getOption("screening").getAsBoolean();
 
         try {
-            utils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, pEvent.getGuild().getIdLong());
+            mUtils.onExecute("UPDATE GuildSettings SET auto_role_id = ? , screening = ? WHERE guild_id=?",lRole.getIdLong(), lScreeningEnabled, pEvent.getGuild().getIdLong());
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SettingsHandler.SERVERSETTINGS_COLOR, ":white_check_mark: Successfully assigned "+lRole.getAsMention()+" as auto role. Each new member will receive it.", pEvent.getUser())).queue();
         }
         catch (SQLException sqlEx) {

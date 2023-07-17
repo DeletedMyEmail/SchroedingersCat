@@ -21,7 +21,7 @@ import java.util.List;
  * Handles slash commands which can't be categorized
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 17.07.2023
  * */
 public class CategorylessHandler extends ListenerAdapter {
 
@@ -38,29 +38,13 @@ public class CategorylessHandler extends ListenerAdapter {
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent pEvent) {
-        try {
+        Utils.catchAndLogError(pEvent.getHook(), () -> {
             switch (pEvent.getName()) {
                 case "help" -> helpCommand(pEvent);
                 case "embed" -> embedCommand(pEvent);
                 case "links" -> linksCommand(pEvent);
             }
-        }
-        catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-        }
-        catch (SQLException sqlEx)
-        {
-            sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
-        }
-        catch (NullPointerException nullEx) {
-            nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
-        }
+        });
     }
 
     @Override

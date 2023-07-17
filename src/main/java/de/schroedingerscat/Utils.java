@@ -1,7 +1,9 @@
 package de.schroedingerscat;
 
 import de.schroedingerscat.entities.Pet;
+import kotlin.jvm.internal.Lambda;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
@@ -22,9 +24,11 @@ import java.sql.*;
  *
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 17.07.2023
  * */
 public class Utils {
+
+    public static final long OWNER_ID = 1072150132583321630L;
 
     private static Connection conn;
 
@@ -316,5 +320,44 @@ public class Utils {
 
     public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor) {
         return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
+    }
+
+    public static void catchAndLogError(InteractionHook pHook, Function pFunction) {
+        try {
+            pFunction.run();
+        }
+        catch (NumberFormatException numEx) {
+            sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + numEx.getMessage());
+            pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: You entered an invalid number", pHook.getInteraction().getUser())).queue();
+        }
+        catch (SQLException sqlEx) {
+            sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + sqlEx.getMessage());
+            pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: Database error occurred", pHook.getInteraction().getUser())).queue();
+        }
+        catch (NullPointerException nullEx) {
+            sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + nullEx.getMessage());
+            pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: An unexpected error occured and it's likely that you entered an **invalid argument**.\nMake sure you selected a valid text channel, message id, role or emoji.", pHook.getInteraction().getUser())).queue();
+        }
+        catch (Exception ex) {
+            sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + ex.getMessage());
+            pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: An unknown error has occurred. This event is logged for troubleshooting purposes. If the problem persists, contact the developer", pHook.getInteraction().getUser())).queue();
+        }
+    }
+
+    public static void catchAndLogError(JDA pJDA, Function pFunction) {
+        try {
+            pFunction.run();
+        }
+        catch (Exception ex) {
+            sendToOwner(pJDA, ":x: An error occured:\n" + ex.getMessage());
+        }
+    }
+
+    public interface Function {
+        void run() throws Exception;
+    }
+
+    public static void sendToOwner(JDA pJDA, String pMessage) {
+        pJDA.getUserById(OWNER_ID).openPrivateChannel().complete().sendMessage(pMessage).queue();
     }
 }

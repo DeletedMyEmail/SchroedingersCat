@@ -21,7 +21,7 @@ import java.net.URISyntaxException;
  *
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 17.07.2023
  * */
 public class MusicHandler extends ListenerAdapter {
 
@@ -35,10 +35,8 @@ public class MusicHandler extends ListenerAdapter {
     }
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
-    {
-        switch (pEvent.getName())
-        {
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
+        switch (pEvent.getName()) {
             case "play_track" -> playTrackCommand(pEvent);
             case "disconnect" -> disconnectCommand(pEvent);
             case "pause" -> pauseCommand(pEvent);

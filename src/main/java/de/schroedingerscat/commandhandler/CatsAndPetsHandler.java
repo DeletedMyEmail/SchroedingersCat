@@ -32,7 +32,7 @@ import java.util.concurrent.TimeUnit;
  * Handles all commands related to pets and cat cards
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 17.07.2023
  * */
 public class CatsAndPetsHandler extends ListenerAdapter {
 
@@ -68,20 +68,16 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
-        System.out.println(pEvent.getButton().getId());
-        try {
-            buyPet(pEvent.getButton().getId().charAt(8) - '0', pEvent);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        if (pEvent.getId().startsWith("buy_pet")) {
-
-        }
+        Utils.catchAndLogError(pEvent.getJDA(), () -> {
+            if (pEvent.getId().startsWith("buy_pet")) {
+                buyPet(pEvent.getButton().getId().charAt(8) - '0', pEvent);
+            }
+        });
     }
 
     @Override
     public void onSlashCommandInteraction(@NotNull SlashCommandInteractionEvent pEvent) {
-        try {
+        Utils.catchAndLogError(pEvent.getHook(), () -> {
             switch (pEvent.getName()) {
                 case "cat" -> spawnCatCommand(pEvent);
                 case "set_catsandpets_channel" -> setCatsAndPetsChannelCommand(pEvent);
@@ -90,14 +86,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 case "cat_view" -> viewCatCommand(pEvent);
                 case "shop" -> shopCommand(pEvent);
             }
-        }
-        catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
-        }
+        });
     }
 
     private long getCooldown(long pGuildId, long pUserId) {

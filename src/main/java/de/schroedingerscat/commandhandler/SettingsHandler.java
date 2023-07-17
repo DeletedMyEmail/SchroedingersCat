@@ -23,7 +23,7 @@ import java.time.format.DateTimeFormatter;
  *
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 15.07.2023
+ * @version 3.0.0 | last edit: 17.07.2023
  * */
 public class SettingsHandler extends ListenerAdapter {
 
@@ -42,85 +42,43 @@ public class SettingsHandler extends ListenerAdapter {
 
     @Override
     public void onGuildJoin(GuildJoinEvent pEvent) {
-        try {
+        Utils.catchAndLogError(pEvent.getJDA(), () -> {
             utils.insertGuildIfAbsent(pEvent.getGuild().getIdLong());
-        }
-        catch (SQLException sqlEx) {
-            System.out.println("Failed to insert guild ("+pEvent.getGuild().getId()+")into database");
-        }
+        });
         botApplication.updateBotListApi();
     }
 
     @Override
-    public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent pEvent)
-    {
-        try {
+    public void onGuildMemberJoin(@NotNull GuildMemberJoinEvent pEvent) {
+        Utils.catchAndLogError(pEvent.getJDA(), () -> {
             ResultSet lRs = utils.onQuery("SELECT welcome_channel_id, welcome_message FROM GuildSettings WHERE guild_id = ?", pEvent.getGuild().getIdLong());
             lRs.next();
 
             String lMessage = lRs.getString("welcome_message");
             TextChannel lChannel = pEvent.getGuild().getTextChannelById(lRs.getLong("welcome_channel_id"));
-            if (lChannel != null)
-                lChannel.
-                        sendMessage(
-                            pEvent.getUser().getAsMention()
-                        )
-                        .addEmbeds(
-                                Utils.createEmbed(
-                                        SERVERSETTINGS_COLOR,
-                                        "",
-                                        lMessage,
-                                        null,
-                                        false,
-                                        pEvent.getUser(),
-                                        null,
-                                        OffsetDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE).replace("-",".")
-                                        )
-                        ).queue();
-        }
-        catch (SQLException sqlEx) {
-            sqlEx.printStackTrace();
-        }
+            if (lChannel != null) {
+                lChannel.sendMessage(pEvent.getUser().getAsMention()).
+                        addEmbeds(Utils.createEmbed(SERVERSETTINGS_COLOR, "", lMessage, null, false, pEvent.getUser(), null, OffsetDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE).replace("-","."))).
+                        queue();
+            }
+        });
     }
 
     @Override
-    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent)
-    {
-        try
-        {
-            switch (pEvent.getName())
-            {
+    public void onSlashCommandInteraction(SlashCommandInteractionEvent pEvent) {
+        Utils.catchAndLogError(pEvent.getJDA(), () -> {
+            switch (pEvent.getName()) {
                 case "get_info" -> getInfoCommand(pEvent);
                 case "set_editor_role" -> setRoleCommand(pEvent, "editor");
                 case "set_moderator_role" -> setRoleCommand(pEvent, "moderator");
                 case "set_welcome" -> setWelcomeCommand(pEvent);
                 case "reset_settings" -> resetSettingsCommand(pEvent);
             }
-        }
-        catch (NumberFormatException numEx) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You entered an invalid number", pEvent.getUser())).queue();
-        }
-        catch (SQLException sqlEx)
-        {
-            sqlEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Database error occurred", pEvent.getUser())).queue();
-        }
-        catch (NullPointerException nullEx) {
-            nullEx.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Invalid argument. Make sure you selected a valid text channel, message id, role and emoji", pEvent.getUser())).queue();
-        }
-        catch (Exception ex) {
-            ex.printStackTrace();
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: Unknown error occured", pEvent.getUser())).queue();
-        }
+        });
     }
 
     // Slash Commands
 
-    /**
-     *
-     *
-     * */
     private void getInfoCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
 
@@ -185,10 +143,6 @@ public class SettingsHandler extends ListenerAdapter {
 
     }
 
-    /**
-     *
-     *
-     * */
     private void setRoleCommand(SlashCommandInteractionEvent pEvent, String pRole) throws SQLException {
         pEvent.deferReply().queue();
         if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
@@ -215,10 +169,6 @@ public class SettingsHandler extends ListenerAdapter {
         pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(SERVERSETTINGS_COLOR, ":white_check_mark: Set the welcome channel to "+lChannel.getAsMention()+" and the message: **"+lMessage+"**", pEvent.getUser())).queue();
     }
 
-    /**
-     *
-     *
-     * */
     private void resetSettingsCommand(SlashCommandInteractionEvent pEvent) throws SQLException {
         pEvent.deferReply().queue();
         if (utils.memberNotAuthorized(pEvent.getMember(), "editor", pEvent.getHook())) return;
