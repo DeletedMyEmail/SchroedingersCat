@@ -2,7 +2,6 @@ package de.schroedingerscat;
 
 import de.schroedingerscat.commandhandler.EconomyHandler;
 import de.schroedingerscat.entities.Pet;
-import kotlin.jvm.internal.Lambda;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.Permission;
@@ -17,6 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.sql.*;
@@ -200,21 +200,6 @@ public class Utils {
         return lStatement;
     }
 
-    public static void mergeImages(String pImg1, String pImg2, String pImg3, String pOutput) throws IOException {
-        BufferedImage lImg1 = ImageIO.read(new File(pImg1));
-        BufferedImage lImg2 = ImageIO.read(new File(pImg2));
-        BufferedImage lImg3 = ImageIO.read(new File(pImg3));
-        BufferedImage lMergedImg = new BufferedImage(lImg1.getWidth() + lImg2.getWidth() + lImg3.getWidth() + 160, Math.max(lImg1.getHeight(), Math.max(lImg2.getHeight(), lImg3.getHeight()))+80, BufferedImage.TYPE_INT_RGB);
-
-        Graphics2D lMergedImgGraphic = lMergedImg.createGraphics();
-        lMergedImgGraphic.drawImage(lImg1, 40, 40, null);
-        lMergedImgGraphic.drawImage(lImg2, lImg1.getWidth() + 80, 40, null);
-        lMergedImgGraphic.drawImage(lImg3, lImg1.getWidth() + 120 + lImg2.getWidth(), 40, null);
-
-        ImageIO.write(lMergedImg, "jpg", new File(pOutput));
-        lMergedImgGraphic.dispose();
-    }
-
     public static String formatPrice(long pPrice) {
         return NumberFormat.getInstance().format(pPrice) + " " + EconomyHandler.CURRENCY;
     }
@@ -228,14 +213,18 @@ public class Utils {
         if (pImageUrl != null) builder.setImage(pImageUrl);
         if (pFooter != null) builder.setFooter(pFooter);
 
-        if (pFields != null)
-            for (String[] field : pFields)
-            {
+        if (pFields != null) {
+            for (String[] field : pFields) {
                 builder.addField(field[0], field[1], inline);
             }
+        }
 
         builder.setColor(pColor);
         return builder.build();
+    }
+
+    public static long roundUp(long num, long divisor) {
+        return (num + divisor - 1) / divisor;
     }
 
     public static MessageEmbed createEmbed(@NotNull Color pColor, @NotNull String pDescription, User pAuthor) {
@@ -251,14 +240,17 @@ public class Utils {
             pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: You entered an invalid number", pHook.getInteraction().getUser())).queue();
         }
         catch (SQLException sqlEx) {
+            sqlEx.printStackTrace();
             sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + sqlEx.getMessage());
             pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: Database error occurred", pHook.getInteraction().getUser())).queue();
         }
         catch (NullPointerException nullEx) {
+            nullEx.printStackTrace();
             sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + nullEx.getMessage());
             pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: An unexpected error occured and it's likely that you entered an **invalid argument**.\nMake sure you selected a valid text channel, message id, role or emoji.", pHook.getInteraction().getUser())).queue();
         }
         catch (Exception ex) {
+            ex.printStackTrace();
             sendToOwner(pHook.getJDA(), ":x: An error occured:\n" + ex.getMessage());
             pHook.editOriginalEmbeds(createEmbed(Color.red, ":x: An unknown error has occurred. This event is logged for troubleshooting purposes. If the problem persists, contact the developer", pHook.getInteraction().getUser())).queue();
         }
@@ -278,8 +270,6 @@ public class Utils {
     }
 
     public static void sendToOwner(JDA pJDA, String pMessage) {
-        System.out.println("log");
         pJDA.getUserById(OWNER_ID).openPrivateChannel().complete().sendMessage(pMessage).queue();
-        System.out.println("logged");
     }
 }

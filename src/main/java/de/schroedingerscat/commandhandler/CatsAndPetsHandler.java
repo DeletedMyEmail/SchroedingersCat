@@ -7,6 +7,7 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -15,17 +16,13 @@ import net.dv8tion.jda.api.interactions.components.buttons.Button;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
-import java.awt.Color;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import javax.imageio.ImageIO;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.NumberFormat;
-import java.util.HashMap;
-import java.util.Random;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -84,7 +81,8 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 case "cat_claim" -> claimCatCommand(pEvent);
                 case "cat_inv" -> catInventoryCommand(pEvent);
                 case "cat_view" -> viewCatCommand(pEvent);
-                case "shop" -> shopCommand(pEvent);
+                case "pet_shop" -> shopCommand(pEvent);
+                case "pets" -> petsCommand(pEvent);
             }
         });
     }
@@ -210,6 +208,92 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         }
     }
 
+    private void petsCommand(SlashCommandInteractionEvent pEvent) throws SQLException, IOException {
+        pEvent.deferReply().queue();
+
+        Pet[] lPets = getOneSiteOfPetsFor(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), 0);
+
+        if (lPets.length == 0) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Sadly you don't own any pets :(\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
+            return;
+        }
+        String[][] lPetNames = new String[lPets.length][2];
+        for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
+            lPetNames[i][0] = lPets[i].name();
+            lPetNames[i][1] = Utils.formatPrice(lPets[i].price());
+        }
+
+        MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Your pets:", lPetNames, true, null, "attachment://pets.jpg", "1/"+Utils.roundUp(getNumberOfPetsFor(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong()),3));
+        pEvent.getHook().editOriginalEmbeds(lEmbed).
+                setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.jpg")).
+                setActionRow(
+                        Button.primary("left_", Emoji.fromUnicode("U+21E6").getAsReactionCode()),
+                        Button.primary("right_", Emoji.fromUnicode("U+21E8").getAsReactionCode())
+                ).
+                queue();
+    }
+
+    public void createShopImage(String pPetPath1, String pPetPath2, String pPetPath3, String pOutput) throws IOException {
+        BufferedImage lImg1 = ImageIO.read(new File(pPetPath1));
+        BufferedImage lImg2 = ImageIO.read(new File(pPetPath2));
+        BufferedImage lImg3 = ImageIO.read(new File(pPetPath3));
+        BufferedImage lMergedImg = new BufferedImage(lImg1.getWidth() + lImg2.getWidth() + lImg3.getWidth() + 160, Math.max(lImg1.getHeight(), Math.max(lImg2.getHeight(), lImg3.getHeight()))+80, BufferedImage.TYPE_INT_RGB);
+
+        Graphics2D lMergedImgGraphic = lMergedImg.createGraphics();
+        lMergedImgGraphic.drawImage(lImg1, 40, 40, null);
+        lMergedImgGraphic.drawImage(lImg2, lImg1.getWidth() + 80, 40, null);
+        lMergedImgGraphic.drawImage(lImg3, lImg1.getWidth() + 120 + lImg2.getWidth(), 40, null);
+
+        ImageIO.write(lMergedImg, "jpg", new File(pOutput));
+        lMergedImgGraphic.dispose();
+    }
+
+    public byte[] mergePetImages(Pet... pPets) throws IOException {
+        BufferedImage[] lImageFiles = new BufferedImage[pPets.length];
+        int lWidth = 40;
+        int lHeight = 0;
+
+        for (int i = 0; i < pPets.length; ++i) {
+            lImageFiles[i] = ImageIO.read(new File(getPetPath(pPets[i].id())));
+            lWidth += lImageFiles[i].getWidth() + 40;
+            lHeight = Math.max(lHeight, lImageFiles[i].getHeight());
+        }
+        lHeight += 80;
+
+        BufferedImage lMergedImg = new BufferedImage(lWidth, lHeight, BufferedImage.TYPE_INT_RGB);
+        Graphics2D lMergedImgGraphic = lMergedImg.createGraphics();
+
+        int lX = 40;
+        for (int i = 0; i < lImageFiles.length; ++i) {
+            lMergedImgGraphic.drawImage(lImageFiles[i], lX, 40, null);
+            lX += lImageFiles[i].getWidth() + 40;
+        }
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ImageIO.write(lMergedImg, "jpg", baos);
+        return baos.toByteArray();
+    }
+
+    private String getPetPath(int pPetId) {
+        return "src/main/resources/pets/pet" + pPetId + ".png";
+    }
+
+    private int getNumberOfPetsFor(long pUserId, long pGuildId) throws SQLException {
+        ResultSet lRs = mUtils.onQuery("SELECT COUNT(*) FROM PetInventory WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
+        lRs.next();
+        return lRs.getInt(1);
+    }
+
+    private Pet[] getOneSiteOfPetsFor(long pUserId, long pGuildId, int pSite) throws SQLException {
+        ArrayList<Pet> lPets = new ArrayList<>();
+        ResultSet lRs = mUtils.onQuery("SELECT * FROM Pet WHERE id IN (SELECT pet_id FROM PetInventory WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3)", pGuildId, pUserId, pSite*3);
+        for (int i = 0; i < 3 && lRs.next(); ++i) {
+            lPets.add(new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("price"), lRs.getString("description")));
+        }
+
+        return lPets.toArray(new Pet[lPets.size()]);
+    }
+
     private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
         pEvent.deferReply().queue();
 
@@ -240,12 +324,15 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         User lUser = pEvent.getUser();
 
         if (lPet.price() > mUtils.getWealth(lUser.getIdLong(), pEvent.getGuild().getIdLong())[1]) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\nTipp: /with", lUser)).queue();
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\n**Tipp:** /with", lUser)).queue();
+        }
+        else if (ownsPet(lUser.getIdLong(), pEvent.getGuild().getIdLong(), lPet.id())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You already own this pet", lUser)).queue();
         }
         else {
             mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id) VALUES (?, ?, ?)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
             mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
-            FileInputStream lPetImgStream = new FileInputStream("src/main/resources/pets/pet" + lPet.id() + ".png");
+            FileInputStream lPetImgStream = new FileInputStream(getPetPath(lPet.id()));
             pEvent.getHook().editOriginalEmbeds(
                         new EmbedBuilder().
                                 setDescription(":white_check_mark: You bought **" + lPet.name() + "** for " + Utils.formatPrice(lPet.price()) + "!").
@@ -258,10 +345,15 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         }
     }
 
+    private boolean ownsPet(long pUserId, long pGuildId, int pPetId) throws SQLException {
+        ResultSet lRs = mUtils.onQuery("SELECT pet_id FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?", pGuildId, pUserId, pPetId);
+        return lRs.next();
+    }
+
     private void refreshPetStock() throws SQLException, IOException {
         for (int i = 0; i < mPetsInStock.length; i++) {
             mPetsInStock[i] = mUtils.getPet();
         }
-        Utils.mergeImages("src/main/resources/pets/pet" + mPetsInStock[0].id() + ".png", "src/main/resources/pets/pet" + mPetsInStock[1].id() + ".png", "src/main/resources/pets/pet" + mPetsInStock[2].id() + ".png", "src/main/resources/shop.jpg");
+        createShopImage(getPetPath(mPetsInStock[0].id()), getPetPath(mPetsInStock[1].id()), getPetPath(mPetsInStock[2].id()), "src/main/resources/shop.jpg");
     }
 }
