@@ -88,7 +88,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 case "cat_inv" -> catInventoryCommand(pEvent);
                 case "cat_view" -> viewCatCommand(pEvent);
                 case "pet_shop" -> shopCommand(pEvent);
-                case "pets" -> petsCommand(pEvent);
+                case "pets" -> petInvCommand(pEvent);
             }
         });
     }
@@ -214,27 +214,51 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         }
     }
 
-    private void petsCommand(SlashCommandInteractionEvent pEvent) throws SQLException, IOException {
+    private void petInvCommand(SlashCommandInteractionEvent pEvent) throws SQLException, IOException {
         pEvent.deferReply().queue();
 
-        Pet[] lPets = getOneSiteOfPetsFor(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), 0);
+        if (pEvent.getOption("user") != null) {
+            displayPetInv(pEvent.getGuild().getIdLong(), pEvent.getOption("user").getAsUser(), 0, pEvent.getHook());
+        }
+        else {
+            displayPetInv(pEvent.getGuild().getIdLong(), pEvent.getUser(), 0, pEvent.getHook());
+        }
+    }
 
-        if (lPets.length == 0) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Sadly you don't own any pets :(\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
+    private void displayPetInv(long pGuildId, User pUser, int pPage, InteractionHook pHook) throws SQLException, IOException {
+        Pet[] lPets = getOnePageOfPetsFor(pUser.getIdLong(), pGuildId, pPage);
+
+        if (lPets.length == 0 && pPage == 0) {
+            pHook.editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, pUser.getEffectiveName() +"'s Pet Inventory", "An empty pet inventory is a bad pet inventory :(\n\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
             return;
         }
+        if (lPets.length == 0) {
+            return;
+        }
+
         String[][] lPetNames = new String[lPets.length][2];
         for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
             lPetNames[i][0] = lPets[i].name();
             lPetNames[i][1] = "Level " + lPets[i].level()+"\nStrength: "+lPets[i].strength()+"\nHealth: "+lPets[i].health()+"\nSpeed: "+lPets[i].speed()+"\nPrice: "+Utils.formatPrice(lPets[i].price());
         }
 
-        MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Your pets:", lPetNames, true, null, "attachment://pets.png", "1/"+Utils.roundUp(getNumberOfPetsFor(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong()),3));
-        pEvent.getHook().editOriginalEmbeds(lEmbed).
+        EmbedBuilder lEmbedBuilder = new EmbedBuilder();
+        lEmbedBuilder.setFooter(pPage+1+"/"+Utils.roundUp(getNumberOfPetsFor(pUser.getIdLong(), pGuildId),3));
+        lEmbedBuilder.setColor(CATS_AND_PETS_COLOR);
+        lEmbedBuilder.setTitle(pUser.getName() +"'s Pet Inventory");
+        lEmbedBuilder.setDescription("Your pets:");
+        lEmbedBuilder.setImage("attachment://pets.png");
+
+        for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
+            lEmbedBuilder.addField(lPetNames[i][0], lPetNames[i][1], true);
+        }
+
+        lEmbedBuilder.setThumbnail(pUser.getEffectiveAvatarUrl());
+        pHook.editOriginalEmbeds(lEmbedBuilder.build()).
                 setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.png")).
                 setActionRow(
-                        Button.primary("left_"+pEvent.getUser().getId()+"_0", Emoji.fromUnicode("U+21E6").getAsReactionCode()),
-                        Button.primary("right_"+pEvent.getUser().getId()+"_0", Emoji.fromUnicode("U+21E8").getAsReactionCode())
+                        Button.primary("left_"+pUser.getId()+"_"+pPage, Emoji.fromUnicode("U+21E6").getAsReactionCode()),
+                        Button.primary("right_"+pUser.getId()+"_"+pPage, Emoji.fromUnicode("U+21E8").getAsReactionCode())
                 ).
                 queue();
     }
@@ -256,22 +280,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             --lPage;
         }
 
-        Pet[] lPets = getOneSiteOfPetsFor(lUserId, pEvent.getGuild().getIdLong(), lPage);
-        if (lPets.length == 0) return;
-
-        String[][] lPetNames = new String[lPets.length][2];
-        for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
-            lPetNames[i][0] = lPets[i].name();
-            lPetNames[i][1] = "Level " + lPets[i].level()+"\nStrength: "+lPets[i].strength()+"\nHealth: "+lPets[i].health()+"\nSpeed: "+lPets[i].speed()+"\nPrice: "+Utils.formatPrice(lPets[i].price());
-        }
-
-        MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Your pets:", lPetNames, true, null, "attachment://pets.png", lPage+1+"/"+Utils.roundUp(getNumberOfPetsFor(lUserId, pEvent.getGuild().getIdLong()),3));
-        pEvent.getHook().editOriginalEmbeds(lEmbed).
-                setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.png")).
-                setActionRow(
-                        Button.primary("left_"+lUserId+"_"+lPage, Emoji.fromUnicode("U+21E6").getAsReactionCode()),
-                        Button.primary("right_"+lUserId+"_"+lPage, Emoji.fromUnicode("U+21E8").getAsReactionCode())).
-                queue();
+        displayPetInv(pEvent.getGuild().getIdLong(), pEvent.getJDA().getUserById(lUserId), lPage, pEvent.getHook());
     }
 
     private void createShopImage(String pPetPath1, String pPetPath2, String pPetPath3, String pOutput) throws IOException {
@@ -324,9 +333,9 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         return lRs.getInt(1);
     }
 
-    private Pet[] getOneSiteOfPetsFor(long pUserId, long pGuildId, int pSite) throws SQLException {
+    private Pet[] getOnePageOfPetsFor(long pUserId, long pGuildId, int pPage) throws SQLException {
         ArrayList<Pet> lPets = new ArrayList<>();
-        ResultSet lRs = mUtils.onQuery("SELECT id, name, description, price, strength, health, speed, level FROM Pet JOIN PetInventory ON pet_id = id WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3", pGuildId, pUserId, pSite*3);
+        ResultSet lRs = mUtils.onQuery("SELECT id, name, description, price, strength, health, speed, level FROM Pet JOIN PetInventory ON pet_id = id WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3", pGuildId, pUserId, pPage*3);
         for (int i = 0; i < 3 && lRs.next(); ++i) {
             lPets.add(new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getString("description"), lRs.getInt("price"), lRs.getInt("level"), lRs.getInt("strength"), lRs.getInt("health"), lRs.getInt("speed")));
         }
