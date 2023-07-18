@@ -29,12 +29,12 @@ import java.util.concurrent.TimeUnit;
  * Handles all commands related to pets and cat cards
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 17.07.2023
+ * @version 3.0.0 | last edit: 18.07.2023
  * */
 public class CatsAndPetsHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
-    public static final Color CATS_AND_PETS_COLOR = new Color(165, 112, 17);
+    public static final Color CATS_AND_PETS_COLOR = new Color(72, 231, 179);
     private static final long SPAWN_COOLDOWN = 180000;
 
     private final HashMap<Long, HashMap<Long, Long>> mCatSpawnCooldown;
@@ -87,7 +87,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 case "cat_claim" -> claimCatCommand(pEvent);
                 case "cat_inv" -> catInventoryCommand(pEvent);
                 case "cat_view" -> viewCatCommand(pEvent);
-                case "pet_shop" -> shopCommand(pEvent);
+                case "pet_shop" -> petShopCommand(pEvent);
                 case "pets" -> petInvCommand(pEvent);
                 case "pet" -> petCommand(pEvent);
             }
@@ -212,7 +212,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         MinimalisticPetRecord[] lPets = getOnePageOfPetsFor(pUser.getIdLong(), pGuildId, pPage);
 
         if (lPets.length == 0 && pPage == 0) {
-            pHook.editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, pUser.getGlobalName() + "'s Pet Inventory", "An empty pet inventory is a bad pet inventory :(\n\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
+            pHook.editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "🐾 " + pUser.getGlobalName() + "'s Pet Inventory", "An empty pet inventory is a bad pet inventory :(\n\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
             return;
         }
         if (lPets.length == 0) {
@@ -230,7 +230,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         EmbedBuilder lEmbedBuilder = new EmbedBuilder();
         lEmbedBuilder.setFooter(pPage+1+"/"+Utils.roundUp(getNumberOfPetsFor(pUser.getIdLong(), pGuildId),3));
         lEmbedBuilder.setColor(CATS_AND_PETS_COLOR);
-        lEmbedBuilder.setTitle(pUser.getGlobalName() +"'s Pet Inventory");
+        lEmbedBuilder.setTitle("🐾 " + pUser.getGlobalName() +"'s Pet Inventory");
         lEmbedBuilder.setDescription("Your pets:");
         lEmbedBuilder.setImage("attachment://pets.png");
 
@@ -269,7 +269,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
         FileInputStream lPetImgStream = new FileInputStream("src/main/resources/pets/pet" + lPet.id() + ".png");
         pEvent.getHook().
-                editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, pEvent.getUser().getGlobalName() + "'s " + lPet.name(), "", lFields, true, null, "attachment://pet.png", null)).
+                editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "🐾 " + pEvent.getUser().getGlobalName() + "'s " + lPet.name(), "", lFields, true, null, "attachment://pet.png", null)).
                 setAttachments(FileUpload.fromData(lPetImgStream, "pet.png")).
                 queue();
     }
@@ -294,13 +294,13 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         displayPetInv(pEvent.getGuild().getIdLong(), pEvent.getJDA().getUserById(lUserId), lPage, pEvent.getHook());
     }
 
-    private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
+    private void petShopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
         pEvent.deferReply().queue();
 
         FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.png");
         pEvent.getHook().
                 editOriginalEmbeds(new EmbedBuilder().
-                        setTitle("Pet Shop").
+                        setTitle("🛍 Pet Shop").
                         setDescription("Buy yourself a pet! The following pets are in stock today:").
                         setColor(CATS_AND_PETS_COLOR).
                         addField(mPetsInStock[0].name(), Utils.formatPrice(mPetsInStock[0].price()), true).
