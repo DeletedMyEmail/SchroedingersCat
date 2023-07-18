@@ -2,12 +2,12 @@ package de.schroedingerscat.commandhandler;
 
 import de.schroedingerscat.Utils;
 import de.schroedingerscat.entities.Pet;
+import de.schroedingerscat.entities.MinimalisticPetRecord;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
-import net.dv8tion.jda.api.entities.emoji.Emoji;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
@@ -39,7 +39,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     private final HashMap<Long, HashMap<Long, Long>> mCatSpawnCooldown;
     private final HashMap<Long, Integer> mLastCatSpawned;
-    private final Pet[] mPetsInStock;
+    private final MinimalisticPetRecord[] mPetsInStock;
     private final Random mRandom;
     private final Utils mUtils;
 
@@ -48,7 +48,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         mUtils = pUtils;
         mCatSpawnCooldown = new HashMap<>();
         mLastCatSpawned = new HashMap<>();
-        mPetsInStock = new Pet[3];
+        mPetsInStock = new MinimalisticPetRecord[3];
 
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -89,18 +89,9 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 case "cat_view" -> viewCatCommand(pEvent);
                 case "pet_shop" -> shopCommand(pEvent);
                 case "pets" -> petInvCommand(pEvent);
+                case "pet" -> petCommand(pEvent);
             }
         });
-    }
-
-    private long getCooldown(long pGuildId, long pUserId) {
-        mCatSpawnCooldown.putIfAbsent(pGuildId, new HashMap<>());
-        long lCurrentTime = System.currentTimeMillis();
-        return mCatSpawnCooldown.get(pGuildId).getOrDefault(pUserId, lCurrentTime) - lCurrentTime;
-    }
-
-    private boolean isSpawningChannel(long pGuildId, long pChannelId) throws SQLException {
-        return mUtils.onQuery("SELECT catsandpets_channel_id FROM GuildSettings WHERE guild_id = ?", pGuildId).getLong("catsandpets_channel_id") == pChannelId;
     }
 
     private void spawnCatCommand(SlashCommandInteractionEvent pEvent) throws FileNotFoundException, SQLException {
@@ -119,12 +110,12 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         }
         else {
             int lNum = mRandom.nextInt(400) == 0 ? -1 : new Random().nextInt(97);
-            FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".png");
-            MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.png",null);
+            FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".jpg");
+            MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.jpg",null);
 
             mCatSpawnCooldown.get(pEvent.getGuild().getIdLong()).put(pEvent.getUser().getIdLong(), System.currentTimeMillis() + SPAWN_COOLDOWN);
             mLastCatSpawned.put(pEvent.getGuild().getIdLong(), lNum);
-            pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
+            pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.jpg")).queue();
         }
     }
 
@@ -188,11 +179,6 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "Inventory", lCatInventoryString.toString(), null, false, pEvent.getUser(), null, null)).queue();
     }
 
-    private void replyWithCat(InteractionHook pHook, int pCatNumber, MessageEmbed pEmbed) throws FileNotFoundException {
-        FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze" + pCatNumber + ".png");
-        pHook.editOriginalEmbeds(pEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
-    }
-
     private void viewCatCommand(SlashCommandInteractionEvent pEvent) throws SQLException, FileNotFoundException {
         pEvent.deferReply().queue();
 
@@ -202,11 +188,8 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         }
         else {
             if (mUtils.onQuery("SELECT cat_number FROM CatCards WHERE guild_id = ? AND user_id = ? AND cat_number = ?", pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), lCatNumber).next()) {
-                replyWithCat(
-                    pEvent.getHook(),
-                    lCatNumber,
-                    Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lCatNumber, "", null, false, null, "attachment://cat.png",null)
-                );
+                FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze" + lCatNumber + ".png");
+                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lCatNumber, "", null, false, null, "attachment://cat.png",null)).setAttachments(FileUpload.fromData(lCatInStream, "cat.png")).queue();
             }
             else {
                 pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't own this cat", pEvent.getUser())).queue();
@@ -226,26 +209,28 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     }
 
     private void displayPetInv(long pGuildId, User pUser, int pPage, InteractionHook pHook) throws SQLException, IOException {
-        Pet[] lPets = getOnePageOfPetsFor(pUser.getIdLong(), pGuildId, pPage);
+        MinimalisticPetRecord[] lPets = getOnePageOfPetsFor(pUser.getIdLong(), pGuildId, pPage);
 
         if (lPets.length == 0 && pPage == 0) {
-            pHook.editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, pUser.getEffectiveName() +"'s Pet Inventory", "An empty pet inventory is a bad pet inventory :(\n\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
+            pHook.editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, pUser.getGlobalName() + "'s Pet Inventory", "An empty pet inventory is a bad pet inventory :(\n\n**Tipp:** /pet_shop", null, true, null, null, "1/1")).queue();
             return;
         }
         if (lPets.length == 0) {
             return;
         }
 
+        int[] lPetIds =  new int[lPets.length];
         String[][] lPetNames = new String[lPets.length][2];
         for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
             lPetNames[i][0] = lPets[i].name();
-            lPetNames[i][1] = "Level " + lPets[i].level()+"\nStrength: "+lPets[i].strength()+"\nHealth: "+lPets[i].health()+"\nSpeed: "+lPets[i].speed()+"\nPrice: "+Utils.formatPrice(lPets[i].price());
+            lPetNames[i][1] = "Level " + lPets[i].xp()/100;
+            lPetIds[i] = lPets[i].id();
         }
 
         EmbedBuilder lEmbedBuilder = new EmbedBuilder();
         lEmbedBuilder.setFooter(pPage+1+"/"+Utils.roundUp(getNumberOfPetsFor(pUser.getIdLong(), pGuildId),3));
         lEmbedBuilder.setColor(CATS_AND_PETS_COLOR);
-        lEmbedBuilder.setTitle(pUser.getName() +"'s Pet Inventory");
+        lEmbedBuilder.setTitle(pUser.getGlobalName() +"'s Pet Inventory");
         lEmbedBuilder.setDescription("Your pets:");
         lEmbedBuilder.setImage("attachment://pets.png");
 
@@ -255,11 +240,37 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
         lEmbedBuilder.setThumbnail(pUser.getEffectiveAvatarUrl());
         pHook.editOriginalEmbeds(lEmbedBuilder.build()).
-                setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.png")).
+                setAttachments(FileUpload.fromData(mergePetImages(lPetIds), "pets.png")).
                 setActionRow(
-                        Button.primary("left_"+pUser.getId()+"_"+pPage, Emoji.fromUnicode("U+21E6").getAsReactionCode()),
-                        Button.primary("right_"+pUser.getId()+"_"+pPage, Emoji.fromUnicode("U+21E8").getAsReactionCode())
+                        Button.primary("left_"+pUser.getId()+"_"+pPage, "◀"),
+                        Button.primary("right_"+pUser.getId()+"_"+pPage, "▶")
                 ).
+                queue();
+    }
+
+    private void petCommand(SlashCommandInteractionEvent pEvent) throws SQLException, FileNotFoundException {
+        pEvent.deferReply().queue();
+
+        Pet lPet = getPet(pEvent.getOption("name").getAsString(), pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong());
+        if (lPet == null) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't own this pet", pEvent.getUser())).queue();
+            return;
+        }
+
+        String[][] lFields = {
+                {"Level " + lPet.xp()/100, lPet.xp()%100 + "/100 xp"},
+                {"Hunger", String.valueOf(lPet.hunger_time_threasholt() < System.currentTimeMillis())},
+                {"Thirst", String.valueOf(lPet.thirst_time_threasholt() < System.currentTimeMillis())},
+                {"Health", String.valueOf(lPet.health())},
+                {"Speed", String.valueOf(lPet.speed())},
+                {"Strength", String.valueOf(lPet.strength())},
+                {"Price", Utils.formatPrice(lPet.price())}
+        };
+
+        FileInputStream lPetImgStream = new FileInputStream("src/main/resources/pets/pet" + lPet.id() + ".png");
+        pEvent.getHook().
+                editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, pEvent.getUser().getGlobalName() + "'s " + lPet.name(), "", lFields, true, null, "attachment://pet.png", null)).
+                setAttachments(FileUpload.fromData(lPetImgStream, "pet.png")).
                 queue();
     }
 
@@ -283,6 +294,72 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         displayPetInv(pEvent.getGuild().getIdLong(), pEvent.getJDA().getUserById(lUserId), lPage, pEvent.getHook());
     }
 
+    private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
+        pEvent.deferReply().queue();
+
+        FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.png");
+        pEvent.getHook().
+                editOriginalEmbeds(new EmbedBuilder().
+                        setTitle("Pet Shop").
+                        setDescription("Buy yourself a pet! The following pets are in stock today:").
+                        setColor(CATS_AND_PETS_COLOR).
+                        addField(mPetsInStock[0].name(), Utils.formatPrice(mPetsInStock[0].price()), true).
+                        addField(mPetsInStock[1].name(), Utils.formatPrice(mPetsInStock[1].price()), true).
+                        addField(mPetsInStock[2].name(), Utils.formatPrice(mPetsInStock[2].price()), true).
+                        setImage("attachment://shop.png").
+                        build()
+                ).
+                setActionRow(
+                        Button.primary("buy_pet_0", "Buy Pet 1"),
+                        Button.primary("buy_pet_1", "Buy Pet 2"),
+                        Button.primary("buy_pet_2", "Buy Pet 3")
+                ).
+                setAttachments(FileUpload.fromData(lCatInStream, "shop.png")).
+                queue();
+    }
+
+    private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException, FileNotFoundException {
+        pEvent.deferReply().queue();
+        MinimalisticPetRecord lPet = mPetsInStock[pPetIndex];
+        User lUser = pEvent.getUser();
+
+        if (lPet.price() > mUtils.getWealth(lUser.getIdLong(), pEvent.getGuild().getIdLong())[1]) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\n**Tipp:** /with", lUser)).queue();
+        }
+        else if (ownsPet(lUser.getIdLong(), pEvent.getGuild().getIdLong(), lPet.id())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You already own this pet", lUser)).queue();
+        }
+        else {
+            mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id, xp, hunger_time_threshold, thirst_time_threshold) VALUES (?, ?, ?, 100, 0, 0)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
+            mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
+            FileInputStream lPetImgStream = new FileInputStream(getPetPath(lPet.id()));
+            pEvent.getHook().editOriginalEmbeds(
+                        new EmbedBuilder().
+                                setDescription(":white_check_mark: You bought **" + lPet.name() + "** for " + Utils.formatPrice(lPet.price()) + "!").
+                                setColor(Color.green).
+                                setThumbnail("attachment://pet.png").
+                                setAuthor(lUser.getGlobalName(), null, lUser.getAvatarUrl()).
+                                build()).
+                    setAttachments(FileUpload.fromData(lPetImgStream, "pet.png")).
+                    queue();
+        }
+    }
+
+    private boolean ownsPet(long pUserId, long pGuildId, int pPetId) throws SQLException {
+        ResultSet lRs = mUtils.onQuery("SELECT pet_id FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?", pGuildId, pUserId, pPetId);
+        return lRs.next();
+    }
+
+    private long getCooldown(long pGuildId, long pUserId) {
+        mCatSpawnCooldown.putIfAbsent(pGuildId, new HashMap<>());
+        long lCurrentTime = System.currentTimeMillis();
+        return mCatSpawnCooldown.get(pGuildId).getOrDefault(pUserId, lCurrentTime) - lCurrentTime;
+    }
+
+    private boolean isSpawningChannel(long pGuildId, long pChannelId) throws SQLException {
+        return mUtils.onQuery("SELECT catsandpets_channel_id FROM GuildSettings WHERE guild_id = ?", pGuildId).getLong("catsandpets_channel_id") == pChannelId;
+    }
+
     private void createShopImage(String pPetPath1, String pPetPath2, String pPetPath3, String pOutput) throws IOException {
         BufferedImage lImg1 = ImageIO.read(new File(pPetPath1));
         BufferedImage lImg2 = ImageIO.read(new File(pPetPath2));
@@ -298,13 +375,13 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         lMergedImgGraphic.dispose();
     }
 
-    private byte[] mergePetImages(Pet... pPets) throws IOException {
-        BufferedImage[] lImageFiles = new BufferedImage[pPets.length];
+    private byte[] mergePetImages(int... pPetIds) throws IOException {
+        BufferedImage[] lImageFiles = new BufferedImage[pPetIds.length];
         int lWidth = 0;
         int lHeight = 0;
 
-        for (int i = 0; i < pPets.length; ++i) {
-            lImageFiles[i] = ImageIO.read(new File(getPetPath(pPets[i].id())));
+        for (int i = 0; i < pPetIds.length; ++i) {
+            lImageFiles[i] = ImageIO.read(new File(getPetPath(pPetIds[i])));
             lWidth += lImageFiles[i].getWidth();
             lHeight = Math.max(lHeight, lImageFiles[i].getHeight());
         }
@@ -333,77 +410,29 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         return lRs.getInt(1);
     }
 
-    private Pet[] getOnePageOfPetsFor(long pUserId, long pGuildId, int pPage) throws SQLException {
-        ArrayList<Pet> lPets = new ArrayList<>();
-        ResultSet lRs = mUtils.onQuery("SELECT id, name, description, price, strength, health, speed, level FROM Pet JOIN PetInventory ON pet_id = id WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3", pGuildId, pUserId, pPage*3);
+    private Pet getPet(String pPetName, long pUserId, long pGuildId) throws SQLException {
+        ResultSet lRs = mUtils.onQuery("SELECT id, name, description, price, xp, strength, speed, health, hunger_time_threshold, thirst_time_threshold FROM Pet JOIN PetInventory ON pet_id = id WHERE guild_id = ? AND user_id = ? AND name = ?", pGuildId, pUserId, pPetName);
+        if (lRs.next()) {
+            return new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getString("description"), lRs.getInt("price"), lRs.getInt("xp"), lRs.getInt("strength"), lRs.getInt("health"), lRs.getInt("speed"), lRs.getLong("hunger_time_threshold"), lRs.getLong("thirst_time_threshold"));
+        }
+        return null;
+    }
+
+    private MinimalisticPetRecord[] getOnePageOfPetsFor(long pUserId, long pGuildId, int pPage) throws SQLException {
+        ArrayList<MinimalisticPetRecord> lPets = new ArrayList<>();
+        ResultSet lRs = mUtils.onQuery("SELECT id, name, xp, price FROM Pet JOIN PetInventory ON pet_id = id WHERE guild_id = ? AND user_id = ? ORDER BY pet_id ASC LIMIT ?, 3", pGuildId, pUserId, pPage*3);
         for (int i = 0; i < 3 && lRs.next(); ++i) {
-            lPets.add(new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getString("description"), lRs.getInt("price"), lRs.getInt("level"), lRs.getInt("strength"), lRs.getInt("health"), lRs.getInt("speed")));
+            lPets.add(new MinimalisticPetRecord(lRs.getInt("id"), lRs.getString("name"), lRs.getInt("xp"), lRs.getInt("price")));
         }
 
-        return lPets.toArray(new Pet[lPets.size()]);
-    }
-
-    private void shopCommand(SlashCommandInteractionEvent pEvent) throws IOException {
-        pEvent.deferReply().queue();
-
-        FileInputStream lCatInStream = new FileInputStream("src/main/resources/shop.png");
-        pEvent.getHook().
-                editOriginalEmbeds(new EmbedBuilder().
-                        setTitle("Pet Shop").
-                        setDescription("Buy yourself a pet! The following pets are in stock today:").
-                        setColor(CATS_AND_PETS_COLOR).
-                        addField(mPetsInStock[0].name(), Utils.formatPrice(mPetsInStock[0].price()), true).
-                        addField(mPetsInStock[1].name(), Utils.formatPrice(mPetsInStock[1].price()), true).
-                        addField(mPetsInStock[2].name(), Utils.formatPrice(mPetsInStock[2].price()), true).
-                        setImage("attachment://shop.png").
-                        build()
-                ).
-                setActionRow(
-                        Button.primary("buy_pet_0", "Buy Pet 1"),
-                        Button.success("buy_pet_1", "Buy Pet 2"),
-                        Button.danger("buy_pet_2", "Buy Pet 3")
-                ).
-                setAttachments(FileUpload.fromData(lCatInStream, "shop.png")).
-                queue();
-    }
-
-    private void buyPet(int pPetIndex, ButtonInteractionEvent pEvent) throws SQLException, FileNotFoundException {
-        pEvent.deferReply().queue();
-        Pet lPet = mPetsInStock[pPetIndex];
-        User lUser = pEvent.getUser();
-
-        if (lPet.price() > mUtils.getWealth(lUser.getIdLong(), pEvent.getGuild().getIdLong())[1]) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You don't have enough money to buy this pet.\n**Tipp:** /with", lUser)).queue();
-        }
-        else if (ownsPet(lUser.getIdLong(), pEvent.getGuild().getIdLong(), lPet.id())) {
-            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You already own this pet", lUser)).queue();
-        }
-        else {
-            mUtils.onExecute("INSERT INTO PetInventory (guild_id, user_id, pet_id, level) VALUES (?, ?, ?, 1)", pEvent.getGuild().getIdLong(), lUser.getIdLong(), lPet.id());
-            mUtils.increaseBankOrCash(lUser.getIdLong(), pEvent.getGuild().getIdLong(), -lPet.price(), "cash");
-            FileInputStream lPetImgStream = new FileInputStream(getPetPath(lPet.id()));
-            pEvent.getHook().editOriginalEmbeds(
-                        new EmbedBuilder().
-                                setDescription(":white_check_mark: You bought **" + lPet.name() + "** for " + Utils.formatPrice(lPet.price()) + "!").
-                                setColor(Color.green).
-                                setThumbnail("attachment://pet.png").
-                                setAuthor(lUser.getName(), null, lUser.getAvatarUrl()).
-                                build()).
-                    setAttachments(FileUpload.fromData(lPetImgStream, "pet.png")).
-                    queue();
-        }
-    }
-
-    private boolean ownsPet(long pUserId, long pGuildId, int pPetId) throws SQLException {
-        ResultSet lRs = mUtils.onQuery("SELECT pet_id FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?", pGuildId, pUserId, pPetId);
-        return lRs.next();
+        return lPets.toArray(new MinimalisticPetRecord[lPets.size()]);
     }
 
     private void refreshPetStock() throws SQLException, IOException {
-        ResultSet lRs = mUtils.onQuery("SELECT * FROM Pet ORDER BY RANDOM() LIMIT 3");
+        ResultSet lRs = mUtils.onQuery("SELECT id, name, price FROM Pet ORDER BY RANDOM() LIMIT 3");
         for (int i = 0; i < 3; ++i) {
             lRs.next();
-            mPetsInStock[i] = new Pet(lRs.getInt("id"), lRs.getString("name"), lRs.getString("description"), lRs.getInt("price"), 1, lRs.getInt("strength"), lRs.getInt("health"), lRs.getInt("speed"));
+            mPetsInStock[i] = new MinimalisticPetRecord(lRs.getInt("id"), lRs.getString("name"), 1, lRs.getInt("price"));
         }
         createShopImage(getPetPath(mPetsInStock[0].id()), getPetPath(mPetsInStock[1].id()), getPetPath(mPetsInStock[2].id()), "src/main/resources/shop.png");
     }

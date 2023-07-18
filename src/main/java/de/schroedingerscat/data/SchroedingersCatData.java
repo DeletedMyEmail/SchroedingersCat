@@ -85,7 +85,8 @@ public class SchroedingersCatData implements BotData {
                             {"cat_leaderboard", "Displays the top 10 cat collectors on this server"},
                             {"cat_gift", "Sends a cat card to another user", "user,user,User who will receive the cat card,true", "int,cat,Number of the cat card you want to send,true"},
                             {"pet_shop", "Buy Cat Cards or Pets"},
-                            {"pets", "Display your pets", "user,user,User whose pets you want to see,false"}
+                            {"pets", "Display your pets", "user,user,User whose pets you want to see,false"},
+                            {"pet", "View your pet's stats", "string,name,Name of the pets you want to see,true"}
                     },
                     {
                             // Others
@@ -107,7 +108,7 @@ public class SchroedingersCatData implements BotData {
             "CREATE TABLE IF NOT EXISTS 'ReactionRole' ('guild_id' INTEGER, 'message_id' INTEGER, 'emoji' TEXT, 'channel_id' INTEGER, 'role_id' INTEGER, PRIMARY KEY('guild_id','emoji','message_id'))",
             "CREATE TABLE IF NOT EXISTS 'CatCards' ('guild_id' INTEGER, 'user_id' INTEGER, 'cat_number' INTEGER)",
             "CREATE TABLE IF NOT EXISTS 'Pet' ('id' INTEGER, 'name' TEXT, 'price' INTEGER, 'description' TEXT, 'strength' INTEGER, 'health' INTEGER, 'speed' INTEGER, PRIMARY KEY('id'))",
-            "CREATE TABLE IF NOT EXISTS 'PetInventory' ('guild_id' INTEGER, 'user_id' INTEGER, 'pet_id' INTEGER, 'level' INTEGER, PRIMARY KEY('guild_id','user_id','pet_id'))",
+            "CREATE TABLE IF NOT EXISTS 'PetInventory' ('guild_id' INTEGER, 'user_id' INTEGER, 'pet_id' INTEGER, 'xp' INTEGER, 'hunger_time_threshold' INTEGER, 'thirst_time_threshold' INTEGER,  PRIMARY KEY('guild_id','user_id','pet_id'))",
             "CREATE TABLE IF NOT EXISTS 'CommandCooldown' ('guild_id' INTEGER, 'user_id' INTEGER, 'command' TEXT, 'cooldown_until' INTEGER)",
             "CREATE TABLE IF NOT EXISTS 'IncomeRole' ('guild_id' INTEGER, 'role_id' INTEGER, 'income' INTEGER)",
             "CREATE TABLE IF NOT EXISTS 'AutoChannel' ('guild_id' INTEGER, 'owner_id' INTEGER, 'channel_id' INTEGER)"
