@@ -69,6 +69,12 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             if (pEvent.getButton().getId().startsWith("buy_pet")) {
                 buyPet(pEvent.getButton().getId().charAt(8) - '0', pEvent);
             }
+            else if (pEvent.getButton().getId().startsWith("left")) {
+                cyclePetInv(pEvent, false);
+            }
+            else if (pEvent.getButton().getId().startsWith("right")) {
+                cyclePetInv(pEvent, true);
+            }
         });
     }
 
@@ -227,13 +233,48 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         pEvent.getHook().editOriginalEmbeds(lEmbed).
                 setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.png")).
                 setActionRow(
-                        Button.primary("left_", Emoji.fromUnicode("U+21E6").getAsReactionCode()),
-                        Button.primary("right_", Emoji.fromUnicode("U+21E8").getAsReactionCode())
+                        Button.primary("left_"+pEvent.getUser().getId()+"_0", Emoji.fromUnicode("U+21E6").getAsReactionCode()),
+                        Button.primary("right_"+pEvent.getUser().getId()+"_0", Emoji.fromUnicode("U+21E8").getAsReactionCode())
                 ).
                 queue();
     }
 
-    public void createShopImage(String pPetPath1, String pPetPath2, String pPetPath3, String pOutput) throws IOException {
+    private void cyclePetInv(ButtonInteractionEvent pEvent, boolean pNext) throws SQLException, IOException {
+        pEvent.deferEdit().queue();
+
+        String[] lData = pEvent.getButton().getId().split("_");
+        long lUserId = Long.parseLong(lData[1]);
+        int lPage = Integer.parseInt(lData[2]);
+
+        if (lPage == 0 && !pNext) {
+            return;
+        }
+        else if (pNext) {
+            ++lPage;
+        }
+        else {
+            --lPage;
+        }
+
+        Pet[] lPets = getOneSiteOfPetsFor(lUserId, pEvent.getGuild().getIdLong(), lPage);
+        if (lPets.length == 0) return;
+
+        String[][] lPetNames = new String[lPets.length][2];
+        for (int i = 0; i < 3 &&  i < lPets.length; ++i) {
+            lPetNames[i][0] = lPets[i].name();
+            lPetNames[i][1] = "Level " + lPets[i].level()+"\nStrength: "+lPets[i].strength()+"\nHealth: "+lPets[i].health()+"\nSpeed: "+lPets[i].speed()+"\nPrice: "+Utils.formatPrice(lPets[i].price());
+        }
+
+        MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Pet Inventory", "Your pets:", lPetNames, true, null, "attachment://pets.png", lPage+1+"/"+Utils.roundUp(getNumberOfPetsFor(lUserId, pEvent.getGuild().getIdLong()),3));
+        pEvent.getHook().editOriginalEmbeds(lEmbed).
+                setAttachments(FileUpload.fromData(mergePetImages(lPets), "pets.png")).
+                setActionRow(
+                        Button.primary("left_"+lUserId+"_"+lPage, Emoji.fromUnicode("U+21E6").getAsReactionCode()),
+                        Button.primary("right_"+lUserId+"_"+lPage, Emoji.fromUnicode("U+21E8").getAsReactionCode())).
+                queue();
+    }
+
+    private void createShopImage(String pPetPath1, String pPetPath2, String pPetPath3, String pOutput) throws IOException {
         BufferedImage lImg1 = ImageIO.read(new File(pPetPath1));
         BufferedImage lImg2 = ImageIO.read(new File(pPetPath2));
         BufferedImage lImg3 = ImageIO.read(new File(pPetPath3));
@@ -248,7 +289,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         lMergedImgGraphic.dispose();
     }
 
-    public byte[] mergePetImages(Pet... pPets) throws IOException {
+    private byte[] mergePetImages(Pet... pPets) throws IOException {
         BufferedImage[] lImageFiles = new BufferedImage[pPets.length];
         int lWidth = 0;
         int lHeight = 0;
