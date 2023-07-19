@@ -66,14 +66,23 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     @Override
     public void onButtonInteraction(@Nonnull ButtonInteractionEvent pEvent) {
         Utils.catchAndLogError(pEvent.getJDA(), () -> {
-            if (pEvent.getButton().getId().startsWith("buy_pet")) {
+            if (buttonNameStartsWith(pEvent, "buy_pet")) {
                 buyPet(pEvent.getButton().getId().charAt(8) - '0', pEvent);
             }
-            else if (pEvent.getButton().getId().startsWith("left")) {
+            else if (buttonNameStartsWith(pEvent, "left")) {
                 cyclePetInv(pEvent, false);
             }
-            else if (pEvent.getButton().getId().startsWith("right")) {
+            else if (buttonNameStartsWith(pEvent, "right")) {
                 cyclePetInv(pEvent, true);
+            }
+            else if (buttonNameStartsWith(pEvent, "feed")) {
+                feedPet(pEvent, pEvent.getButton().getId().split("_"));
+            }
+            else if (buttonNameStartsWith(pEvent, "water")) {
+                giveWaterToPet(pEvent, pEvent.getButton().getId().split("_"));
+            }
+            else if (buttonNameStartsWith(pEvent, "play")) {
+
             }
         });
     }
@@ -257,10 +266,14 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             return;
         }
 
+        long lCurrentTime = System.currentTimeMillis();
+        String lHungerField = lPet.hunger_time_threasholt() < lCurrentTime ? "true" : "In " + TimeUnit.MILLISECONDS.toMinutes(lPet.hunger_time_threasholt() - lCurrentTime) + " minutes";
+        String lThirstField = lPet.thirst_time_threasholt() < lCurrentTime ? "true" : "In " + TimeUnit.MILLISECONDS.toMinutes(lPet.thirst_time_threasholt() - lCurrentTime) + " minutes";
+
         String[][] lFields = {
                 {"Level " + lPet.xp()/100, lPet.xp()%100 + "/100 xp"},
-                {"Hunger", String.valueOf(lPet.hunger_time_threasholt() < System.currentTimeMillis())},
-                {"Thirst", String.valueOf(lPet.thirst_time_threasholt() < System.currentTimeMillis())},
+                {"Hunger", lHungerField},
+                {"Thirst", lThirstField},
                 {"Health", String.valueOf(lPet.health())},
                 {"Speed", String.valueOf(lPet.speed())},
                 {"Strength", String.valueOf(lPet.strength())},
@@ -271,6 +284,11 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         pEvent.getHook().
                 editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "🐾 " + pEvent.getUser().getGlobalName() + "'s " + lPet.name(), "", lFields, true, null, "attachment://pet.png", null)).
                 setAttachments(FileUpload.fromData(lPetImgStream, "pet.png")).
+                setActionRow(
+                        Button.primary("feed_" + pEvent.getUser().getId() + "_" + lPet.name(), "🥞 Feed"),
+                        Button.primary("water_" + pEvent.getUser().getId() + "_" + lPet.name(), "💧 Water"),
+                        Button.primary("play_" + pEvent.getUser().getId() + "_" + lPet.name(), "🎯 Play")
+                ).
                 queue();
     }
 
@@ -426,6 +444,52 @@ public class CatsAndPetsHandler extends ListenerAdapter {
         }
 
         return lPets.toArray(new MinimalisticPetRecord[lPets.size()]);
+    }
+
+    private void feedPet(ButtonInteractionEvent pEvent, String[] pData) throws SQLException {
+        pEvent.deferReply().queue();
+
+        User lUser = pEvent.getJDA().getUserById(pData[1]);
+        long lGuildId = pEvent.getGuild().getIdLong();
+        String lPetName = pData[2];
+        Pet lPet = getPet(lPetName, lUser.getIdLong(), lGuildId);
+
+        if (lPet == null || !lUser.equals(pEvent.getUser())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, ":x: You don't own this pet", lUser)).queue();
+        }
+        else if (lPet.hunger_time_threasholt() > System.currentTimeMillis()) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, ":x: Your pet is not hungry yet", lUser)).queue();
+        }
+        else {
+            long lTimeUntilFedRdy = mRandom.nextInt( 14400000) + 14400000;
+            mUtils.onExecute("UPDATE PetInventory SET hunger_time_threshold = ?, xp = (SELECT xp FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?) + 10 WHERE guild_id = ? AND user_id = ? AND pet_id = ?", System.currentTimeMillis() + lTimeUntilFedRdy, lGuildId, lUser.getIdLong(), lPet.id(), lGuildId, lUser.getIdLong(), lPet.id());
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "", ":white_check_mark: You fed your pet **" + lPet.name() + "** and earned **10xp**", null, false, lUser, null, "Can be fed again in " + TimeUnit.MILLISECONDS.toHours(lTimeUntilFedRdy) + " hours")).queue();
+        }
+    }
+
+    private void giveWaterToPet(ButtonInteractionEvent pEvent, String[] pData) throws SQLException {
+        pEvent.deferReply().queue();
+
+        User lUser = pEvent.getJDA().getUserById(pData[1]);
+        long lGuildId = pEvent.getGuild().getIdLong();
+        String lPetName = pData[2];
+        Pet lPet = getPet(lPetName, lUser.getIdLong(), lGuildId);
+
+        if (lPet == null || !lUser.equals(pEvent.getUser())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, ":x: You don't own this pet", lUser)).queue();
+        }
+        else if (lPet.thirst_time_threasholt() > System.currentTimeMillis()) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, ":x: Your pet is not thirsty yet", lUser)).queue();
+        }
+        else {
+            long lTimeUntilFedRdy = mRandom.nextInt( 7200000) + 5400000;
+            mUtils.onExecute("UPDATE PetInventory SET thirst_time_threshold = ?, xp = (SELECT xp FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?) + 10 WHERE guild_id = ? AND user_id = ? AND pet_id = ?", System.currentTimeMillis() + lTimeUntilFedRdy, lGuildId, lUser.getIdLong(), lPet.id(), lGuildId, lUser.getIdLong(), lPet.id());
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "", ":white_check_mark: You gave your pet **" + lPet.name() + "** water and earned **10xp**", null, false, lUser, null, "Can give water to your pet again in " + TimeUnit.MILLISECONDS.toHours(lTimeUntilFedRdy) + " hours")).queue();
+        }
+    }
+
+    private boolean buttonNameStartsWith(ButtonInteractionEvent pButton, String pName) {
+        return pButton.getButton().getId().startsWith(pName);
     }
 
     private void refreshPetStock() throws SQLException, IOException {
