@@ -208,6 +208,24 @@ public class Utils {
         return createEmbed(pColor, "", pDescription, null, false, pAuthor, null, null);
     }
 
+    public long getCooldownFor(long pGuildId, long pUserId, String pCommand) throws SQLException {
+        ResultSet lRs = onQuery("SELECT cooldown_until FROM CommandCooldown WHERE guild_id = ? AND user_id = ? AND command = ?", pGuildId, pUserId, pCommand);
+        if (lRs.next()) {
+            return lRs.getLong("cooldown_until");
+        } else {
+            return -1;
+        }
+    }
+
+    public void setCooldownFor(long pGuildId, long pUserId, String pCommand, long pCooldownUntil) throws SQLException {
+        if (getCooldownFor(pGuildId, pUserId, pCommand) == -1) {
+            onExecute("INSERT INTO CommandCooldown (guild_id, user_id, command, cooldown_until) VALUES (?,?,?,?)", pGuildId, pUserId, pCommand, pCooldownUntil);
+        }
+        else {
+            onExecute("UPDATE CommandCooldown SET cooldown_until = ? WHERE guild_id = ? AND user_id = ? AND command = ?", pCooldownUntil, pGuildId, pUserId, pCommand);
+        }
+    }
+
     public static void catchAndLogError(InteractionHook pHook, Function pFunction) {
         try {
             pFunction.run();

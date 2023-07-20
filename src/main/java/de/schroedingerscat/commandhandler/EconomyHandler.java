@@ -42,8 +42,7 @@ public class EconomyHandler extends ListenerAdapter {
 
     // HashMap<GuildId, List<Object>{color,number,List<Object>{user,boolean,amount}, List<Channel>},
     private final HashMap<Long, Object[]> mCurrentSpins;
-    // Command cooldown: HashMap<userId, guildId, HashMap<guildId, List<[when work cooldown end, when crime cooldown ends, when rob cooldown ends]>
-    private final HashMap<Long, HashMap<Long, Long[]>> mCommandsCooldown;
+
     // giver's id, receiver's id
     private final HashMap<Long, Long> mReceiverFromGiveCommand;
     private final BotApplication mBotApplication;
@@ -55,7 +54,6 @@ public class EconomyHandler extends ListenerAdapter {
 
         mCurrentSpins = new HashMap<>();
         mReceiverFromGiveCommand = new HashMap<>();
-        mCommandsCooldown = new HashMap<>();
 
         Timer timer = new Timer();
         timer.scheduleAtFixedRate(new TimerTask() {
@@ -83,7 +81,7 @@ public class EconomyHandler extends ListenerAdapter {
         Utils.catchAndLogError(pEvent.getHook(), () -> {
             switch (pEvent.getName()) {
                 case "bal" -> balCommand(pEvent, pEvent.getTargetMember());
-                case "rob" -> robCommand(pEvent, pEvent.getTargetMember());
+                case "rob" -> robCommand(pEvent, pEvent.getTarget());
                 case "give" -> giveModal(pEvent);
             }
         });
@@ -96,7 +94,7 @@ public class EconomyHandler extends ListenerAdapter {
                 case "bal" -> balCommand(pEvent);
                 case "top" -> topCommand(pEvent);
                 case "crime" -> crimeCommand(pEvent);
-                case "rob" -> robCommand(pEvent,pEvent.getOption("user").getAsMember());
+                case "rob" -> robCommand(pEvent,pEvent.getOption("user").getAsUser());
                 case "dep" -> depCommand(pEvent);
                 case "with" -> withCommand(pEvent);
                 case "work" -> workCommand(pEvent);
@@ -152,7 +150,12 @@ public class EconomyHandler extends ListenerAdapter {
      * @param pEvent - SlashCommandInteractionEvent triggered by member
      * */
     private void workCommand(@NotNull SlashCommandInteractionEvent pEvent) throws SQLException {
-        if (hasCooldown(pEvent, 0)) return;
+        long lCooldown = mUtils.getCooldownFor(pEvent.getMember().getIdLong(), pEvent.getGuild().getIdLong(), "work") - System.currentTimeMillis();
+
+        if (lCooldown > 0) {
+            pEvent.replyEmbeds(Utils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", pEvent.getUser())).queue();
+            return;
+        }
 
         pEvent.deferReply().queue();
         long lGuildId = pEvent.getGuild().getIdLong();
@@ -161,7 +164,7 @@ public class EconomyHandler extends ListenerAdapter {
         int lGainedMoney = new Random().nextInt(2000)+1000;
 
         mUtils.increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
-        setCooldownInMillis(lMemberId, lGuildId, 0, 180000);
+        mUtils.setCooldownFor(lMemberId, lGuildId, "work", System.currentTimeMillis() + 180000);
         pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(ECONOMY_COLOR,"",":white_check_mark: You earned **"+ Utils.formatPrice(lGainedMoney)+"**", null, false,pEvent.getUser(),null,null)).queue();
     }
 
@@ -171,7 +174,12 @@ public class EconomyHandler extends ListenerAdapter {
      * @param pEvent - SlashCommandInteractionEvent triggered by member
      * */
     private void crimeCommand(@NotNull SlashCommandInteractionEvent pEvent) throws SQLException {
-        if (hasCooldown(pEvent, 1)) return;
+        long lCooldown = mUtils.getCooldownFor(pEvent.getMember().getIdLong(), pEvent.getGuild().getIdLong(), "crime") - System.currentTimeMillis();
+
+        if (lCooldown > 0) {
+            pEvent.replyEmbeds(Utils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", pEvent.getUser())).queue();
+            return;
+        }
 
         pEvent.deferReply().queue();
         long lGuildId = pEvent.getGuild().getIdLong();
@@ -186,7 +194,8 @@ public class EconomyHandler extends ListenerAdapter {
         }
         else {
             mUtils.increaseBankOrCash(lMemberId, lGuildId, lGainedMoney, "cash");
-            setCooldownInMillis(lMemberId, lGuildId, 1, 360000);
+            mUtils.setCooldownFor(lMemberId, lGuildId, "crime", System.currentTimeMillis() + 360000);
+
             pEvent.getHook().editOriginalEmbeds(
                     Utils.createEmbed(
                             ECONOMY_COLOR,
@@ -292,48 +301,49 @@ public class EconomyHandler extends ListenerAdapter {
         }
     }
 
-    private void robCommand(@NotNull GenericCommandInteractionEvent pEvent, Member pMemberToRob) throws SQLException {
-        if (hasCooldown(pEvent, 2)) return;
 
+
+    private void robCommand(GenericCommandInteractionEvent pEvent, User pMemberToRob) throws SQLException {
         pEvent.deferReply().queue();
-        robCommand(pEvent.getHook(), pEvent.getMember(), pMemberToRob);
-    }
+        User lRobber = pEvent.getUser();
+        long lGuildId = pEvent.getGuild().getIdLong();
+        long lCooldown = mUtils.getCooldownFor(lRobber.getIdLong(), lGuildId, "work") - System.currentTimeMillis();
 
-    /**
-     *
-     *
-     * */
-    private void robCommand(InteractionHook pHook, Member pRobber, Member pMemberToRob) throws SQLException {
-        if (pRobber.equals(pMemberToRob)) {
-            pHook.editOriginalEmbeds(Utils.createEmbed(
-                    Color.red, "", ":x: You can't rob yourself",
-                    null, false, pRobber.getUser(), null, null)).queue();
+        if (lCooldown > 0) {
+            pEvent.replyEmbeds(Utils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", lRobber)).queue();
             return;
         }
 
-        long lMemberToRobCash = mUtils.getWealth(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong())[1];
-        long[] lRobberWealth = mUtils.getWealth(pRobber.getUser().getIdLong(), pRobber.getGuild().getIdLong());
+        if (lRobber.equals(pMemberToRob)) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(
+                    Color.red, "", ":x: You can't rob yourself",
+                    null, false, lRobber, null, null)).queue();
+            return;
+        }
+
+        long lMemberToRobCash = mUtils.getWealth(pMemberToRob.getIdLong(), lGuildId)[1];
+        long[] lRobberWealth = mUtils.getWealth(lRobber.getIdLong(), lGuildId);
 
         if (lMemberToRobCash <= 0) {
             String lDescription = ":x: "+pMemberToRob.getAsMention()+" doesn't have enough cash to rob.";
             long lostValue = (long) ((lRobberWealth[1]+lRobberWealth[0])*0.1);
             if (lostValue > 0) {
-                mUtils.increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), -lostValue, "cash");
-                setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
-                lDescription = ":x: You got caught robbing "+pMemberToRob.getAsMention()+" and paid **"+Utils.formatPrice(lostValue)+"**";
+                mUtils.increaseBankOrCash(lRobber.getIdLong(), lGuildId, -lostValue, "cash");
+                mUtils.setCooldownFor(lRobber.getIdLong(), lGuildId, "rob", System.currentTimeMillis() + 7200000);
+                lDescription = ":x: You got caught robbing "+lGuildId+" and paid **"+Utils.formatPrice(lostValue)+"**";
             }
-            pHook.editOriginalEmbeds(Utils.createEmbed(
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", lDescription,
-                    null, false, pRobber.getUser(), null, null)).queue();
+                    null, false, lRobber, null, null)).queue();
         }
         else {
-            mUtils.increaseBankOrCash(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), +lMemberToRobCash, "cash");
-            mUtils.increaseBankOrCash(pMemberToRob.getIdLong(), pRobber.getGuild().getIdLong(), -lMemberToRobCash, "cash");
-            setCooldownInMillis(pRobber.getIdLong(), pRobber.getGuild().getIdLong(), 2, 7200000);
-            pHook.editOriginalEmbeds(Utils.createEmbed(
+            mUtils.increaseBankOrCash(lRobber.getIdLong(), pEvent.getGuild().getIdLong(), +lMemberToRobCash, "cash");
+            mUtils.increaseBankOrCash(pMemberToRob.getIdLong(), pEvent.getGuild().getIdLong(), -lMemberToRobCash, "cash");
+            mUtils.setCooldownFor(lRobber.getIdLong(), pEvent.getGuild().getIdLong(), "rob", System.currentTimeMillis() + 7200000);
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(
                     ECONOMY_COLOR, "", ":white_check_mark: Successfully robbed "+
                             pMemberToRob.getAsMention()+" and got **"+Utils.formatPrice(lMemberToRobCash)+"**",
-                    null, false, pRobber.getUser(), null, null)).queue();
+                    null, false, lRobber, null, null)).queue();
         }
     }
 
@@ -650,41 +660,6 @@ public class EconomyHandler extends ListenerAdapter {
         }
         catch (SQLException | NullPointerException e) {
             e.printStackTrace();
-        }
-    }
-
-    private boolean hasCooldown(GenericCommandInteractionEvent pEvent, int pCommandIndex) {
-        long lCooldown = getCooldownInMillis(pEvent.getUser().getIdLong(), pEvent.getGuild().getIdLong(), pCommandIndex);
-        if (lCooldown > 0) {
-            pEvent.replyEmbeds(mUtils.createEmbed(Color.red, ":x: Cooldown for this command ends in **"+TimeUnit.MILLISECONDS.toMinutes(lCooldown)+"** minutes", pEvent.getUser())).queue();
-            return true;
-        }
-        return false;
-    }
-
-    private long getCooldownInMillis(long pUserId, long pGuildId, int pCommandIndex) {
-        if (mCommandsCooldown.get(pUserId) == null) return 0;
-        Long[] lWhenCooldownsEnd = mCommandsCooldown.get(pUserId).get(pGuildId);
-        if (lWhenCooldownsEnd == null) return 0;
-
-        /*if (lWhenCooldownsEnd[pCommandIndex] - System.currentTimeMillis() <= 0) {
-            if (lWhenCooldownsEnd[0] - System.currentTimeMillis() <= 0 && lWhenCooldownsEnd[1]- System.currentTimeMillis() <= 0 && lWhenCooldownsEnd[2] - System.currentTimeMillis()<= 0)
-                commandsCooldown.get(pUserId).remove(pGuildId);
-            return 0;
-        }*/
-        return lWhenCooldownsEnd[pCommandIndex] - System.currentTimeMillis();
-    }
-
-    private void setCooldownInMillis(long pUserId, long pGuildId, int pCommandIndex, long pCooldownInMillis)
-    {
-        mCommandsCooldown.putIfAbsent(pUserId, new HashMap<>());
-        HashMap<Long, Long[]> lUsersGuildWithCooldowns = mCommandsCooldown.get(pUserId);
-        if (lUsersGuildWithCooldowns.get(pGuildId) != null)
-            lUsersGuildWithCooldowns.get(pGuildId)[pCommandIndex] = System.currentTimeMillis() + pCooldownInMillis;
-        else {
-            Long[] lCooldowns = {0L,0L,0L};
-            lCooldowns[pCommandIndex] = System.currentTimeMillis() + pCooldownInMillis;
-            lUsersGuildWithCooldowns.put(pGuildId, lCooldowns);
         }
     }
 

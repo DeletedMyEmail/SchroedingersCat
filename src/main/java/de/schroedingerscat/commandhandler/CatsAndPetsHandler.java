@@ -8,11 +8,13 @@ import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
+import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
+import net.dv8tion.jda.api.interactions.modals.Modal;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
@@ -35,9 +37,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     /** Default color of this category to be used for embeds */
     public static final Color CATS_AND_PETS_COLOR = new Color(72, 231, 179);
-    private static final long SPAWN_COOLDOWN = 180000;
 
-    private final HashMap<Long, HashMap<Long, Long>> mCatSpawnCooldown;
     private final HashMap<Long, Integer> mLastCatSpawned;
     private final MinimalisticPetRecord[] mPetsInStock;
     private final Random mRandom;
@@ -46,7 +46,6 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     public CatsAndPetsHandler(Utils pUtils) {
         mRandom = new Random();
         mUtils = pUtils;
-        mCatSpawnCooldown = new HashMap<>();
         mLastCatSpawned = new HashMap<>();
         mPetsInStock = new MinimalisticPetRecord[3];
 
@@ -82,9 +81,33 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 giveWaterToPet(pEvent, pEvent.getButton().getId().split("_"));
             }
             else if (buttonNameStartsWith(pEvent, "play")) {
-
+                pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "", ":x: This feature is not implemented yet", null, false, pEvent.getUser(), null, null)).queue();
+            }
+            else if (buttonNameStartsWith(pEvent, "fight")) {
+                sendFightModal(pEvent);
             }
         });
+    }
+
+    @Override
+    public void onModalInteraction(@Nonnull ModalInteractionEvent pEvent) {
+
+    }
+
+    private void sendFightModal(ButtonInteractionEvent pEvent) {
+        String[] pData = pEvent.getButton().getId().split("_");
+        User lUser = pEvent.getJDA().getUserById(pData[1]);
+
+        if (lUser == null || !lUser.equals(pEvent.getUser())) {
+            pEvent.replyEmbeds(Utils.createEmbed(Color.red, "", ":x: Not your pet", null, false, pEvent.getUser(), null, null)).setEphemeral(true).queue();
+        }
+        else {
+            pEvent.replyModal(
+                        Modal.create("fight", "🏹 Start a fight against").
+                            addActionRow()
+                            .build()).
+                    queue();
+        }
     }
 
     @Override
@@ -105,7 +128,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
 
     private void spawnCatCommand(SlashCommandInteractionEvent pEvent) throws FileNotFoundException, SQLException {
         pEvent.deferReply().queue();
-        long lCooldown = getCooldown(pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong());
+        long lCooldown = mUtils.getCooldownFor(pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), "spawn_cat");
 
         if (!isSpawningChannel(pEvent.getGuild().getIdLong(), pEvent.getChannel().getIdLong())) {
             pEvent.getHook().
@@ -122,7 +145,7 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             FileInputStream lCatInStream = new FileInputStream("src/main/resources/catpics/katze"+lNum+".jpg");
             MessageEmbed lEmbed = Utils.createEmbed(CATS_AND_PETS_COLOR, "Cat Card #"+lNum, "", null, false, null, "attachment://cat.jpg",null);
 
-            mCatSpawnCooldown.get(pEvent.getGuild().getIdLong()).put(pEvent.getUser().getIdLong(), System.currentTimeMillis() + SPAWN_COOLDOWN);
+            mUtils.setCooldownFor(pEvent.getGuild().getIdLong(), pEvent.getUser().getIdLong(), "spawn_cat", System.currentTimeMillis() + 180000);
             mLastCatSpawned.put(pEvent.getGuild().getIdLong(), lNum);
             pEvent.getHook().editOriginalEmbeds(lEmbed).setAttachments(FileUpload.fromData(lCatInStream, "cat.jpg")).queue();
         }
@@ -287,7 +310,8 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 setActionRow(
                         Button.primary("feed_" + pEvent.getUser().getId() + "_" + lPet.name(), "🥞 Feed"),
                         Button.primary("water_" + pEvent.getUser().getId() + "_" + lPet.name(), "💧 Water"),
-                        Button.primary("play_" + pEvent.getUser().getId() + "_" + lPet.name(), "🎯 Play")
+                        Button.primary("play_" + pEvent.getUser().getId() + "_" + lPet.name(), "🎯 Play"),
+                        Button.primary("fight_" + pEvent.getUser().getId() + "_" + lPet.name(), "🏹 Fight")
                 ).
                 queue();
     }
@@ -366,12 +390,6 @@ public class CatsAndPetsHandler extends ListenerAdapter {
     private boolean ownsPet(long pUserId, long pGuildId, int pPetId) throws SQLException {
         ResultSet lRs = mUtils.onQuery("SELECT pet_id FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?", pGuildId, pUserId, pPetId);
         return lRs.next();
-    }
-
-    private long getCooldown(long pGuildId, long pUserId) {
-        mCatSpawnCooldown.putIfAbsent(pGuildId, new HashMap<>());
-        long lCurrentTime = System.currentTimeMillis();
-        return mCatSpawnCooldown.get(pGuildId).getOrDefault(pUserId, lCurrentTime) - lCurrentTime;
     }
 
     private boolean isSpawningChannel(long pGuildId, long pChannelId) throws SQLException {
