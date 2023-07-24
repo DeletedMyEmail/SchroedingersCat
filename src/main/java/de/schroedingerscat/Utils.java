@@ -256,6 +256,7 @@ public class Utils {
             pFunction.run();
         }
         catch (Exception ex) {
+            ex.printStackTrace();
             sendToOwner(pJDA, ":x: An error occured:\n" + ex.getMessage());
         }
     }

@@ -4,17 +4,19 @@ import de.schroedingerscat.Utils;
 import de.schroedingerscat.entities.Pet;
 import de.schroedingerscat.entities.MinimalisticPetRecord;
 import net.dv8tion.jda.api.EmbedBuilder;
+import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.entities.channel.Channel;
 import net.dv8tion.jda.api.entities.channel.ChannelType;
-import net.dv8tion.jda.api.events.interaction.ModalInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.command.SlashCommandInteractionEvent;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
+import net.dv8tion.jda.api.events.interaction.component.StringSelectInteractionEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import net.dv8tion.jda.api.interactions.InteractionHook;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
-import net.dv8tion.jda.api.interactions.modals.Modal;
+import net.dv8tion.jda.api.interactions.components.selections.SelectOption;
+import net.dv8tion.jda.api.interactions.components.selections.StringSelectMenu;
 import net.dv8tion.jda.api.utils.FileUpload;
 import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nonnull;
@@ -25,13 +27,14 @@ import java.io.*;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Handles all commands related to pets and cat cards
  *
  * @author KaitoKunTatsu
- * @version 3.0.0 | last edit: 18.07.2023
+ * @version 3.0.0 | last edit: 24.07.2023
  * */
 public class CatsAndPetsHandler extends ListenerAdapter {
 
@@ -84,30 +87,24 @@ public class CatsAndPetsHandler extends ListenerAdapter {
                 pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "", ":x: This feature is not implemented yet", null, false, pEvent.getUser(), null, null)).queue();
             }
             else if (buttonNameStartsWith(pEvent, "fight")) {
-                sendFightModal(pEvent);
+                sendOpponentSelector(pEvent);
+            }
+            else if (buttonNameStartsWith(pEvent, "accept_fight")) {
+                acceptFight(pEvent);
             }
         });
     }
 
     @Override
-    public void onModalInteraction(@Nonnull ModalInteractionEvent pEvent) {
-
-    }
-
-    private void sendFightModal(ButtonInteractionEvent pEvent) {
-        String[] pData = pEvent.getButton().getId().split("_");
-        User lUser = pEvent.getJDA().getUserById(pData[1]);
-
-        if (lUser == null || !lUser.equals(pEvent.getUser())) {
-            pEvent.replyEmbeds(Utils.createEmbed(Color.red, "", ":x: Not your pet", null, false, pEvent.getUser(), null, null)).setEphemeral(true).queue();
-        }
-        else {
-            pEvent.replyModal(
-                        Modal.create("fight", "🏹 Start a fight against").
-                            addActionRow()
-                            .build()).
-                    queue();
-        }
+    public void onStringSelectInteraction(@NotNull StringSelectInteractionEvent pEvent) {
+        Utils.catchAndLogError(pEvent.getJDA(), () -> {
+            if (pEvent.getSelectMenu().getId().startsWith("fight")) {
+                requestFight(pEvent);
+            }
+            else if (pEvent.getSelectMenu().getId().startsWith("pet_choice")) {
+                startFight(pEvent);
+            }
+        });
     }
 
     @Override
@@ -504,6 +501,156 @@ public class CatsAndPetsHandler extends ListenerAdapter {
             mUtils.onExecute("UPDATE PetInventory SET thirst_time_threshold = ?, xp = (SELECT xp FROM PetInventory WHERE guild_id = ? AND user_id = ? AND pet_id = ?) + 10 WHERE guild_id = ? AND user_id = ? AND pet_id = ?", System.currentTimeMillis() + lTimeUntilFedRdy, lGuildId, lUser.getIdLong(), lPet.id(), lGuildId, lUser.getIdLong(), lPet.id());
             pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "", ":white_check_mark: You gave your pet **" + lPet.name() + "** water and earned **10xp**", null, false, lUser, null, "Can give water to your pet again in " + TimeUnit.MILLISECONDS.toHours(lTimeUntilFedRdy) + " hours")).queue();
         }
+    }
+
+
+    private void requestFight(StringSelectInteractionEvent pEvent) throws SQLException {
+        pEvent.deferReply().queue();
+
+        String[] lData = pEvent.getSelectMenu().getId().split("_");
+        User lUser = pEvent.getJDA().getUserById(lData[1]);
+        User lOpponent = pEvent.getJDA().getUserById(pEvent.getSelectedOptions().get(0).getValue());
+
+        if (lOpponent == null) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, "", ":x: The opponent you selected was not found", null, false, lUser, null, null)).queue();
+        }
+        else if (lOpponent.equals(lUser)) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, "", ":x: You can't fight against yourself. wtf?", null, false, lUser, null, null)).queue();
+        }
+        else if (isFightRunning(lUser.getIdLong(), lOpponent.getIdLong(), pEvent.getGuild().getIdLong())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: This fight is already running", pEvent.getUser())).queue();
+        }
+        else {
+            pEvent.getHook().
+                    editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "", lUser.getAsMention() + " challanged " + lOpponent.getAsMention() + " for a pet fight! 🏹", null, false, null, null, null)).
+                    setActionRow(Button.primary("accept_fight", "Accept")).
+                    queue( msg -> {
+                        try {
+                            setPetFightRequest(lUser.getIdLong(), lOpponent.getIdLong(), msg.getIdLong(), lData[2]);
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
+                    });
+        }
+    }
+
+    private void setPetFightRequest(long pChallangerId, long pOpponentId, long pMessageId, String pPetName) throws SQLException {
+        if (mUtils.onQuery("SELECT * FROM PetFightRequest WHERE challanger_id = ? AND opponent_id = ?", pChallangerId, pOpponentId).next()) {
+            mUtils.onExecute("UPDATE PetFightRequest SET message_id = ? AND challangers_pet = ? WHERE challanger_id = ? AND opponent_id = ?", pMessageId, pPetName, pChallangerId, pOpponentId);
+        }
+        else {
+            mUtils.onExecute("INSERT INTO PetFightRequest (challanger_id, opponent_id, message_id, challangers_pet) VALUES (?, ?, ?, ?)", pChallangerId, pOpponentId, pMessageId, pPetName);
+        }
+    }
+
+    private void sendOpponentSelector(ButtonInteractionEvent pEvent) {
+        pEvent.deferReply(true).queue();
+        String[] pData = pEvent.getButton().getId().split("_");
+        User lUser = pEvent.getJDA().getUserById(pData[1]);
+
+        if (lUser == null || !lUser.equals(pEvent.getUser())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, "", ":x: Not your pet", null, false, null, null, null)).queue();
+        }
+        else {
+            List<Member> lUsers = pEvent.getGuild().getMembers();
+            SelectOption[] lOptions = new SelectOption[lUsers.size()];
+            for (int i = 0; i < lUsers.size(); ++i) {
+                lOptions[i] = SelectOption.of(lUsers.get(i).getEffectiveName(), lUsers.get(i).getId());
+            }
+
+            pEvent.getHook().editOriginal("Select your opponent").setActionRow(StringSelectMenu.create(pEvent.getButton().getId()).addOptions(lOptions).build()).queue();
+        }
+    }
+
+
+    private void acceptFight(ButtonInteractionEvent pEvent) throws SQLException {
+        pEvent.deferReply(true).queue();
+
+        User lUser = pEvent.getUser();
+        long[] lIds = getChallangerAndOpponentId(pEvent.getMessageIdLong());
+        if (lIds.length == 0) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: This fight request is no longer valid", lUser)).queue();
+        }
+        else if (lIds[1] != lUser.getIdLong()) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: You are not the opponent of this fight", lUser)).queue();
+        }
+        else {
+            String[] lPets = getPetNames(lIds[1], pEvent.getGuild().getIdLong());
+            SelectOption[] lSelectOptions = new SelectOption[lPets.length];
+            for (int i = 0; i < lPets.length; ++i) {
+                lSelectOptions[i] = SelectOption.of(lPets[i], lPets[i]);
+            }
+
+            pEvent.getHook().
+                    editOriginal("Choose your pet").
+                    setActionRow(StringSelectMenu.create("pet_choice_"+pEvent.getMessageId()).addOptions(lSelectOptions).build()).
+                    queue();
+        }
+    }
+
+    private String[] getPetNames(long pUserId, long pGuildId) throws SQLException {
+        ResultSet lRs = mUtils.onQuery("SELECT name FROM PetInventory JOIN Pet ON pet_id = id WHERE guild_id = ? AND user_id = ?", pGuildId, pUserId);
+        List<String> lPetNames = new ArrayList<>();
+        while (lRs.next()) {
+            lPetNames.add(lRs.getString("name"));
+        }
+        return lPetNames.toArray(new String[lPetNames.size()]);
+    }
+
+    private boolean isFightRunning(long pUser1Id, long pUser2Id, long pGuildId) throws SQLException {
+        return mUtils.onQuery("SELECT * FROM PetFight WHERE guild_id = ? AND (user1_id = ? OR user1_id = ?) AND (user2_id = ? OR user2_id = ?)", pGuildId, pUser1Id, pUser2Id, pUser1Id, pUser2Id).next();
+    }
+
+    private void startFight(StringSelectInteractionEvent pEvent) throws SQLException, IOException {
+        pEvent.deferReply().queue();
+
+        String lMessageId = pEvent.getSelectMenu().getId().split("_")[2];
+        long[] lIds = getChallangerAndOpponentId(Long.parseLong(lMessageId));
+        if (lIds.length == 0) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: This fight request is no longer valid", pEvent.getUser())).queue();
+            return;
+        }
+        if (isFightRunning(lIds[0], lIds[1], pEvent.getGuild().getIdLong())) {
+            pEvent.getHook().editOriginalEmbeds(Utils.createEmbed(Color.red, ":x: This fight is already running", pEvent.getUser())).queue();
+            return;
+        }
+
+        ResultSet lRs = mUtils.onQuery("SELECT challangers_pet FROM PetFightRequest WHERE message_id = ?", lMessageId);
+        lRs.next();
+
+        Pet lChallangersPet = getPet(lRs.getString("challangers_pet"), lIds[0], pEvent.getGuild().getIdLong());
+        Pet lOpponentsPet = getPet(pEvent.getValues().get(0), lIds[1], pEvent.getGuild().getIdLong());
+        User lChallanger = pEvent.getJDA().getUserById(lIds[0]);
+        User lOpponent = pEvent.getJDA().getUserById(lIds[1]);
+
+        mUtils.onExecute("DELETE FROM PetFightRequest WHERE message_id = ?", lMessageId);
+        mUtils.onExecute("INSERT INTO PetFight(user1_id, user2_id, guild_id, turn, pet_user1, pet_user2) VALUES(?, ?, ?, 0, ?, ?)", lIds[0], lIds[1], pEvent.getGuild().getIdLong(), lChallangersPet.name(), lOpponentsPet.name());
+
+        String[][] lFields = {
+                {lChallangersPet.name(), lChallangersPet.health() + "hp"},
+                {lOpponentsPet.name(), lOpponentsPet.health() + "hp"},
+                {"Turn", lChallanger.getAsMention()}
+        };
+
+        mergePetImages(lChallangersPet.id(), lOpponentsPet.id());
+
+        pEvent.getHook().
+                editOriginalEmbeds(Utils.createEmbed(CATS_AND_PETS_COLOR, "🏹 FIGHT", lChallanger.getAsMention() + " against " + lOpponent.getAsMention(), lFields, true, null, "attachment://pets.png", null)).
+                setAttachments(FileUpload.fromData(mergePetImages(lChallangersPet.id(), lOpponentsPet.id()), "pets.png")).
+                setActionRow(
+                        Button.danger("attack", "Attack"),
+                        Button.primary("defend", "Defend"),
+                        Button.secondary("run", "Run"),
+                        Button.success("boost", "Boost")
+                ).queue();
+    }
+
+    private long[] getChallangerAndOpponentId(long pMessageId) throws SQLException {
+        ResultSet lRs = mUtils.onQuery("SELECT * FROM PetFightRequest WHERE message_id = ?", pMessageId);
+        if (lRs.next()) {
+            return new long[] {lRs.getLong("challanger_id"), lRs.getLong("opponent_id")};
+        }
+        return new long[0];
     }
 
     private boolean buttonNameStartsWith(ButtonInteractionEvent pButton, String pName) {

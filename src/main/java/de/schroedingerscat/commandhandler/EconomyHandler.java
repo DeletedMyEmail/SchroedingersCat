@@ -301,8 +301,6 @@ public class EconomyHandler extends ListenerAdapter {
         }
     }
 
-
-
     private void robCommand(GenericCommandInteractionEvent pEvent, User pMemberToRob) throws SQLException {
         pEvent.deferReply().queue();
         User lRobber = pEvent.getUser();
