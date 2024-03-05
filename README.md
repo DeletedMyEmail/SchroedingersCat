@@ -21,10 +21,6 @@ You can paste a new bot token in every line as well as top.gg token and bot id s
 To choose bots you want to start, simply add (multiple) line indices (0,1,2,...) as arguments at the end of the command above. Those indices refer to lines in the tokenfile.~~
 Depricated, update is coming soon.
 
-<a href="https://paypal.me/kaitokuntatsu" style="padding: 5px; background-color: #1072EB; border-radius: 5px; color: white;">
-  Donate via PayPal
-</a>
-
 ## Features
 
    - Automated Voice Channel
@@ -42,9 +38,6 @@ Depricated, update is coming soon.
   
   #### Support Server <br>
   https://discord.gg/XUqU4MpFFF
-  
-  #### Website <br>
-  https://schroedingerscat.sevenpages.de/
 
 ## Examples
 
